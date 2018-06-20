@@ -213,6 +213,7 @@ impl<'a> Value<'a> {
             Value::Date(d) => Self::write_str(DATE, d, buf),
             Value::Time(t) => Self::write_str(TIME, t, buf),
             Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf),
+            Value::Blob(bytes) => Self::write_blob(bytes, buf),
             _ => unimplemented!(),
         }
     }
@@ -257,11 +258,47 @@ impl<'a> Value<'a> {
         }
 
         // Null terminator
-        if i + 1 != total_size as usize {
-            return Err(Error::new(ErrorKind::WriteZero, format!("write_str() -> output buffer needs at least {} bytes", total_size)));
-        }
         if let Some(item) = buf.get_mut(i) {
             *item = 0;
+        }
+
+        Ok(total_size as usize)
+    }
+
+    /// # TODO
+    fn write_blob(bytes: &[u8], buf: &mut [u8]) -> Result<usize, Error> {
+        let len = bytes.len() as u32;
+        if len > ::std::i32::MAX as u32 {
+            return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> too large: {} byte(s)", len)));
+        }
+
+        let total_size = 1 + if len <= ::std::i8::MAX as u32 { 1 } else { 2 } + len;
+        if buf.len() < total_size as usize {
+            return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> output buffer needs at least {} bytes", total_size)));
+        }
+
+        // Type
+        let mut i = 0;
+        buf[i] = BLOB;
+        i += 1;
+
+        // Size
+        if len <= ::std::i8::MAX as u32 {
+            buf[i] = len as u8;
+            i += 1;
+        } else {
+            write_integer!(i32, len as i32, buf[i..])?;
+            i += 2;
+        }
+
+        // Data
+        if let Some(mut buf) = buf.get_mut(i..) {
+            let written = buf.write(bytes)? as u32;
+            if written != len {
+                return Err(Error::new(
+                    ErrorKind::WriteZero, format!("write_blob() -> expected to write {} byte(s); result: {}", len, written)
+                ));
+            }
         }
 
         Ok(total_size as usize)

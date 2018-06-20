@@ -69,4 +69,10 @@ fn write() {
     v.write(&mut buf).unwrap();
     assert!(buf[0..2] == [value::TEXT, 0x06]);
     assert!(&buf[2..] == b"Binn-X\0");
+
+    let v = Value::Blob(b"hello-jen");
+    let mut buf = [0_u8; 11];
+    v.write(&mut buf).unwrap();
+    assert!(buf[0..2] == [value::BLOB, 0x09]);
+    assert!(&buf[2..] == b"hello-jen");
 }
