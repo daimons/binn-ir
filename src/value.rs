@@ -3,6 +3,8 @@
 //! # Values
 
 use std::collections::{BTreeMap, HashMap};
+use std::io::{Error, ErrorKind};
+use std::mem;
 
 /// # Null
 pub const NULL: u8 = 0b_0000_0000;
@@ -138,5 +140,41 @@ pub enum Value<'a> {
 
     /// # Object
     Object(HashMap<&'a str, Value<'a>>),
+
+}
+
+macro_rules! write_integer { ($function_name: expr, $type: ty, $v: expr, $buf: expr) => {{
+    let bytes: &[u8; mem::size_of::<$type>() ] = unsafe { mem::transmute(&$v.to_be()) };
+    if $buf.len() < bytes.len() {
+        Err(Error::new(ErrorKind::WriteZero, format!("{} -> output buffer needs at least 2 bytes", $function_name)))
+    } else {
+        for i in 0..bytes.len() {
+            $buf[i] = bytes[i]
+        }
+        Ok(bytes.len())
+    }
+}};}
+
+impl<'a> Value<'a> {
+
+    /// # TODO
+    pub fn write(&self, buf: &mut [u8]) -> Result<usize, Error> {
+        match *self {
+            Value::Null => write_integer!("write_null", u8, NULL, buf),
+            Value::True => write_integer!("write_true", u8, TRUE, buf),
+            Value::False => write_integer!("write_false", u8, FALSE, buf),
+            Value::U8(v) => write_integer!("write_u8", u8, v, buf),
+            Value::I8(v) => write_integer!("write_i8", i8, v, buf),
+            Value::U16(v) => write_integer!("write_u16", u16, v, buf),
+            Value::I16(v) => write_integer!("write_i16", i16, v, buf),
+            Value::U32(v) => write_integer!("write_u32", u32, v, buf),
+            Value::I32(v) => write_integer!("write_i32", i32, v, buf),
+            Value::Float(v) => write_integer!("write_float", u32, v.to_bits(), buf),
+            Value::U64(v) => write_integer!("write_u64", u64, v, buf),
+            Value::I64(v) => write_integer!("write_i64", i64, v, buf),
+            Value::Double(v) => write_integer!("write_double", u64, v.to_bits(), buf),
+            _ => unimplemented!(),
+        }
+    }
 
 }
