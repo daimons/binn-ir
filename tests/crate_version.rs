@@ -4,5 +4,5 @@ extern crate binnx;
 
 #[test]
 fn crate_version() {
-    assert_eq!(binnx::CRATE_VERSION, env!("CARGO_PKG_VERSION"));
+    assert!(binnx::CRATE_VERSION == env!("CARGO_PKG_VERSION"));
 }
