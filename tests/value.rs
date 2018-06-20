@@ -2,7 +2,7 @@
 
 extern crate binnx;
 
-use binnx::value;
+use binnx::value::{self, Value};
 
 #[test]
 fn values() {
@@ -35,4 +35,22 @@ fn values() {
     assert!(value::LIST         == 0b_1110_0000 | 0xE0 | 224);
     assert!(value::MAP          == 0b_1110_0001 | 0xE1 | 225);
     assert!(value::OBJECT       == 0b_1110_0010 | 0xE2 | 226);
+}
+
+#[test]
+fn write() {
+    let v = Value::U8(123);
+    let mut buf = [0_u8; 2];
+    v.write(&mut buf).unwrap();
+    assert!(buf == [value::U8, 123]);
+
+    let v = Value::I16(-456);
+    let mut buf = [0_u8; 3];
+    v.write(&mut buf).unwrap();
+    assert!(buf == [value::I16, 0xFE, 0x38]);
+
+    let v = Value::U16(789);
+    let mut buf = [0_u8; 3];
+    v.write(&mut buf).unwrap();
+    assert!(buf == [value::U16, 0x03, 0x15]);
 }

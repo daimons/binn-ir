@@ -147,15 +147,16 @@ macro_rules! as_bytes { ($type: ty, $v: expr) => {{
     unsafe { mem::transmute::<&$type, &[u8; mem::size_of::<$type>() ]>(&$v) }
 }};}
 
-macro_rules! write_integer { ($function_name: expr, $type: ty, $v: expr, $buf: expr) => {{
+macro_rules! write_integer { ($type: ty, $v: expr, $buf: expr) => {{
     let bytes = as_bytes!($type, $v.to_be());
-    if $buf.len() < bytes.len() {
-        Err(Error::new(ErrorKind::WriteZero, format!("{} -> output buffer needs at least 2 bytes", $function_name)))
+    let result = bytes.len();
+    if $buf.len() < result {
+        Err(Error::new(ErrorKind::WriteZero, format!("write_integer!() -> output buffer needs at least {} byte(s)", result)))
     } else {
-        for i in 0..bytes.len() {
+        for i in 0..result {
             $buf[i] = bytes[i]
         }
-        Ok(bytes.len())
+        Ok(result)
     }
 }};}
 
@@ -164,19 +165,49 @@ impl<'a> Value<'a> {
     /// # TODO
     pub fn write(&self, buf: &mut [u8]) -> Result<usize, Error> {
         match *self {
-            Value::Null => write_integer!("write_null", u8, NULL, buf),
-            Value::True => write_integer!("write_true", u8, TRUE, buf),
-            Value::False => write_integer!("write_false", u8, FALSE, buf),
-            Value::U8(u) => write_integer!("write_u8", u8, u, buf),
-            Value::I8(i) => write_integer!("write_i8", i8, i, buf),
-            Value::U16(u) => write_integer!("write_u16", u16, u, buf),
-            Value::I16(i) => write_integer!("write_i16", i16, i, buf),
-            Value::U32(u) => write_integer!("write_u32", u32, u, buf),
-            Value::I32(i) => write_integer!("write_i32", i32, i, buf),
-            Value::Float(f) => write_integer!("write_float", u32, f.to_bits(), buf),
-            Value::U64(u) => write_integer!("write_u64", u64, u, buf),
-            Value::I64(i) => write_integer!("write_i64", i64, i, buf),
-            Value::Double(f) => write_integer!("write_double", u64, f.to_bits(), buf),
+            Value::Null => write_integer!(u8, NULL, buf),
+            Value::True => write_integer!(u8, TRUE, buf),
+            Value::False => write_integer!(u8, FALSE, buf),
+            Value::U8(u) => {
+                write_integer!(u8, U8, buf)?;
+                write_integer!(u8, u, buf[1..])
+            },
+            Value::I8(i) => {
+                write_integer!(u8, I8, buf)?;
+                write_integer!(i8, i, buf[1..])
+            },
+            Value::U16(u) => {
+                write_integer!(u8, U16, buf)?;
+                write_integer!(u16, u, buf[1..])
+            },
+            Value::I16(i) => {
+                write_integer!(u8, I16, buf)?;
+                write_integer!(i16, i, buf[1..])
+            },
+            Value::U32(u) => {
+                write_integer!(u8, U32, buf)?;
+                write_integer!(u32, u, buf[1..])
+            },
+            Value::I32(i) => {
+                write_integer!(u8, I32, buf)?;
+                write_integer!(i32, i, buf[1..])
+            },
+            Value::Float(f) => {
+                write_integer!(u8, FLOAT, buf)?;
+                write_integer!(u32, f.to_bits(), buf[1..])
+            },
+            Value::U64(u) => {
+                write_integer!(u8, U64, buf)?;
+                write_integer!(u64, u, buf[1..])
+            },
+            Value::I64(i) => {
+                write_integer!(u8, I64, buf)?;
+                write_integer!(i64, i, buf[1..])
+            },
+            Value::Double(f) => {
+                write_integer!(u8, DOUBLE, buf)?;
+                write_integer!(u64, f.to_bits(), buf[1..])
+            },
             Value::Text(t) => Self::write_str(TEXT, t, buf),
             Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf),
             Value::Date(d) => Self::write_str(DATE, d, buf),
@@ -207,7 +238,7 @@ impl<'a> Value<'a> {
         if total_bytes <= ::std::i8::MAX as u32 {
             buf[1] = total_bytes as u8;
         } else {
-            write_integer!("write_i32", i32, total_bytes as i32, buf[1..])?;
+            write_integer!(i32, total_bytes as i32, buf[1..])?;
         }
 
         // Data
