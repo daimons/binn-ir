@@ -143,18 +143,22 @@ pub enum Value<'a> {
 
 }
 
+/// # Converts a value to its underlying byte slice
 macro_rules! as_bytes { ($type: ty, $v: expr) => {{
     unsafe { mem::transmute::<&$type, &[u8; mem::size_of::<$type>() ]>(&$v) }
 }};}
 
+/// # Writes an integer value
+///
+/// Returns: number of byte written, as u32.
 macro_rules! write_integer { ($type: ty, $v: expr, $buf: expr) => {{
     let bytes = as_bytes!($type, $v.to_be());
-    let result = bytes.len();
-    if $buf.len() < result {
+    let result = bytes.len() as u32;
+    if $buf.len() < result as usize {
         Err(Error::new(ErrorKind::WriteZero, format!("write_integer!() -> output buffer needs at least {} byte(s)", result)))
     } else {
         for i in 0..result {
-            $buf[i] = bytes[i]
+            $buf[i as usize] = bytes[i as usize]
         }
         Ok(result)
     }
@@ -166,7 +170,7 @@ impl<'a> Value<'a> {
     pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 
     /// # TODO
-    pub fn write(&self, buf: &mut [u8]) -> Result<usize, Error> {
+    pub fn write(&self, buf: &mut [u8]) -> Result<u32, Error> {
         match *self {
             Value::Null => write_integer!(u8, NULL, buf),
             Value::True => write_integer!(u8, TRUE, buf),
@@ -222,7 +226,21 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    fn write_str(ty: u8, s: &str, buf: &mut [u8]) -> Result<usize, Error> {
+    fn write_size(size: u32, buf: &mut [u8]) -> Result<u32, Error> {
+        if size <= ::std::i8::MAX as u32 {
+            if let Some(item) = buf.get_mut(0) {
+                *item = size as u8;
+                Ok(1)
+            } else {
+                Err(Error::new(ErrorKind::WriteZero, "write_size() -> output buffer is empty"))
+            }
+        } else {
+            write_integer!(i32, size as i32, buf)
+        }
+    }
+
+    /// # TODO
+    fn write_str(ty: u8, s: &str, buf: &mut [u8]) -> Result<u32, Error> {
         let bytes = s.as_bytes();
         let str_len = bytes.len() as u32;
         if str_len > Self::MAX_DATA_SIZE {
@@ -241,13 +259,10 @@ impl<'a> Value<'a> {
 
         // Size
         // Note that null terminator does NOT count
-        if str_len <= ::std::i8::MAX as u32 {
-            buf[i] = str_len as u8;
-            i += 1;
-        } else {
-            write_integer!(i32, str_len as i32, buf[i..])?;
-            i += 4;
-        }
+        i += Self::write_size(str_len, match buf.get_mut(i..) {
+            Some(buf) => buf,
+            None => return Err(Error::new(ErrorKind::WriteZero, "write_str() -> failed to write string length")),
+        })? as usize;
 
         // Data
         if let Some(mut buf) = buf.get_mut(i..) {
@@ -265,11 +280,11 @@ impl<'a> Value<'a> {
             *item = 0;
         }
 
-        Ok(total_size as usize)
+        Ok(total_size)
     }
 
     /// # TODO
-    fn write_blob(bytes: &[u8], buf: &mut [u8]) -> Result<usize, Error> {
+    fn write_blob(bytes: &[u8], buf: &mut [u8]) -> Result<u32, Error> {
         let len = bytes.len() as u32;
         if len > Self::MAX_DATA_SIZE {
             return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> too large: {} byte(s)", len)));
@@ -286,13 +301,10 @@ impl<'a> Value<'a> {
         i += 1;
 
         // Size
-        if len <= ::std::i8::MAX as u32 {
-            buf[i] = len as u8;
-            i += 1;
-        } else {
-            write_integer!(i32, len as i32, buf[i..])?;
-            i += 4;
-        }
+        i += Self::write_size(len, match buf.get_mut(i..) {
+            Some(buf) => buf,
+            None => return Err(Error::new(ErrorKind::WriteZero, "write_blob() -> failed to write blob length")),
+        })? as usize;
 
         // Data
         if let Some(mut buf) = buf.get_mut(i..) {
@@ -304,7 +316,7 @@ impl<'a> Value<'a> {
             }
         }
 
-        Ok(total_size as usize)
+        Ok(total_size)
     }
 
 }
