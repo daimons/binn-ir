@@ -10,6 +10,10 @@
 //!
 //! ---
 //!
+//! # Binn-X
+//!
+//! I didn't want to use the original name because I'm not the author. So I "designed" this name  `:-D`
+//!
 //! # TODO
 //!
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
