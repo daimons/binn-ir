@@ -143,8 +143,12 @@ pub enum Value<'a> {
 
 }
 
+macro_rules! as_bytes { ($type: ty, $v: expr) => {{
+    unsafe { mem::transmute::<&$type, &[u8; mem::size_of::<$type>() ]>(&$v) }
+}};}
+
 macro_rules! write_integer { ($function_name: expr, $type: ty, $v: expr, $buf: expr) => {{
-    let bytes: &[u8; mem::size_of::<$type>() ] = unsafe { mem::transmute(&$v.to_be()) };
+    let bytes = as_bytes!($type, $v.to_be());
     if $buf.len() < bytes.len() {
         Err(Error::new(ErrorKind::WriteZero, format!("{} -> output buffer needs at least 2 bytes", $function_name)))
     } else {
