@@ -162,6 +162,9 @@ macro_rules! write_integer { ($type: ty, $v: expr, $buf: expr) => {{
 
 impl<'a> Value<'a> {
 
+    /// # Max data size, in bytes
+    pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
+
     /// # TODO
     pub fn write(&self, buf: &mut [u8]) -> Result<usize, Error> {
         match *self {
@@ -222,7 +225,7 @@ impl<'a> Value<'a> {
     fn write_str(ty: u8, s: &str, buf: &mut [u8]) -> Result<usize, Error> {
         let bytes = s.as_bytes();
         let str_len = bytes.len() as u32;
-        if str_len > ::std::i32::MAX as u32 {
+        if str_len > Self::MAX_DATA_SIZE {
             return Err(Error::new(ErrorKind::WriteZero, "write_str() -> string too large"));
         }
 
@@ -268,7 +271,7 @@ impl<'a> Value<'a> {
     /// # TODO
     fn write_blob(bytes: &[u8], buf: &mut [u8]) -> Result<usize, Error> {
         let len = bytes.len() as u32;
-        if len > ::std::i32::MAX as u32 {
+        if len > Self::MAX_DATA_SIZE {
             return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> too large: {} byte(s)", len)));
         }
 
