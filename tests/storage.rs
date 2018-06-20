@@ -2,16 +2,16 @@
 
 extern crate binnx;
 
-use binnx::Storage;
+use binnx::storage;
 
 #[test]
-fn storage() {
-    assert!(Storage::NOBYTES    == 0b000);
-    assert!(Storage::BYTE       == 0b001);
-    assert!(Storage::WORD       == 0b010);
-    assert!(Storage::DWORD      == 0b011);
-    assert!(Storage::QWORD      == 0b100);
-    assert!(Storage::STRING     == 0b101);
-    assert!(Storage::BLOB       == 0b110);
-    assert!(Storage::CONTAINER  == 0b111);
+fn storages() {
+    assert!(storage::NO_BYTES   == 0b_000);
+    assert!(storage::BYTE       == 0b_001);
+    assert!(storage::WORD       == 0b_010);
+    assert!(storage::DWORD      == 0b_011);
+    assert!(storage::QWORD      == 0b_100);
+    assert!(storage::STRING     == 0b_101);
+    assert!(storage::BLOB       == 0b_110);
+    assert!(storage::CONTAINER  == 0b_111);
 }

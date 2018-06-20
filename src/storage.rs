@@ -2,59 +2,36 @@
 
 //! # Storages
 
-/// # Storage
-pub enum Storage<'a> {
+/// # No bytes
+pub const NO_BYTES: u8 = 0b_000;
 
-    /// # No bytes
-    NoBytes,
+/// # Byte
+pub const BYTE: u8 = 0b_001;
 
-    /// # 1 byte
-    Byte(u8),
+/// # Word
+pub const WORD: u8 = 0b_010;
 
-    /// # Word (2 bytes)
-    Word(u16),
+/// # D-word
+pub const DWORD: u8 = 0b_011;
 
-    /// # DWord (4 bytes)
-    DWord(u32),
+/// # Q-word
+pub const QWORD: u8 = 0b_100;
 
-    /// # QWord (8 bytes)
-    QWord(u64),
+/// # String
+pub const STRING: u8 = 0b_101;
 
-    /// # String (UTF-8)
-    String(&'a str),
+/// # Blob
+pub const BLOB: u8 = 0b_110;
 
-    /// # Blob
-    Blob(&'a [u8]),
-
-    /// # Container
-    Container,
-
-}
-
-impl<'a> Storage<'a> {
-
-    /// # NOBYTES
-    pub const NOBYTES: u8 = 0b000;
-
-    /// # BYTE
-    pub const BYTE: u8 = 0b001;
-
-    /// # WORD
-    pub const WORD: u8 = 0b010;
-
-    /// # DWORD
-    pub const DWORD: u8 = 0b011;
-
-    /// # QWORD
-    pub const QWORD: u8 = 0b100;
-
-    /// # STRING
-    pub const STRING: u8 = 0b101;
-
-    /// # BLOB
-    pub const BLOB: u8 = 0b110;
-
-    /// # CONTAINER
-    pub const CONTAINER: u8 = 0b111;
-
-}
+/// # Container
+///
+/// Container might be:
+///
+/// - [`List`]
+/// - [`Map`]
+/// - [`Object`]
+///
+/// [`List`]: ../value/enum.Value.html#list
+/// [`Map`]: ../value/enum.Value.html#map
+/// [`Object`]: ../value/enum.Value.html#object
+pub const CONTAINER: u8 = 0b_111;
