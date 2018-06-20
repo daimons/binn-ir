@@ -53,4 +53,14 @@ fn write() {
     let mut buf = [0_u8; 3];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U16, 0x03, 0x15]);
+
+    let v = Value::I16(-12345);
+    let mut buf = [0_u8; 3];
+    v.write(&mut buf).unwrap();
+    assert!(buf == [value::I16, 0xCF, 0xC7]);
+
+    let v = Value::U16(6789);
+    let mut buf = [0_u8; 3];
+    v.write(&mut buf).unwrap();
+    assert!(buf == [value::U16, 0x1A, 0x85]);
 }
