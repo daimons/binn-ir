@@ -194,7 +194,8 @@ impl<'a> Value<'a> {
             return Err(Error::new(ErrorKind::WriteZero, "write_str() -> string too large"));
         }
 
-        let total_size = 1 + if total_bytes <= ::std::i8::MAX as u32 { 1 } else { 2 } + total_bytes + 1;
+        // Null terminator does not count
+        let total_size = 1 + if total_bytes <= ::std::i8::MAX as u32 { 1 } else { 2 } + total_bytes;
         if buf.len() < total_size as usize {
             return Err(Error::new(ErrorKind::WriteZero, "write_str() -> output buffer needs at least 2 bytes"));
         }
