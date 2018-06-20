@@ -170,6 +170,8 @@ impl<'a> Value<'a> {
     pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 
     /// # TODO
+    ///
+    /// - Must change type of output buffer to something like Vec<u8>.
     pub fn write(&self, buf: &mut [u8]) -> Result<u32, Error> {
         match *self {
             Value::Null => write_integer!(u8, NULL, buf),
