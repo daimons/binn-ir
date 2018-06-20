@@ -2,6 +2,8 @@
 
 //! # Values
 
+use std::collections::{BTreeMap, HashMap};
+
 /// # Null
 pub const NULL: u8 = 0b_0000_0000;
 
@@ -129,18 +131,12 @@ pub enum Value<'a> {
     Blob(&'a [u8]),
 
     /// # List
-    ///
-    /// TODO
-    List,
+    List(Vec<Value<'a>>),
 
     /// # Map
-    ///
-    /// TODO
-    Map,
+    Map(BTreeMap<i32, Value<'a>>),
 
     /// # Object
-    ///
-    /// TODO
-    Object,
+    Object(HashMap<&'a str, Value<'a>>),
 
 }

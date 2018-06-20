@@ -19,7 +19,8 @@
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
 //! [Binn]: https://github.com/liteserver/binn
 
-#![no_std]
+// TODO: enable this flag when `alloc` crate is stabilized
+// #![no_std]
 
 // ╔═════════════════╗
 // ║   IDENTIFIERS   ║
