@@ -218,32 +218,53 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    fn write_str(ty: u8, s: &str, mut buf: &mut [u8]) -> Result<usize, Error> {
+    fn write_str(ty: u8, s: &str, buf: &mut [u8]) -> Result<usize, Error> {
         let bytes = s.as_bytes();
-        let total_bytes = bytes.len() as u32;
-        if total_bytes > ::std::i32::MAX as u32 {
+        let str_len = bytes.len() as u32;
+        if str_len > ::std::i32::MAX as u32 {
             return Err(Error::new(ErrorKind::WriteZero, "write_str() -> string too large"));
         }
 
-        // Null terminator does not count
-        let total_size = 1 + if total_bytes <= ::std::i8::MAX as u32 { 1 } else { 2 } + total_bytes;
+        let total_size = 1 + if str_len <= ::std::i8::MAX as u32 { 1 } else { 2 } + str_len + 1;
         if buf.len() < total_size as usize {
-            return Err(Error::new(ErrorKind::WriteZero, "write_str() -> output buffer needs at least 2 bytes"));
+            return Err(Error::new(ErrorKind::WriteZero, format!("write_str() -> output buffer needs at least {} bytes", total_size)));
         }
 
         // Type
-        buf[0] = ty;
+        let mut i = 0;
+        buf[i] = ty;
+        i += 1;
 
         // Size
-        if total_bytes <= ::std::i8::MAX as u32 {
-            buf[1] = total_bytes as u8;
+        // Note that null terminator does NOT count
+        if str_len <= ::std::i8::MAX as u32 {
+            buf[i] = str_len as u8;
+            i += 1;
         } else {
-            write_integer!(i32, total_bytes as i32, buf[1..])?;
+            write_integer!(i32, str_len as i32, buf[i..])?;
+            i += 2;
         }
 
         // Data
-        buf.write(bytes)?;
-        buf.write(&[0])
+        if let Some(mut buf) = buf.get_mut(i..) {
+            let written = buf.write(bytes)? as u32;
+            if written != str_len {
+                return Err(Error::new(
+                    ErrorKind::WriteZero, format!("write_str() -> expected to write {} byte(s); result: {}", str_len, written)
+                ));
+            }
+            i += str_len as usize;
+        }
+
+        // Null terminator
+        if i + 1 != total_size as usize {
+            return Err(Error::new(ErrorKind::WriteZero, format!("write_str() -> output buffer needs at least {} bytes", total_size)));
+        }
+        if let Some(item) = buf.get_mut(i) {
+            *item = 0;
+        }
+
+        Ok(total_size as usize)
     }
 
 }

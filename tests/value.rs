@@ -63,4 +63,10 @@ fn write() {
     let mut buf = [0_u8; 3];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U16, 0x1A, 0x85]);
+
+    let v = Value::Text("Binn-X");
+    let mut buf = [0_u8; 9];
+    v.write(&mut buf).unwrap();
+    assert!(buf[0..2] == [value::TEXT, 0x06]);
+    assert!(&buf[2..] == b"Binn-X\0");
 }
