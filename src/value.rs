@@ -3,7 +3,7 @@
 //! # Values
 
 use std::collections::{BTreeMap, HashMap};
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Write};
 use std::mem;
 
 /// # Null
@@ -167,18 +167,51 @@ impl<'a> Value<'a> {
             Value::Null => write_integer!("write_null", u8, NULL, buf),
             Value::True => write_integer!("write_true", u8, TRUE, buf),
             Value::False => write_integer!("write_false", u8, FALSE, buf),
-            Value::U8(v) => write_integer!("write_u8", u8, v, buf),
-            Value::I8(v) => write_integer!("write_i8", i8, v, buf),
-            Value::U16(v) => write_integer!("write_u16", u16, v, buf),
-            Value::I16(v) => write_integer!("write_i16", i16, v, buf),
-            Value::U32(v) => write_integer!("write_u32", u32, v, buf),
-            Value::I32(v) => write_integer!("write_i32", i32, v, buf),
-            Value::Float(v) => write_integer!("write_float", u32, v.to_bits(), buf),
-            Value::U64(v) => write_integer!("write_u64", u64, v, buf),
-            Value::I64(v) => write_integer!("write_i64", i64, v, buf),
-            Value::Double(v) => write_integer!("write_double", u64, v.to_bits(), buf),
+            Value::U8(u) => write_integer!("write_u8", u8, u, buf),
+            Value::I8(i) => write_integer!("write_i8", i8, i, buf),
+            Value::U16(u) => write_integer!("write_u16", u16, u, buf),
+            Value::I16(i) => write_integer!("write_i16", i16, i, buf),
+            Value::U32(u) => write_integer!("write_u32", u32, u, buf),
+            Value::I32(i) => write_integer!("write_i32", i32, i, buf),
+            Value::Float(f) => write_integer!("write_float", u32, f.to_bits(), buf),
+            Value::U64(u) => write_integer!("write_u64", u64, u, buf),
+            Value::I64(i) => write_integer!("write_i64", i64, i, buf),
+            Value::Double(f) => write_integer!("write_double", u64, f.to_bits(), buf),
+            Value::Text(t) => Self::write_str(TEXT, t, buf),
+            Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf),
+            Value::Date(d) => Self::write_str(DATE, d, buf),
+            Value::Time(t) => Self::write_str(TIME, t, buf),
+            Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf),
             _ => unimplemented!(),
         }
+    }
+
+    /// # TODO
+    fn write_str(ty: u8, s: &str, mut buf: &mut [u8]) -> Result<usize, Error> {
+        let bytes = s.as_bytes();
+        let total_bytes = bytes.len() as u32;
+        if total_bytes > ::std::i32::MAX as u32 {
+            return Err(Error::new(ErrorKind::WriteZero, "write_str() -> string too large"));
+        }
+
+        let total_size = 1 + if total_bytes <= ::std::i8::MAX as u32 { 1 } else { 2 } + total_bytes + 1;
+        if buf.len() < total_size as usize {
+            return Err(Error::new(ErrorKind::WriteZero, "write_str() -> output buffer needs at least 2 bytes"));
+        }
+
+        // Type
+        buf[0] = ty;
+
+        // Size
+        if total_bytes <= ::std::i8::MAX as u32 {
+            buf[1] = total_bytes as u8;
+        } else {
+            write_integer!("write_i32", i32, total_bytes as i32, buf[1..])?;
+        }
+
+        // Data
+        buf.write(bytes)?;
+        buf.write(&[0])
     }
 
 }
