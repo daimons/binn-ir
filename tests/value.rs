@@ -2,6 +2,8 @@
 
 extern crate binnx;
 
+use std::mem;
+
 use binnx::value::{self, Value};
 
 #[test]
@@ -75,4 +77,21 @@ fn write() {
     v.write(&mut buf).unwrap();
     assert!(buf[0..2] == [value::BLOB, 0x09]);
     assert!(&buf[2..] == b"hello-jen");
+
+    let s = "roy eats moss' orange".repeat(100);
+    let bytes = s.as_bytes();
+    let v = Value::Blob(bytes);
+    let mut buf = {
+        let mut buf = bytes.to_vec();
+        // Push 1 byte for type, 4 bytes for size
+        for _ in 0..5 {
+            buf.push(0);
+        }
+        buf
+    };
+    v.write(buf.as_mut_slice()).unwrap();
+    let size: &[u8; mem::size_of::<i32>()] = unsafe { mem::transmute(&(bytes.len() as i32).to_be()) };
+    assert!(buf[0] == value::BLOB);
+    assert!(&buf[1..5] == size);
+    assert!(&buf[5..] == bytes);
 }

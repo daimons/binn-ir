@@ -226,7 +226,7 @@ impl<'a> Value<'a> {
             return Err(Error::new(ErrorKind::WriteZero, "write_str() -> string too large"));
         }
 
-        let total_size = 1 + if str_len <= ::std::i8::MAX as u32 { 1 } else { 2 } + str_len + 1;
+        let total_size = 1 + if str_len <= ::std::i8::MAX as u32 { 1 } else { 4 } + str_len + 1;
         if buf.len() < total_size as usize {
             return Err(Error::new(ErrorKind::WriteZero, format!("write_str() -> output buffer needs at least {} bytes", total_size)));
         }
@@ -243,7 +243,7 @@ impl<'a> Value<'a> {
             i += 1;
         } else {
             write_integer!(i32, str_len as i32, buf[i..])?;
-            i += 2;
+            i += 4;
         }
 
         // Data
@@ -272,7 +272,7 @@ impl<'a> Value<'a> {
             return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> too large: {} byte(s)", len)));
         }
 
-        let total_size = 1 + if len <= ::std::i8::MAX as u32 { 1 } else { 2 } + len;
+        let total_size = 1 + if len <= ::std::i8::MAX as u32 { 1 } else { 4 } + len;
         if buf.len() < total_size as usize {
             return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> output buffer needs at least {} bytes", total_size)));
         }
@@ -288,7 +288,7 @@ impl<'a> Value<'a> {
             i += 1;
         } else {
             write_integer!(i32, len as i32, buf[i..])?;
-            i += 2;
+            i += 4;
         }
 
         // Data
