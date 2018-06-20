@@ -1,0 +1,9 @@
+# License: see LICENSE file at root directory of `master` branch
+
+[package]
+publish = false
+name = "binnx"
+version = "0.0.1"
+authors = ["Hai Bison <haibison.apps@gmail.com>"]
+
+[dependencies]
