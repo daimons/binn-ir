@@ -282,18 +282,20 @@ impl<'a> Value<'a> {
             Value::Time(t) => Self::write_str(TIME, t, buf),
             Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf),
             Value::Blob(bytes) => Self::write_blob(bytes, buf),
-            // Value::List(list) => {
-            //     // Type
-            //     write_integer!(u8, LIST, buf)?;
-            //     // TODO: size
-            //     // write_integer!(u8, LIST, buf)?;
-            //     // Count
-            //     Self::write_size(list.len() as u32, buf);
-            //     // Items
-            //     for v in list {
-            //         v.write(buf)?;
-            //     }
-            // },
+            Value::List(ref list) => {
+                let result = self.len()?;
+                // Type
+                write_integer!(u8, LIST, buf)?;
+                // Size
+                Self::write_size(result, buf)?;
+                // Count
+                Self::write_size(list.len() as u32, buf)?;
+                // Items
+                for v in list {
+                    v.write(buf)?;
+                }
+                Ok(result)
+            },
             _ => unimplemented!(),
         }
     }
