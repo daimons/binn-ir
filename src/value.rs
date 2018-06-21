@@ -462,7 +462,7 @@ impl<'a> Value<'a> {
             let written = buf.write(k.as_bytes())?;
             if written != k.len() {
                 return Err(Error::new(
-                    ErrorKind::WriteZero, format!("write() -> expected to write {} byte(s) of key; result: {}", k.len(), written)
+                    ErrorKind::WriteZero, format!("write_object() -> expected to write {} byte(s) of key; result: {}", k.len(), written)
                 ));
             }
             v.write(buf)?;
