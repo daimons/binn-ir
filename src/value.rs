@@ -170,6 +170,67 @@ impl<'a> Value<'a> {
     pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 
     /// # TODO
+    pub fn len(&self) -> Result<u32, Error> {
+        /// # Calculates bytes needed for a length
+        fn bytes_for_len(len: usize) -> Result<u32, Error> {
+            match len <= ::std::i8::MAX as usize {
+                true => Ok(1),
+                false => match len <= ::std::i32::MAX as usize {
+                    true => Ok(4),
+                    false => Err(Error::new(ErrorKind::InvalidInput, format!("bytes_for_len() -> too large: {} bytes", len))),
+                },
+            }
+        }
+
+        match *self {
+            Value::Null => Ok(1),
+            Value::True => Ok(1),
+            Value::False => Ok(1),
+            Value::U8(_) => Ok(2),
+            Value::I8(_) => Ok(2),
+            Value::U16(_) => Ok(3),
+            Value::I16(_) => Ok(3),
+            Value::U32(_) => Ok(5),
+            Value::I32(_) => Ok(5),
+            Value::Float(_) => Ok(5),
+            Value::U64(_) => Ok(9),
+            Value::I64(_) => Ok(9),
+            Value::Double(_) => Ok(9),
+            // 1 byte for type, 1 byte for null terminator
+            Value::Text(t) => Ok(2 + bytes_for_len(t.len())?),
+            // 1 byte for type, 1 byte for null terminator
+            Value::DateTime(dt) => Ok(2 + bytes_for_len(dt.len())?),
+            // 1 byte for type, 1 byte for null terminator
+            Value::Date(d) => Ok(2 + bytes_for_len(d.len())?),
+            // 1 byte for type, 1 byte for null terminator
+            Value::Time(t) => Ok(2 + bytes_for_len(t.len())?),
+            // 1 byte for type, 1 byte for null terminator
+            Value::DecimalStr(ds) => Ok(2 + bytes_for_len(ds.len())?),
+            Value::Blob(bytes) => Ok(1 + bytes_for_len(bytes.len())?),
+            Value::List(ref list) => {
+                // Type + count
+                let mut result = 1 + bytes_for_len(list.len())?;
+                // Items
+                for v in list {
+                    result += v.len()?;
+                }
+                // The len value itself:
+                // First, assume that it needs just 1 byte
+                result += 1;
+                if result > ::std::i8::MAX as u32 {
+                    // Now we need 3 more bytes
+                    result += 3;
+                }
+                match result <= Self::MAX_DATA_SIZE {
+                    true => Ok(result),
+                    false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
+                }
+            },
+            _ => unimplemented!(),
+        }
+    }
+
+    /// # TODO
     pub fn write(&self, buf: &mut Write) -> Result<u32, Error> {
         match *self {
             Value::Null => write_integer!(u8, NULL, buf),
@@ -221,6 +282,18 @@ impl<'a> Value<'a> {
             Value::Time(t) => Self::write_str(TIME, t, buf),
             Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf),
             Value::Blob(bytes) => Self::write_blob(bytes, buf),
+            // Value::List(list) => {
+            //     // Type
+            //     write_integer!(u8, LIST, buf)?;
+            //     // TODO: size
+            //     // write_integer!(u8, LIST, buf)?;
+            //     // Count
+            //     Self::write_size(list.len() as u32, buf);
+            //     // Items
+            //     for v in list {
+            //         v.write(buf)?;
+            //     }
+            // },
             _ => unimplemented!(),
         }
     }
