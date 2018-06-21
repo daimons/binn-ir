@@ -171,17 +171,6 @@ impl<'a> Value<'a> {
 
     /// # TODO
     pub fn len(&self) -> Result<u32, Error> {
-        /// # Calculates bytes needed for a length
-        fn bytes_for_len(len: usize) -> Result<u32, Error> {
-            match len <= ::std::i8::MAX as usize {
-                true => Ok(1),
-                false => match len <= ::std::i32::MAX as usize {
-                    true => Ok(4),
-                    false => Err(Error::new(ErrorKind::InvalidInput, format!("bytes_for_len() -> too large: {} bytes", len))),
-                },
-            }
-        }
-
         match *self {
             Value::Null => Ok(1),
             Value::True => Ok(1),
@@ -197,56 +186,100 @@ impl<'a> Value<'a> {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
-            Value::Text(t) => Ok(2 + bytes_for_len(t.len())? + t.len() as u32),
+            Value::Text(t) => Ok(2 + Self::bytes_for_len(t.len())? + t.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::DateTime(dt) => Ok(2 + bytes_for_len(dt.len())? + dt.len() as u32),
+            Value::DateTime(dt) => Ok(2 + Self::bytes_for_len(dt.len())? + dt.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::Date(d) => Ok(2 + bytes_for_len(d.len())? + d.len() as u32),
+            Value::Date(d) => Ok(2 + Self::bytes_for_len(d.len())? + d.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::Time(t) => Ok(2 + bytes_for_len(t.len())? + t.len() as u32),
+            Value::Time(t) => Ok(2 + Self::bytes_for_len(t.len())? + t.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::DecimalStr(ds) => Ok(2 + bytes_for_len(ds.len())? + ds.len() as u32),
-            Value::Blob(bytes) => Ok(1 + bytes_for_len(bytes.len())? + bytes.len() as u32),
-            Value::List(ref list) => {
-                // Type + count
-                let mut result = 1 + bytes_for_len(list.len())?;
-                // Items
-                for v in list {
-                    result += v.len()?;
-                }
-                // The len value itself:
-                // First, assume that it needs just 1 byte
-                result += 1;
-                if result > ::std::i8::MAX as u32 {
-                    // Now we need 3 more bytes
-                    result += 3;
-                }
-                match result <= Self::MAX_DATA_SIZE {
-                    true => Ok(result),
-                    false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
-                }
+            Value::DecimalStr(ds) => Ok(2 + Self::bytes_for_len(ds.len())? + ds.len() as u32),
+            Value::Blob(bytes) => Ok(1 + Self::bytes_for_len(bytes.len())? + bytes.len() as u32),
+            Value::List(ref list) => Self::list_len(list),
+            Value::Map(ref map) => Self::map_len(map),
+            Value::Object(ref object) => Self::object_len(object),
+        }
+    }
+
+    /// # Calculates bytes needed for a length
+    fn bytes_for_len(len: usize) -> Result<u32, Error> {
+        match len <= ::std::i8::MAX as usize {
+            true => Ok(1),
+            false => match len <= ::std::i32::MAX as usize {
+                true => Ok(4),
+                false => Err(Error::new(ErrorKind::InvalidInput, format!("bytes_for_len() -> too large: {} bytes", len))),
             },
-            Value::Map(ref map) => {
-                // Type + count
-                let mut result = 1 + bytes_for_len(map.len())?;
-                // Items
-                for v in map.values() {
-                    // 4 bytes for key
-                    result += 4 + v.len()?;
-                }
-                // The len value itself:
-                // First, assume that it needs just 1 byte
-                result += 1;
-                if result > ::std::i8::MAX as u32 {
-                    // Now we need 3 more bytes
-                    result += 3;
-                }
-                match result <= Self::MAX_DATA_SIZE {
-                    true => Ok(result),
-                    false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
-                }
-            },
-            _ => unimplemented!(),
+        }
+    }
+
+    /// # Calculates list length
+    fn list_len(list: &'a Vec<Value<'a>>) -> Result<u32, Error> {
+        // Type + count
+        let mut result = 1 + Self::bytes_for_len(list.len())?;
+        // Items
+        for v in list {
+            result += v.len()?;
+        }
+        // The len value itself:
+        // First, assume that it needs just 1 byte
+        result += 1;
+        if result > ::std::i8::MAX as u32 {
+            // Now we need 3 more bytes
+            result += 3;
+        }
+        match result <= Self::MAX_DATA_SIZE {
+            true => Ok(result),
+            false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
+        }
+    }
+
+    /// # Calculates map length
+    fn map_len(map: &'a BTreeMap<i32, Value<'a>>) -> Result<u32, Error> {
+        // Type + count
+        let mut result = 1 + Self::bytes_for_len(map.len())?;
+        // Items
+        for v in map.values() {
+            // 4 bytes for key
+            result += 4 + v.len()?;
+        }
+        // The len value itself:
+        // First, assume that it needs just 1 byte
+        result += 1;
+        if result > ::std::i8::MAX as u32 {
+            // Now we need 3 more bytes
+            result += 3;
+        }
+        match result <= Self::MAX_DATA_SIZE {
+            true => Ok(result),
+            false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
+        }
+    }
+
+    /// # Calculates object length
+    fn object_len(object: &'a HashMap<&'a str, Value<'a>>) -> Result<u32, Error> {
+        // Type + count
+        let mut result = 1 + Self::bytes_for_len(object.len())?;
+        // Items
+        for (k, v) in object {
+            // Key is limited to 255 bytes; and has NO null terminator
+            if k.len() > ::std::u8::MAX as usize {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput, format!("len() -> key size is limited to {} bytes; got: {}", ::std::u8::MAX, k.len())
+                ));
+            }
+            result += 1 + k.len() as u32 + v.len()?;
+        }
+        // The len value itself:
+        // First, assume that it needs just 1 byte
+        result += 1;
+        if result > ::std::i8::MAX as u32 {
+            // Now we need 3 more bytes
+            result += 3;
+        }
+        match result <= Self::MAX_DATA_SIZE {
+            true => Ok(result),
+            false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
         }
     }
 
@@ -331,7 +364,28 @@ impl<'a> Value<'a> {
                 }
                 Ok(result)
             },
-            _ => unimplemented!(),
+            Value::Object(ref object) => {
+                let result = self.len()?;
+                // Type
+                write_integer!(u8, OBJECT, buf)?;
+                // Size
+                Self::write_size(result, buf)?;
+                // Count
+                Self::write_size(object.len() as u32, buf)?;
+                // Items
+                for (k, v) in object {
+                    // Call to self.len()? above already verified that key len is <= u8::MAX
+                    write_integer!(u8, k.len() as u8, buf)?;
+                    let written = buf.write(k.as_bytes())?;
+                    if written != k.len() {
+                        return Err(Error::new(
+                            ErrorKind::WriteZero, format!("write() -> expected to write {} byte(s) of key; result: {}", k.len(), written)
+                        ));
+                    }
+                    v.write(buf)?;
+                }
+                Ok(result)
+            },
         }
     }
 

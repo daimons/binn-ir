@@ -2,7 +2,7 @@
 
 extern crate binnx;
 
-use std::collections::{BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 use std::mem;
 
 use binnx::value::{self, Value};
@@ -43,38 +43,38 @@ fn values() {
 #[test]
 fn write_basic_types() {
     let v = Value::U8(123);
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U8, 123]);
 
     let v = Value::I16(-456);
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::I16, 0xFE, 0x38]);
 
     let v = Value::U16(789);
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U16, 0x03, 0x15]);
 
     let v = Value::I16(-12345);
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::I16, 0xCF, 0xC7]);
 
     let v = Value::U16(6789);
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U16, 0x1A, 0x85]);
 
     let v = Value::Text("Binn-X");
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf[0..2] == [value::TEXT, 0x06]);
     assert!(&buf[2..] == b"Binn-X\0");
 
     let v = Value::Blob(b"hello-jen");
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     assert!(buf[0..2] == [value::BLOB, 0x09]);
     assert!(&buf[2..] == b"hello-jen");
@@ -82,7 +82,7 @@ fn write_basic_types() {
     let s = "roy eats moss' orange".repeat(100);
     let bytes = s.as_bytes();
     let v = Value::Blob(bytes);
-    let mut buf = vec!();
+    let mut buf = vec![];
     v.write(&mut buf).unwrap();
     let size: &[u8; mem::size_of::<i32>()] = unsafe { mem::transmute(&(bytes.len() as i32).to_be()) };
     assert!(buf[0] == value::BLOB);
@@ -92,9 +92,10 @@ fn write_basic_types() {
 
 #[test]
 fn write_lists() {
-    let v = Value::List(vec![Value::U8(123), Value::I16(-456), Value::U16(789)]);
-    let mut buf = vec!();
-    v.write(&mut buf).unwrap();
+    let value = Value::List(vec![Value::U8(123), Value::I16(-456), Value::U16(789)]);
+    let mut buf = vec![];
+    value.write(&mut buf).unwrap();
+    println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
     assert!(buf.as_slice() == &[
         // Type
         value::LIST,
@@ -116,10 +117,10 @@ fn write_maps() {
 
     let item_count = map.len();
 
-    let v = Value::Map(map);
-    let mut buf = vec!();
-    v.write(&mut buf).unwrap();
-    println!("{:02x?}", buf.as_slice());
+    let value = Value::Map(map);
+    let mut buf = vec![];
+    value.write(&mut buf).unwrap();
+    println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
     assert!(buf.as_slice() == &[
         // Type
         value::MAP,
@@ -136,4 +137,63 @@ fn write_maps() {
         value::I16, 0xCF, 0xC7,
         value::U16, 0x1A, 0x85,
     ]);
+}
+
+#[test]
+fn write_objects() {
+    let mut list = vec![];
+
+    let mut map = HashMap::new();
+    map.insert("id", Value::U8(1));
+    map.insert("name", Value::Text("John"));
+    let object = Value::Object(map);
+    let object1_len = object.len().unwrap();
+    list.push(object);
+
+    let mut map = HashMap::new();
+    map.insert("id", Value::U8(2));
+    map.insert("name", Value::Text("Eric"));
+    let object = Value::Object(map);
+    let object2_len = object.len().unwrap();
+    list.push(object);
+
+    let item_count = list.len();
+
+    let value = Value::List(list);
+    let mut buf = vec![];
+    value.write(&mut buf).unwrap();
+    println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
+    assert!(
+        &buf[0..6] == &[
+            // Type
+            value::LIST,
+            // Size
+            buf.len() as u8,
+            // Count
+            item_count as u8,
+
+            value::OBJECT, object1_len as u8, 2,
+        ]
+        && (
+            &buf[6..23] == &[
+                0x02, b'i', b'd', value::U8, 1,
+                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
+            ]
+            || &buf[6..23] == &[
+                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
+                0x02, b'i', b'd', value::U8, 1,
+            ]
+        )
+        && &buf[23..26] == &[value::OBJECT, object2_len as u8, 2]
+        && (
+            &buf[26..43] == &[
+                0x02, b'i', b'd', value::U8, 2,
+                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
+            ]
+            || &buf[26..43] == &[
+                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
+                0x02, b'i', b'd', value::U8, 2,
+            ]
+        )
+    );
 }
