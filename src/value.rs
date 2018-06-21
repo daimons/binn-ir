@@ -197,22 +197,42 @@ impl<'a> Value<'a> {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
-            Value::Text(t) => Ok(2 + bytes_for_len(t.len())?),
+            Value::Text(t) => Ok(2 + bytes_for_len(t.len())? + t.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::DateTime(dt) => Ok(2 + bytes_for_len(dt.len())?),
+            Value::DateTime(dt) => Ok(2 + bytes_for_len(dt.len())? + dt.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::Date(d) => Ok(2 + bytes_for_len(d.len())?),
+            Value::Date(d) => Ok(2 + bytes_for_len(d.len())? + d.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::Time(t) => Ok(2 + bytes_for_len(t.len())?),
+            Value::Time(t) => Ok(2 + bytes_for_len(t.len())? + t.len() as u32),
             // 1 byte for type, 1 byte for null terminator
-            Value::DecimalStr(ds) => Ok(2 + bytes_for_len(ds.len())?),
-            Value::Blob(bytes) => Ok(1 + bytes_for_len(bytes.len())?),
+            Value::DecimalStr(ds) => Ok(2 + bytes_for_len(ds.len())? + ds.len() as u32),
+            Value::Blob(bytes) => Ok(1 + bytes_for_len(bytes.len())? + bytes.len() as u32),
             Value::List(ref list) => {
                 // Type + count
                 let mut result = 1 + bytes_for_len(list.len())?;
                 // Items
                 for v in list {
                     result += v.len()?;
+                }
+                // The len value itself:
+                // First, assume that it needs just 1 byte
+                result += 1;
+                if result > ::std::i8::MAX as u32 {
+                    // Now we need 3 more bytes
+                    result += 3;
+                }
+                match result <= Self::MAX_DATA_SIZE {
+                    true => Ok(result),
+                    false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
+                }
+            },
+            Value::Map(ref map) => {
+                // Type + count
+                let mut result = 1 + bytes_for_len(map.len())?;
+                // Items
+                for v in map.values() {
+                    // 4 bytes for key
+                    result += 4 + v.len()?;
                 }
                 // The len value itself:
                 // First, assume that it needs just 1 byte
@@ -292,6 +312,21 @@ impl<'a> Value<'a> {
                 Self::write_size(list.len() as u32, buf)?;
                 // Items
                 for v in list {
+                    v.write(buf)?;
+                }
+                Ok(result)
+            },
+            Value::Map(ref map) => {
+                let result = self.len()?;
+                // Type
+                write_integer!(u8, MAP, buf)?;
+                // Size
+                Self::write_size(result, buf)?;
+                // Count
+                Self::write_size(map.len() as u32, buf)?;
+                // Items
+                for (k, v) in map {
+                    write_integer!(i32, k, buf)?;
                     v.write(buf)?;
                 }
                 Ok(result)

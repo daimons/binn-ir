@@ -2,6 +2,7 @@
 
 extern crate binnx;
 
+use std::collections::{BTreeMap};
 use std::mem;
 
 use binnx::value::{self, Value};
@@ -104,5 +105,35 @@ fn write_lists() {
         value::U8, 123,
         value::I16, 0xFE, 0x38,
         value::U16, 0x03, 0x15
+    ]);
+}
+
+#[test]
+fn write_maps() {
+    let mut map = BTreeMap::new();
+    map.insert(1, Value::Text("add"));
+    map.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
+
+    let item_count = map.len();
+
+    let v = Value::Map(map);
+    let mut buf = vec!();
+    v.write(&mut buf).unwrap();
+    println!("{:02x?}", buf.as_slice());
+    assert!(buf.as_slice() == &[
+        // Type
+        value::MAP,
+        // Size
+        buf.len() as u8,
+        // Count
+        item_count as u8,
+        // Key: 1
+        0x00, 0x00, 0x00, 0x01,
+        value::TEXT, 0x03, b'a', b'd', b'd', 0x00,
+        // Key: 2
+        0x00, 0x00, 0x00, 0x02,
+        value::LIST, 0x09, 0x02,
+        value::I16, 0xCF, 0xC7,
+        value::U16, 0x1A, 0x85,
     ]);
 }
