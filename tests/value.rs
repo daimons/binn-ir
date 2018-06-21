@@ -42,38 +42,38 @@ fn values() {
 #[test]
 fn write() {
     let v = Value::U8(123);
-    let mut buf = [0_u8; 2];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U8, 123]);
 
     let v = Value::I16(-456);
-    let mut buf = [0_u8; 3];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf == [value::I16, 0xFE, 0x38]);
 
     let v = Value::U16(789);
-    let mut buf = [0_u8; 3];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U16, 0x03, 0x15]);
 
     let v = Value::I16(-12345);
-    let mut buf = [0_u8; 3];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf == [value::I16, 0xCF, 0xC7]);
 
     let v = Value::U16(6789);
-    let mut buf = [0_u8; 3];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf == [value::U16, 0x1A, 0x85]);
 
     let v = Value::Text("Binn-X");
-    let mut buf = [0_u8; 9];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf[0..2] == [value::TEXT, 0x06]);
     assert!(&buf[2..] == b"Binn-X\0");
 
     let v = Value::Blob(b"hello-jen");
-    let mut buf = [0_u8; 11];
+    let mut buf = vec!();
     v.write(&mut buf).unwrap();
     assert!(buf[0..2] == [value::BLOB, 0x09]);
     assert!(&buf[2..] == b"hello-jen");
@@ -81,15 +81,8 @@ fn write() {
     let s = "roy eats moss' orange".repeat(100);
     let bytes = s.as_bytes();
     let v = Value::Blob(bytes);
-    let mut buf = {
-        let mut buf = bytes.to_vec();
-        // Push 1 byte for type, 4 bytes for size
-        for _ in 0..5 {
-            buf.push(0);
-        }
-        buf
-    };
-    v.write(buf.as_mut_slice()).unwrap();
+    let mut buf = vec!();
+    v.write(&mut buf).unwrap();
     let size: &[u8; mem::size_of::<i32>()] = unsafe { mem::transmute(&(bytes.len() as i32).to_be()) };
     assert!(buf[0] == value::BLOB);
     assert!(&buf[1..5] == size);
