@@ -335,57 +335,9 @@ impl<'a> Value<'a> {
             Value::Time(t) => Self::write_str(TIME, t, buf),
             Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf),
             Value::Blob(bytes) => Self::write_blob(bytes, buf),
-            Value::List(ref list) => {
-                let result = self.len()?;
-                // Type
-                write_integer!(u8, LIST, buf)?;
-                // Size
-                Self::write_size(result, buf)?;
-                // Count
-                Self::write_size(list.len() as u32, buf)?;
-                // Items
-                for v in list {
-                    v.write(buf)?;
-                }
-                Ok(result)
-            },
-            Value::Map(ref map) => {
-                let result = self.len()?;
-                // Type
-                write_integer!(u8, MAP, buf)?;
-                // Size
-                Self::write_size(result, buf)?;
-                // Count
-                Self::write_size(map.len() as u32, buf)?;
-                // Items
-                for (k, v) in map {
-                    write_integer!(i32, k, buf)?;
-                    v.write(buf)?;
-                }
-                Ok(result)
-            },
-            Value::Object(ref object) => {
-                let result = self.len()?;
-                // Type
-                write_integer!(u8, OBJECT, buf)?;
-                // Size
-                Self::write_size(result, buf)?;
-                // Count
-                Self::write_size(object.len() as u32, buf)?;
-                // Items
-                for (k, v) in object {
-                    // Call to self.len()? above already verified that key len is <= u8::MAX
-                    write_integer!(u8, k.len() as u8, buf)?;
-                    let written = buf.write(k.as_bytes())?;
-                    if written != k.len() {
-                        return Err(Error::new(
-                            ErrorKind::WriteZero, format!("write() -> expected to write {} byte(s) of key; result: {}", k.len(), written)
-                        ));
-                    }
-                    v.write(buf)?;
-                }
-                Ok(result)
-            },
+            Value::List(ref list) => self.write_list(list, buf),
+            Value::Map(ref map) => self.write_map(map, buf),
+            Value::Object(ref object) => self.write_object(object, buf),
         }
     }
 
@@ -459,6 +411,63 @@ impl<'a> Value<'a> {
         bytes_written += written;
 
         Ok(bytes_written)
+    }
+
+    /// # Writes list
+    fn write_list(&self, list: &'a Vec<Value<'a>>, buf: &mut Write) -> Result<u32, Error> {
+        let result = self.len()?;
+        // Type
+        write_integer!(u8, LIST, buf)?;
+        // Size
+        Self::write_size(result, buf)?;
+        // Count
+        Self::write_size(list.len() as u32, buf)?;
+        // Items
+        for v in list {
+            v.write(buf)?;
+        }
+        Ok(result)
+    }
+
+    /// # Writes map
+    fn write_map(&self, map: &'a BTreeMap<i32, Value<'a>>, buf: &mut Write) -> Result<u32, Error> {
+        let result = self.len()?;
+        // Type
+        write_integer!(u8, MAP, buf)?;
+        // Size
+        Self::write_size(result, buf)?;
+        // Count
+        Self::write_size(map.len() as u32, buf)?;
+        // Items
+        for (k, v) in map {
+            write_integer!(i32, k, buf)?;
+            v.write(buf)?;
+        }
+        Ok(result)
+    }
+
+    /// # Writes object
+    fn write_object(&self, object: &'a HashMap<&'a str, Value<'a>>, buf: &mut Write) -> Result<u32, Error> {
+        let result = self.len()?;
+        // Type
+        write_integer!(u8, OBJECT, buf)?;
+        // Size
+        Self::write_size(result, buf)?;
+        // Count
+        Self::write_size(object.len() as u32, buf)?;
+        // Items
+        for (k, v) in object {
+            // Call to self.len()? above already verified that key len is <= u8::MAX
+            write_integer!(u8, k.len() as u8, buf)?;
+            let written = buf.write(k.as_bytes())?;
+            if written != k.len() {
+                return Err(Error::new(
+                    ErrorKind::WriteZero, format!("write() -> expected to write {} byte(s) of key; result: {}", k.len(), written)
+                ));
+            }
+            v.write(buf)?;
+        }
+        Ok(result)
     }
 
 }
