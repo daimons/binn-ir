@@ -40,7 +40,7 @@ fn values() {
 }
 
 #[test]
-fn write() {
+fn write_basic_types() {
     let v = Value::U8(123);
     let mut buf = vec!();
     v.write(&mut buf).unwrap();
@@ -87,9 +87,22 @@ fn write() {
     assert!(buf[0] == value::BLOB);
     assert!(&buf[1..5] == size);
     assert!(&buf[5..] == bytes);
+}
 
+#[test]
+fn write_lists() {
     let v = Value::List(vec![Value::U8(123), Value::I16(-456), Value::U16(789)]);
     let mut buf = vec!();
     v.write(&mut buf).unwrap();
-    assert!(buf.as_slice() == &[0xE0, 0x0B, 0x03, 0x20, 0x7B, 0x41, 0xFE, 0x38, 0x40, 0x03, 0x15]);
+    assert!(buf.as_slice() == &[
+        // Type
+        value::LIST,
+        // Size
+        buf.len() as u8,
+        // Count
+        3,
+        value::U8, 123,
+        value::I16, 0xFE, 0x38,
+        value::U16, 0x03, 0x15
+    ]);
 }
