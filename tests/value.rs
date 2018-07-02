@@ -1,11 +1,11 @@
 // License: see LICENSE file at root directory of `master` branch
 
-extern crate binnx;
+extern crate binn_ir;
 
 use std::collections::{BTreeMap, HashMap};
 use std::mem;
 
-use binnx::value::{self, Value};
+use binn_ir::value::{self, Value};
 
 #[test]
 fn values() {

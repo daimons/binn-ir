@@ -1,8 +1,8 @@
 // License: see LICENSE file at root directory of `master` branch
 
-extern crate binnx;
+extern crate binn_ir;
 
 #[test]
 fn crate_version() {
-    assert!(binnx::CRATE_VERSION == env!("CARGO_PKG_VERSION"));
+    assert!(binn_ir::CRATE_VERSION == env!("CARGO_PKG_VERSION"));
 }

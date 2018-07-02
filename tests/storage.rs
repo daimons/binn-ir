@@ -1,8 +1,8 @@
 // License: see LICENSE file at root directory of `master` branch
 
-extern crate binnx;
+extern crate binn_ir;
 
-use binnx::storage;
+use binn_ir::storage;
 
 #[test]
 fn storages() {

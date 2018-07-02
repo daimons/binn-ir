@@ -2,7 +2,7 @@
 
 [package]
 publish = false
-name = "binnx"
+name = "binn-ir"
 version = "0.0.1"
 authors = ["Hai Bison <haibison.apps@gmail.com>"]
 

@@ -4,15 +4,11 @@
 //!
 //! # Project
 //!
-//! - Repository: <https://bitbucket.org/haibison/binnx>
+//! - Repository: <https://bitbucket.org/haibison/binn-ir>
 //! - License: [Free Public License 1.0.0](https://opensource.org/licenses/FPL-1.0.0)
 //! - _This project follows [Semantic Versioning 2.0.0]_
 //!
 //! ---
-//!
-//! # Binn-X
-//!
-//! I didn't want to use the original name because I'm not the author. So I "designed" this name  `:-D`
 //!
 //! # TODO
 //!
@@ -26,11 +22,13 @@
 // ║   IDENTIFIERS   ║
 // ╚═════════════════╝
 
-macro_rules! crate_code_name    { () => { "binnx" }}
+macro_rules! crate_code_name    { () => { "binn-ir" }}
 macro_rules! crate_version      { () => { "0.0.1" }}
 
 /// # Crate name
-pub const CRATE_NAME: &'static str = "Binn-X";
+///
+/// IR stands for _implementation in Rust_.
+pub const CRATE_NAME: &'static str = "Binn-IR";
 
 /// # Crate code name
 pub const CRATE_CODE_NAME: &'static str = crate_code_name!();

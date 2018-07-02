@@ -1,4 +1,4 @@
-# Binn-X
+# Binn-IR
 
 - Version: [`0.0.1`](version-info.md) _(June 20th, 2018)_
     + _This project follows [Semantic Versioning 2.0.0]_
@@ -6,9 +6,9 @@
 
 ---
 
-- Repository: <https://bitbucket.org/haibison/binnx>
-- Crate: <https://crates.io/crates/binnx>
-- Documentation: <https://docs.rs/binnx/>
+- Repository: <https://bitbucket.org/haibison/binn-ir>
+- Crate: <https://crates.io/crates/binn-ir>
+- Documentation: <https://docs.rs/binn-ir/>
 
 ---
 
