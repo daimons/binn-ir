@@ -3,7 +3,7 @@
 //! # Values
 
 use std::collections::{BTreeMap, HashMap};
-use std::io::{Error, ErrorKind, Write};
+use std::io::{Error, ErrorKind, Read, Write};
 use std::mem;
 
 /// # Null
@@ -397,7 +397,7 @@ impl<'a> Value<'a> {
         let mut bytes_written = 0;
 
         // Type
-        match buf.write(&[BLOB])? as u32 {
+        match buf.write(&[BLOB])? {
             1 => bytes_written += 1,
             other => return Err(Error::new(ErrorKind::WriteZero, format!("write_blob() -> expected to write 1 byte; result: {}", other))),
         };
@@ -470,6 +470,11 @@ impl<'a> Value<'a> {
             v.write(buf)?;
         }
         Ok(result)
+    }
+
+    /// # TODO
+    pub fn read(buf: &mut Read) -> Result<Self, Error> {
+        unimplemented!()
     }
 
 }
