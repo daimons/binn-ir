@@ -186,6 +186,7 @@ impl<'a> Value<'a> {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
+            // TODO: wait for stable TryFrom/TryInto and fix castings
             Value::Text(t) => Ok(2 + Self::bytes_for_len(t.len())? + t.len() as u32),
             // 1 byte for type, 1 byte for null terminator
             Value::DateTime(dt) => Ok(2 + Self::bytes_for_len(dt.len())? + dt.len() as u32),
