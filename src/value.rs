@@ -169,7 +169,7 @@ impl<'a> Value<'a> {
     /// # Max data size, in bytes
     pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 
-    /// # TODO
+    /// # Calculates length of this value
     pub fn len(&self) -> Result<u32, Error> {
         match *self {
             Value::Null => Ok(1),
@@ -283,7 +283,9 @@ impl<'a> Value<'a> {
         }
     }
 
-    /// # TODO
+    /// # Writes this value into a buffer
+    ///
+    /// Returns the number of bytes written.
     pub fn write(&self, buf: &mut Write) -> Result<u32, Error> {
         match *self {
             Value::Null => write_integer!(u8, NULL, buf),
@@ -341,7 +343,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    /// # TODO
+    /// # Writes size into the buffer
     fn write_size(size: u32, buf: &mut Write) -> Result<u32, Error> {
         if size <= ::std::i8::MAX as u32 {
             write_integer!(u8, size as u8, buf)
@@ -350,7 +352,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    /// # TODO
+    /// # Writes a string into the buffer
     fn write_str(ty: u8, s: &str, buf: &mut Write) -> Result<u32, Error> {
         let bytes = s.as_bytes();
         let str_len = bytes.len() as u32;
@@ -385,7 +387,7 @@ impl<'a> Value<'a> {
         Ok(total_size)
     }
 
-    /// # TODO
+    /// # Writes blob into the buffer
     fn write_blob(bytes: &[u8], buf: &mut Write) -> Result<u32, Error> {
         let len = bytes.len() as u32;
         if len > Self::MAX_DATA_SIZE {
@@ -413,7 +415,7 @@ impl<'a> Value<'a> {
         Ok(bytes_written)
     }
 
-    /// # Writes list
+    /// # Writes a list into the buffer
     fn write_list(&self, list: &'a Vec<Value<'a>>, buf: &mut Write) -> Result<u32, Error> {
         let result = self.len()?;
         // Type
@@ -429,7 +431,7 @@ impl<'a> Value<'a> {
         Ok(result)
     }
 
-    /// # Writes map
+    /// # Writes a map into the buffer
     fn write_map(&self, map: &'a BTreeMap<i32, Value<'a>>, buf: &mut Write) -> Result<u32, Error> {
         let result = self.len()?;
         // Type
@@ -446,7 +448,7 @@ impl<'a> Value<'a> {
         Ok(result)
     }
 
-    /// # Writes object
+    /// # Writes an object into the buffer
     fn write_object(&self, object: &'a HashMap<&'a str, Value<'a>>, buf: &mut Write) -> Result<u32, Error> {
         let result = self.len()?;
         // Type
