@@ -2,6 +2,7 @@
 
 //! # Values
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::io::{Error, ErrorKind, Read, Write};
 use std::mem;
@@ -205,11 +206,11 @@ impl<'a> Value<'a> {
 
     /// # Calculates bytes needed for a length
     fn bytes_for_len(len: usize) -> Result<u32, Error> {
-        match len <= ::std::i8::MAX as usize {
-            true => Ok(1),
-            false => match len <= ::std::i32::MAX as usize {
-                true => Ok(4),
-                false => Err(Error::new(ErrorKind::InvalidInput, format!("bytes_for_len() -> too large: {} bytes", len))),
+        match cmp_integers!(len, ::std::i8::MAX) {
+            Ordering::Less | Ordering::Equal => Ok(1),
+            _ => match cmp_integers!(len, ::std::i32::MAX) {
+                Ordering::Less | Ordering::Equal => Ok(4),
+                _ => Err(Error::new(ErrorKind::InvalidInput, format!("bytes_for_len() -> too large: {} bytes", len))),
             },
         }
     }
@@ -474,7 +475,7 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    pub fn read(buf: &mut Read) -> Result<Self, Error> {
+    pub fn read(_buf: &mut Read) -> Result<Self, Error> {
         unimplemented!()
     }
 

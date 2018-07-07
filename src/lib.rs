@@ -49,5 +49,8 @@ pub const TAG: &'static str = concat!(crate_code_name!(), "_149dc8a5_", crate_ve
 // ║   IMPLEMENTATION   ║
 // ╚════════════════════╝
 
+#[macro_use]
+mod tmp;
+
 pub mod storage;
 pub mod value;
