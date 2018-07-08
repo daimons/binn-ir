@@ -4,7 +4,7 @@
 
 /// # Compares integers
 ///
-/// - Version: 0.0.7 (July 8th, 2018)
+/// - Version: 0.0.8 (July 8th, 2018)
 macro_rules! cmp_integers {
     ($a: expr, $b: expr) => {{
         let (a, b) = ($a, $b);
@@ -31,18 +31,18 @@ macro_rules! cmp_integers {
 
 #[test]
 fn test_cmp_integers() {
-    assert!(::std::cmp::Ordering::Greater == cmp_integers!(111_u8, -1_i8));
-    assert!(::std::cmp::Ordering::Greater == cmp_integers!(111_usize, -1_i8));
-    assert!(::std::cmp::Ordering::Greater == cmp_integers!(::std::u128::MAX, -1_i8));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(111_u8, -1_i8));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(111_usize, -1_i8));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(::std::u128::MAX, -1_i8));
 
-    assert!(::std::cmp::Ordering::Less == cmp_integers!(-1_i8, 2_u32));
-    assert!(::std::cmp::Ordering::Less == cmp_integers!(-1_i8, 2_usize));
+    assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-1_i8, 2_u32));
+    assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-1_i8, 2_usize));
 
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(-0_i32, 0));
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(-0_i8, 0_u64));
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(1_i8, 1_u64));
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(1_i8, 1_usize));
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(111_i64, 111_u8));
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(-1_i8, -1_i32));
-    assert!(::std::cmp::Ordering::Equal == cmp_integers!(-999_i16, -999_i64));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(-0_i32, 0));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(-0_i8, 0_u64));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(1_i8, 1_u64));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(1_i8, 1_usize));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(111_i64, 111_u8));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(-1_i8, -1_i32));
+    assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(-999_i16, -999_i64));
 }
