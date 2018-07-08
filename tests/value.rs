@@ -45,39 +45,39 @@ fn write_basic_types() {
     let v = Value::U8(123);
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf == [value::U8, 123]);
+    assert_eq!(buf, [value::U8, 123]);
 
     let v = Value::I16(-456);
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf == [value::I16, 0xFE, 0x38]);
+    assert_eq!(buf, [value::I16, 0xFE, 0x38]);
 
     let v = Value::U16(789);
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf == [value::U16, 0x03, 0x15]);
+    assert_eq!(buf, [value::U16, 0x03, 0x15]);
 
     let v = Value::I16(-12345);
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf == [value::I16, 0xCF, 0xC7]);
+    assert_eq!(buf, [value::I16, 0xCF, 0xC7]);
 
     let v = Value::U16(6789);
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf == [value::U16, 0x1A, 0x85]);
+    assert_eq!(buf, [value::U16, 0x1A, 0x85]);
 
     let v = Value::Text("Binn-X");
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf[0..2] == [value::TEXT, 0x06]);
-    assert!(&buf[2..] == b"Binn-X\0");
+    assert_eq!(buf[0..2], [value::TEXT, 0x06]);
+    assert_eq!(&buf[2..], b"Binn-X\0");
 
     let v = Value::Blob(b"hello-jen");
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    assert!(buf[0..2] == [value::BLOB, 0x09]);
-    assert!(&buf[2..] == b"hello-jen");
+    assert_eq!(buf[0..2], [value::BLOB, 0x09]);
+    assert_eq!(&buf[2..], b"hello-jen");
 
     let s = "roy eats moss' orange".repeat(100);
     let bytes = s.as_bytes();
@@ -85,9 +85,9 @@ fn write_basic_types() {
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
     let size: &[u8; mem::size_of::<i32>()] = unsafe { mem::transmute(&(bytes.len() as i32).to_be()) };
-    assert!(buf[0] == value::BLOB);
-    assert!(&buf[1..5] == size);
-    assert!(&buf[5..] == bytes);
+    assert_eq!(buf[0], value::BLOB);
+    assert_eq!(&buf[1..5], size);
+    assert_eq!(&buf[5..], bytes);
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn write_lists() {
     let mut buf = vec![];
     value.write(&mut buf).unwrap();
     println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
-    assert!(buf.as_slice() == &[
+    assert_eq!(buf.as_slice(), &[
         // Type
         value::LIST,
         // Size
@@ -121,7 +121,7 @@ fn write_maps() {
     let mut buf = vec![];
     value.write(&mut buf).unwrap();
     println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
-    assert!(buf.as_slice() == &[
+    assert_eq!(buf.as_slice(), &[
         // Type
         value::MAP,
         // Size
@@ -163,37 +163,35 @@ fn write_objects() {
     let mut buf = vec![];
     value.write(&mut buf).unwrap();
     println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
-    assert!(
-        &buf[0..6] == &[
-            // Type
-            value::LIST,
-            // Size
-            buf.len() as u8,
-            // Count
-            item_count as u8,
+    assert_eq!(&buf[0..6], &[
+        // Type
+        value::LIST,
+        // Size
+        buf.len() as u8,
+        // Count
+        item_count as u8,
 
-            value::OBJECT, object1_len as u8, 2,
+        value::OBJECT, object1_len as u8, 2,
+    ]);
+    assert!((
+        &buf[6..23] == &[
+            0x02, b'i', b'd', value::U8, 1,
+            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
         ]
-        && (
-            &buf[6..23] == &[
-                0x02, b'i', b'd', value::U8, 1,
-                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
-            ]
-            || &buf[6..23] == &[
-                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
-                0x02, b'i', b'd', value::U8, 1,
-            ]
-        )
-        && &buf[23..26] == &[value::OBJECT, object2_len as u8, 2]
-        && (
-            &buf[26..43] == &[
-                0x02, b'i', b'd', value::U8, 2,
-                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
-            ]
-            || &buf[26..43] == &[
-                0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
-                0x02, b'i', b'd', value::U8, 2,
-            ]
-        )
+        || &buf[6..23] == &[
+            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
+            0x02, b'i', b'd', value::U8, 1,
+        ]
+    ));
+    assert_eq!(&buf[23..26], &[value::OBJECT, object2_len as u8, 2]);
+    assert!(
+        &buf[26..43] == &[
+            0x02, b'i', b'd', value::U8, 2,
+            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
+        ]
+        || &buf[26..43] == &[
+            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
+            0x02, b'i', b'd', value::U8, 2,
+        ]
     );
 }
