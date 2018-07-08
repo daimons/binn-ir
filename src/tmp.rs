@@ -4,26 +4,27 @@
 
 /// # Compares integers
 ///
-/// - Version: 0.0.6 (July 7th, 2018)
-// #[macro_export]
+/// - Version: 0.0.7 (July 8th, 2018)
 macro_rules! cmp_integers {
     ($a: expr, $b: expr) => {{
-        match ::std::mem::size_of_val(&$a).max(::std::mem::size_of_val(&$b)) {
-            1 => cmp_integers!($a, $b, u8, i8),
-            2 => cmp_integers!($a, $b, u16, i16),
-            4 => cmp_integers!($a, $b, u32, i32),
-            8 => cmp_integers!($a, $b, u64, i64),
-            16 => cmp_integers!($a, $b, u128, i128),
-            _ => cmp_integers!($a, $b, usize, isize),
+        let (a, b) = ($a, $b);
+        match ::std::mem::size_of_val(&a).max(::std::mem::size_of_val(&b)) {
+            1 => cmp_integers!(a, b, u8, i8),
+            2 => cmp_integers!(a, b, u16, i16),
+            4 => cmp_integers!(a, b, u32, i32),
+            8 => cmp_integers!(a, b, u64, i64),
+            16 => cmp_integers!(a, b, u128, i128),
+            _ => cmp_integers!(a, b, usize, isize),
         }
     }};
     ($a: expr, $b: expr, $unsigned: ty, $signed: ty) => {{
+        let (a, b) = ($a, $b);
         #[allow(unused_comparisons)]
-        match ($a >= 0, $b >= 0) {
-            (true, true) => ($a as $unsigned).cmp(&($b as $unsigned)),
+        match (a >= 0, b >= 0) {
+            (true, true) => (a as $unsigned).cmp(&(b as $unsigned)),
             (true, false) => ::std::cmp::Ordering::Greater,
             (false, true) => ::std::cmp::Ordering::Less,
-            (false, false) => ($a as $signed).cmp(&($b as $signed)),
+            (false, false) => (a as $signed).cmp(&(b as $signed)),
         }
     }};
 }
