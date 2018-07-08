@@ -165,10 +165,29 @@ macro_rules! write_integer { ($type: ty, $v: expr, $buf: expr) => {{
     }
 }};}
 
+/// # Data size
+pub type DataSize = u32;
+
+/// # Calculates sum of data size with an integer
+///
+/// Returns: `Result<DataSize, Error>`
+macro_rules! sum {
+    ($a: expr, $b: expr) => {{
+        // Do NOT nest another cmp_integers($a, ...); or rustc will hang up!!!
+        match cmp_integers!($b, Value::MAX_DATA_SIZE) {
+            Ordering::Greater => Err(Error::new(
+                ErrorKind::InvalidInput, format!("Data too large: {} (max allowed: {})", $b, Value::MAX_DATA_SIZE)
+            )),
+            // This guarantees that $a is DataSize
+            _ => $a.checked_add($b as DataSize).ok_or(Error::new(ErrorKind::InvalidInput, format!("Can't add {} into {}", $a, $b))),
+        }
+    }};
+}
+
 impl<'a> Value<'a> {
 
     /// # Max data size, in bytes
-    pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
+    pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
 
     /// # Calculates length of this value
     pub fn len(&self) -> Result<u32, Error> {
@@ -187,17 +206,17 @@ impl<'a> Value<'a> {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
-            // TODO: wait for stable TryFrom/TryInto and fix castings
-            Value::Text(t) => Ok(2 + Self::bytes_for_len(t.len())? + t.len() as u32),
+            Value::Text(t) => sum!(sum!(Self::bytes_for_len(t.len())?, 2)?, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DateTime(dt) => Ok(2 + Self::bytes_for_len(dt.len())? + dt.len() as u32),
+            Value::DateTime(dt) => sum!(sum!(Self::bytes_for_len(dt.len())?, 2)?, dt.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Date(d) => Ok(2 + Self::bytes_for_len(d.len())? + d.len() as u32),
+            Value::Date(d) => sum!(sum!(Self::bytes_for_len(d.len())?, 2)?, d.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Time(t) => Ok(2 + Self::bytes_for_len(t.len())? + t.len() as u32),
+            Value::Time(t) => sum!(sum!(Self::bytes_for_len(t.len())?, 2)?, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DecimalStr(ds) => Ok(2 + Self::bytes_for_len(ds.len())? + ds.len() as u32),
-            Value::Blob(bytes) => Ok(1 + Self::bytes_for_len(bytes.len())? + bytes.len() as u32),
+            Value::DecimalStr(ds) => sum!(sum!(Self::bytes_for_len(ds.len())?, 2)?, ds.len()),
+            // 1 byte for type
+            Value::Blob(bytes) => sum!(sum!(Self::bytes_for_len(bytes.len())?, 1)?, bytes.len()),
             Value::List(ref list) => Self::list_len(list),
             Value::Map(ref map) => Self::map_len(map),
             Value::Object(ref object) => Self::object_len(object),
@@ -205,13 +224,13 @@ impl<'a> Value<'a> {
     }
 
     /// # Calculates bytes needed for a length
-    fn bytes_for_len(len: usize) -> Result<u32, Error> {
+    fn bytes_for_len(len: usize) -> Result<DataSize, Error> {
         match cmp_integers!(len, ::std::i8::MAX) {
-            Ordering::Less | Ordering::Equal => Ok(1),
-            _ => match cmp_integers!(len, ::std::i32::MAX) {
-                Ordering::Less | Ordering::Equal => Ok(4),
-                _ => Err(Error::new(ErrorKind::InvalidInput, format!("bytes_for_len() -> too large: {} bytes", len))),
+            Ordering::Greater => match cmp_integers!(len, Self::MAX_DATA_SIZE) {
+                Ordering::Greater => Err(Error::new(ErrorKind::InvalidInput, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
+                _ => Ok(4),
             },
+            _ => Ok(1),
         }
     }
 
