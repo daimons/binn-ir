@@ -84,9 +84,8 @@ fn write_basic_types() {
     let v = Value::Blob(bytes);
     let mut buf = vec![];
     v.write(&mut buf).unwrap();
-    let size: &[u8; mem::size_of::<i32>()] = unsafe { mem::transmute(&(bytes.len() as i32).to_be()) };
     assert_eq!(buf[0], value::BLOB);
-    assert_eq!(&buf[1..5], size);
+    assert_eq!(&buf[1..5], unsafe { mem::transmute::<i32, [u8; mem::size_of::<i32>()]>((bytes.len() as i32).to_be()) });
     assert_eq!(&buf[5..], bytes);
 }
 
