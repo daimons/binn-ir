@@ -173,7 +173,7 @@ pub type DataSize = u32;
 /// Returns: `Result<DataSize, Error>`
 macro_rules! sum {
     ($a: expr, $b: expr) => {{
-        // Do NOT nest another cmp_integers($a, ...); or rustc will hang up!!!
+        // Do NOT nest another cmp_integers($a, ...); or the compiler will hang up!!!
         match cmp_integers!($b, Value::MAX_DATA_SIZE) {
             Ordering::Greater => Err(Error::new(
                 ErrorKind::InvalidInput, format!("Data too large: {} (max allowed: {})", $b, Value::MAX_DATA_SIZE)
