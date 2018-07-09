@@ -212,8 +212,8 @@ macro_rules! sum {
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
         let mut result: Result<DataSize, Error> = Ok($a);
         $(
-            result = match result {
-                Ok(current) => {
+            match result {
+                Ok(current) => result = {
                     let b = $b;
                     match cmp_integers!(b, Value::MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
@@ -225,7 +225,7 @@ macro_rules! sum {
                         },
                     }
                 },
-                Err(_) => result,
+                Err(_) => (),
             };
         )+
         result
