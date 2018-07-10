@@ -1,8 +1,12 @@
 // License: see LICENSE file at root directory of `master` branch
 
+/// # Unique universally identifier of this kit
+#[allow(dead_code)]
+pub const UUID: &'static str = "731e87c5-7612-48c4-9608-80724cb8ff97";
+
 /// # Version
 #[allow(dead_code)]
-pub const VERSION: &'static str = "0.1.0";
+pub const VERSION: &'static str = "0.2.0";
 
 /// # Release date
 #[allow(dead_code)]
