@@ -4,7 +4,7 @@
 
 /// # Compares integers
 ///
-/// - Version: 0.0.8 (July 8th, 2018)
+/// - Version: 0.0.9 (July 10th, 2018)
 macro_rules! cmp_integers {
     ($a: expr, $b: expr) => {{
         let (a, b) = ($a, $b);
@@ -34,9 +34,16 @@ fn test_cmp_integers() {
     assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(111_u8, -1_i8));
     assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(111_usize, -1_i8));
     assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(::std::u128::MAX, -1_i8));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(2_i8, 1_u128));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(2_u8, -1_i128));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(-1_i8, -2_i64));
+    assert_eq!(::std::cmp::Ordering::Greater, cmp_integers!(1_i8, -0_i32));
 
     assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-1_i8, 2_u32));
     assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-1_i8, 2_usize));
+    assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-9_i128, 2_u8));
+    assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-9_i64, -1_i8));
+    assert_eq!(::std::cmp::Ordering::Less, cmp_integers!(-9_i32, -0_i8));
 
     assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(-0_i32, 0));
     assert_eq!(::std::cmp::Ordering::Equal, cmp_integers!(-0_i8, 0_u64));
