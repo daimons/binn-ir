@@ -50,7 +50,7 @@ pub const TAG: &'static str = concat!(crate_code_name!(), "_149dc8a5_", crate_ve
 // ╚════════════════════╝
 
 #[macro_use]
-mod tmp;
+mod cmp_integers;
 
 pub mod storage;
 pub mod value;

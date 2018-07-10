@@ -1,10 +1,14 @@
 // License: see LICENSE file at root directory of `master` branch
 
-//! Temporary kit
+/// # Version
+#[allow(dead_code)]
+pub const VERSION: &'static str = "0.1.0";
+
+/// # Release date
+#[allow(dead_code)]
+pub const RELEASE_DATE: (u16, u8, u8) = (2018, 7, 10);
 
 /// # Compares integers
-///
-/// - Version: 0.0.9 (July 10th, 2018)
 macro_rules! cmp_integers {
     ($a: expr, $b: expr) => {{
         let (a, b) = ($a, $b);
