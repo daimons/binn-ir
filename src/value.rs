@@ -703,7 +703,7 @@ impl Value {
         Ok(result)
     }
 
-    /// # TODO
+    /// # Reads a value from source
     pub fn read(source: &mut Read) -> io::Result<Self> {
         let data_type = {
             let mut buf = [0];
