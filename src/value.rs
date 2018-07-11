@@ -1049,4 +1049,14 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Map`] from source
+    ///
+    /// [`Map`]: enum.Value.html#map
+    pub fn read_map(source: &mut Read) -> io::Result<BTreeMap<i32, Self>> {
+        match Self::read(source)? {
+            Value::Map(map) => Ok(map),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_map() -> got: {:?}", &other))),
+        }
+    }
+
 }

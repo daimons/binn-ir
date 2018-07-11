@@ -183,10 +183,14 @@ fn read_write_maps() {
     assert_eq!(cmp_integers!(map.len().unwrap(), buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(Value::read(&mut cursor).unwrap(), map);
-
-    // Verify position
-    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+    match map {
+        Value::Map(map) => {
+            assert_eq!(Value::read_map(&mut cursor).unwrap(), map);
+            // Verify position
+            assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+        },
+        _ => unreachable!(),
+    };
 }
 
 #[test]
