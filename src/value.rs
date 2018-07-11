@@ -816,6 +816,14 @@ impl Value {
         }
     }
 
+    /// # Reads a `u64` value from source
+    pub fn read_u64(source: &mut Read) -> io::Result<u64> {
+        match Self::read(source)? {
+            Value::U64(u) => Ok(u),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u64() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
