@@ -123,6 +123,15 @@ fn write_lists() {
         Value::Text(String::from("Draco Malfoy")), Value::Text(String::from("Slytherin")),
         Value::Time(String::from(std::u128::MAX.to_string().repeat(100))),
         Value::List(vec![Value::Date(String::from("July 12th, 2018")), Value::DecimalStr(String::from("1234567890"))]),
+        Value::Map({
+            let mut map_data = BTreeMap::new();
+            map_data.insert(0, Value::Null);
+            map_data.insert(-1, Value::True);
+            map_data.insert(2, Value::False);
+            map_data.insert(-3, Value::Text(String::from("Ravenclaw")));
+            map_data.insert(4, Value::Blob(b"Hogwarts".to_vec()));
+            map_data
+        }),
     ]);
     let list_len = list.len().unwrap();
     assert_eq!(cmp_integers!(list_len, std::i8::MAX), Ordering::Greater);
@@ -153,6 +162,14 @@ fn write_maps() {
         map_data.insert(-9, Value::Text(String::from("SUN")));
         map_data.insert(10, Value::Text(String::from("earth")));
         map_data.insert(-11, Value::Text(String::from("Saturn")));
+        map_data.insert(-12, Value::Map({
+            let mut map_data = BTreeMap::new();
+            map_data.insert(0, Value::Null);
+            map_data.insert(-1, Value::True);
+            map_data.insert(2, Value::False);
+            map_data.insert(-3, Value::List(vec![Value::Text(String::from("Oracle")), Value::Blob(b"Universe, time and space".to_vec())]));
+            map_data
+        }));
         map_data
     });
 
