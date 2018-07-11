@@ -758,7 +758,7 @@ impl Value {
             self::TIME => Ok(Value::Time(read_str!(source)?)),
             self::DECIMAL_STR => Ok(Value::DecimalStr(read_str!(source)?)),
             self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
-            self::LIST => Self::read_list(source),
+            self::LIST => Self::read_raw_list(source),
             self::MAP => Self::read_map(source),
             self::OBJECT => Self::read_object(source),
             _ => unimplemented!(),
@@ -918,8 +918,18 @@ impl Value {
         }
     }
 
-    /// # Reads a list from source
-    fn read_list(source: &mut Read) -> io::Result<Self> {
+    /// # Reads a [`List`] from source
+    ///
+    /// [`List`]: enum.Value.html#list
+    pub fn read_list(source: &mut Read) -> io::Result<Vec<Self>> {
+        match Self::read(source)? {
+            Value::List(list) => Ok(list),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_list() -> got: {:?}", &other))),
+        }
+    }
+
+    /// # Reads a raw list from source
+    fn read_raw_list(source: &mut Read) -> io::Result<Self> {
         let size = read_size!(source)?;
         let item_count = read_size!(source)?;
 
@@ -931,12 +941,12 @@ impl Value {
                 Some(v) => match cmp_integers!(size, v) {
                     Ordering::Greater => v,
                     _ => return Err(Error::new(
-                        ErrorKind::InvalidData, format!("Value::read_list() -> expected to read less than {} bytes, got: {}", &size, &v)
+                        ErrorKind::InvalidData, format!("Value::read_raw_list() -> expected to read less than {} bytes, got: {}", &size, &v)
                     )),
                 },
                 None => return Err(Error::new(
                     ErrorKind::InvalidData,
-                    format!("Value::read_list() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
+                    format!("Value::read_raw_list() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
                 )),
             };
             result.push(value);

@@ -141,10 +141,14 @@ fn read_write_lists() {
     assert_eq!(cmp_integers!(list_len, buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(Value::read(&mut cursor).unwrap(), list);
-
-    // Verify position
-    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+    match list {
+        Value::List(list) => {
+            assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
+            // Verify position
+            assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+        },
+        _ => unreachable!(),
+    };
 }
 
 #[test]
