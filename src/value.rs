@@ -633,7 +633,8 @@ impl Value {
             // Size
             write_size!(size, buf)?,
             // Count
-            // TODO: verify list length
+            // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+            // container's size.
             write_size!(list.len() as DataSize, buf)?
         )?;
 
@@ -653,7 +654,8 @@ impl Value {
             // Size
             write_size!(size, buf)?,
             // Count
-            // TODO: verify map length
+            // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+            // container's size.
             write_size!(map.len() as DataSize, buf)?
         )?;
 
@@ -677,7 +679,8 @@ impl Value {
             // Size
             write_size!(size, buf)?,
             // Count
-            // TODO: verify object length
+            // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+            // container's size.
             write_size!(object.len() as DataSize, buf)?
         )?;
 
