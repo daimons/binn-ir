@@ -4,7 +4,6 @@ extern crate binn_ir;
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
-use std::mem;
 use std::io::Cursor;
 
 #[macro_use]
@@ -72,6 +71,10 @@ fn read_write_basic_types() {
     Value::Time(String::from("harry")).write(&mut buf).unwrap();
     Value::DecimalStr(String::from("ginny\t\0\n")).write(&mut buf).unwrap();
 
+    let blob_str = "roy eats moss' orange".repeat(20);
+    assert_eq!(cmp_integers!(blob_str.len(), std::i8::MAX), Ordering::Greater);
+    Value::Blob(blob_str.as_bytes().to_vec()).write(&mut buf).unwrap();
+
     let mut cursor = Cursor::new(&buf);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Null);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::True);
@@ -94,15 +97,16 @@ fn read_write_basic_types() {
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Date(String::from("ron")));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Time(String::from("harry")));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::DecimalStr(String::from("ginny\t\0\n")));
-    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 
-    let bytes = "roy eats moss' orange".repeat(100).as_bytes().to_vec();
-    let blob = Value::Blob(bytes.clone());
-    let mut buf = vec![];
-    blob.write(&mut buf).unwrap();
-    assert_eq!(buf[0], value::BLOB);
-    assert_eq!(&buf[1..5], unsafe { mem::transmute::<i32, [u8; mem::size_of::<i32>()]>((bytes.len() as i32).to_be()) });
-    assert_eq!(&buf[5..], bytes.as_slice());
+    match Value::read(&mut cursor) {
+        // Ok(Value::Blob(bytes)) => assert_eq!(String::from_utf8(bytes).unwrap(), blob_str),
+        Ok(Value::Blob(_)) => { assert_eq!(cursor.position(), buf.len() as u64); },
+        Ok(other) => panic!("Expected a blob, got: {}", &other),
+        Err(err) => panic!("Expected a blob, got: {}", &err),
+    };
+
+    // Verify position
+    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
 
 #[test]

@@ -74,6 +74,9 @@ pub const MAP: u8 = 0b_1110_0001;
 /// # Object
 pub const OBJECT: u8 = 0b_1110_0010;
 
+/// # Size mask
+const SIZE_MASK: u32 = 0x_8000_0000_u32;
+
 /// # Values
 #[derive(PartialEq)]
 pub enum Value {
@@ -206,24 +209,24 @@ fn test_macro_as_bytes() {
     assert!(as_bytes!(u8, 100) == [0x64]);
     assert!(as_bytes!(i8, -0x64) == [0x9C]);
 
-    assert_eq!(as_bytes!(u16, 0x03E8_u16.to_be()), [0x03, 0xE8]);
-    assert_eq!(as_bytes!(u16, 0x270F_u16.to_be()), [0x27, 0x0F]);
+    assert_eq!(as_bytes!(u16, 0x_03E8_u16.to_be()), [0x03, 0xE8]);
+    assert_eq!(as_bytes!(u16, 0x_270F_u16.to_be()), [0x27, 0x0F]);
 
     assert_eq!(as_bytes!(i16, (-9999 as i16).to_be()), [0xD8, 0xF1]);
     assert_eq!(as_bytes!(i16, (-2000 as i16).to_be()), [0xF8, 0x30]);
     assert_eq!(as_bytes!(i16, (-1234 as i16).to_be()), [0xFB, 0x2E]);
 
-    assert_eq!(as_bytes!(u32, 0x075B_CD15_u32.to_be()), [0x07, 0x5B, 0xCD, 0x15]);
-    assert_eq!(as_bytes!(u32, 0x3ADE_68B1_u32.to_be()), [0x3A, 0xDE, 0x68, 0xB1]);
-    assert_eq!(as_bytes!(u32, 0xAABB_FFEE_u32.to_be()), [0xAA, 0xBB, 0xFF, 0xEE]);
+    assert_eq!(as_bytes!(u32, 0x_075B_CD15_u32.to_be()), [0x07, 0x5B, 0xCD, 0x15]);
+    assert_eq!(as_bytes!(u32, 0x_3ADE_68B1_u32.to_be()), [0x3A, 0xDE, 0x68, 0xB1]);
+    assert_eq!(as_bytes!(u32, 0x_AABB_FFEE_u32.to_be()), [0xAA, 0xBB, 0xFF, 0xEE]);
 
-    assert_eq!(as_bytes!(u64, 0x8000_0000_0000_0000_u64.to_be()), [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    assert_eq!(as_bytes!(u64, 0xFFFF_FFFF_0000_0000_u64.to_be()), [0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(as_bytes!(u64, 0x_8000_0000_0000_0000_u64.to_be()), [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(as_bytes!(u64, 0x_FFFF_FFFF_0000_0000_u64.to_be()), [0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00]);
 
     assert_eq!(as_bytes!(i64, (-3372036854775808 as i64).to_be()), [0xFF, 0xF4, 0x05, 0x26, 0x7D, 0x1A, 0x00, 0x00]);
 
     assert_eq!(
-        as_bytes!(u128, 0xAAFF_0000_CCDD_8899_1234_8678_BCCB_0000_u128.to_be()),
+        as_bytes!(u128, 0x_AAFF_0000_CCDD_8899_1234_8678_BCCB_0000_u128.to_be()),
         [0xAA, 0xFF, 0x00, 0x00, 0xCC, 0xDD, 0x88, 0x99, 0x12, 0x34, 0x86, 0x78, 0xBC, 0xCB, 0x00, 0x00]
     );
 }
@@ -258,6 +261,17 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
     }
 }};}
 
+/// # Writes size (u32) into the buffer
+///
+/// Result: number of bytes written - `io::Result<DataSize>`.
+macro_rules! write_size { ($size: expr, $buf: ident) => {{
+    let size = $size;
+    match cmp_integers!(size, ::std::i8::MAX) {
+        Ordering::Greater => write_int_be!(u32, size | SIZE_MASK, $buf),
+        _ => write_int_be!(u8, size as u8, $buf),
+    }
+}};}
+
 /// # Reads size from std::io::Read
 ///
 /// Result: `io::Result<u32>`.
@@ -268,7 +282,7 @@ macro_rules! read_size { ($source: ident) => {{
             let mut buf = [first_byte, 0, 0, 0];
             match $source.read_exact(&mut buf[1..]) {
                 Ok(()) => {
-                    let result = u32::from_be(unsafe { mem::transmute(buf) });
+                    let result = u32::from_be(unsafe { mem::transmute(buf) }) & !(SIZE_MASK);
                     match cmp_integers!(result, Value::MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::read_size!() -> too large: {}", &result))),
                         _ => Ok(result),
@@ -326,14 +340,24 @@ macro_rules! sum {
 /// Returns: `io::Result<Vec<_>>`
 macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
     let capacity = $capacity;
-    match cmp_integers!(capacity, ::std::usize::MAX) {
+    match cmp_integers!(capacity, Value::MAX_DATA_SIZE) {
         Ordering::Greater => Err(Error::new(
             ErrorKind::WriteZero,
             format!(
-                "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, ::std::usize::MAX
+                "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
+                &capacity, Value::MAX_DATA_SIZE
             )
         )),
-        _ => Ok(Vec::with_capacity(capacity as usize)),
+        _ => match cmp_integers!(capacity, ::std::usize::MAX) {
+            Ordering::Greater => Err(Error::new(
+                ErrorKind::WriteZero,
+                format!(
+                    "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
+                    &capacity, ::std::usize::MAX
+                )
+            )),
+            _ => Ok(Vec::with_capacity(capacity as usize)),
+        },
     }
 }};}
 
@@ -522,14 +546,6 @@ impl Value {
         }
     }
 
-    /// # Writes size into the buffer
-    fn write_size(size: DataSize, buf: &mut Write) -> io::Result<DataSize> {
-        match cmp_integers!(size, ::std::i8::MAX) {
-            Ordering::Greater => write_int_be!(i32, size as i32, buf),
-            _ => write_int_be!(u8, size as u8, buf),
-        }
-    }
-
     /// # Writes a string into the buffer
     fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
         let bytes = s.as_bytes();
@@ -557,7 +573,7 @@ impl Value {
 
         // Size
         // Note that null terminator does NOT count
-        Self::write_size(str_len, buf)?;
+        write_size!(str_len, buf)?;
 
         // Data
         let written = buf.write(bytes)?;
@@ -594,7 +610,7 @@ impl Value {
         };
 
         // Size
-        bytes_written = sum!(Self::write_size(len, buf)?, bytes_written)?;
+        bytes_written = sum!(write_size!(len, buf)?, bytes_written)?;
 
         // Data
         let written = buf.write(bytes)?;
@@ -615,9 +631,10 @@ impl Value {
             // Type
             write_int_be!(u8, LIST, buf)?,
             // Size
-            Self::write_size(size, buf)?,
+            write_size!(size, buf)?,
             // Count
-            Self::write_size(list.len() as DataSize, buf)?
+            // TODO: verify list length
+            write_size!(list.len() as DataSize, buf)?
         )?;
 
         // Items
@@ -634,9 +651,10 @@ impl Value {
             // Type
             write_int_be!(u8, MAP, buf)?,
             // Size
-            Self::write_size(size, buf)?,
+            write_size!(size, buf)?,
             // Count
-            Self::write_size(map.len() as DataSize, buf)?
+            // TODO: verify map length
+            write_size!(map.len() as DataSize, buf)?
         )?;
 
         // Items
@@ -657,9 +675,10 @@ impl Value {
             // Type
             write_int_be!(u8, OBJECT, buf)?,
             // Size
-            Self::write_size(size, buf)?,
+            write_size!(size, buf)?,
             // Count
-            Self::write_size(object.len() as DataSize, buf)?
+            // TODO: verify object length
+            write_size!(object.len() as DataSize, buf)?
         )?;
 
         // Items
@@ -709,7 +728,7 @@ impl Value {
             self::DATE => Ok(Value::Date(Self::read_str(source)?)),
             self::TIME => Ok(Value::Time(Self::read_str(source)?)),
             self::DECIMAL_STR => Ok(Value::DecimalStr(Self::read_str(source)?)),
-            // Value::Blob(bytes) => Self::write_blob(bytes, buf)?,
+            self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
             // Value::List(ref list) => self.write_list(expected_result, list, buf)?,
             // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
             // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
