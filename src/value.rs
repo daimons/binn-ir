@@ -4,7 +4,7 @@
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
-use std::io::{Error, ErrorKind, Read, Write};
+use std::io::{self, Error, ErrorKind, Read, Write};
 use std::mem;
 
 /// # Null
@@ -206,7 +206,7 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: expr) => {{
 
 /// # Calculates sum of first value (`DataSize`) with integer(s)
 ///
-/// Result: `Result<DataSize, Error>`.
+/// Result: `io::Result<DataSize>`.
 ///
 /// If result > [`Value::MAX_DATA_SIZE`], an error is returned.
 ///
@@ -214,7 +214,7 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: expr) => {{
 macro_rules! sum {
     ($a: expr, $($b: expr),+) => {{
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
-        let mut result: Result<DataSize, Error> = Ok($a);
+        let mut result: io::Result<DataSize> = Ok($a);
         $(
             match result {
                 Ok(current) => result = {
@@ -250,7 +250,7 @@ impl<'a> Value<'a> {
     pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
 
     /// # Calculates length of this value
-    pub fn len(&self) -> Result<DataSize, Error> {
+    pub fn len(&self) -> io::Result<DataSize> {
         match *self {
             Value::Null => Ok(1),
             Value::True => Ok(1),
@@ -284,7 +284,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Calculates bytes needed for a length
-    fn bytes_for_len(len: usize) -> Result<DataSize, Error> {
+    fn bytes_for_len(len: usize) -> io::Result<DataSize> {
         match cmp_integers!(len, ::std::i8::MAX) {
             Ordering::Greater => match cmp_integers!(len, Self::MAX_DATA_SIZE) {
                 Ordering::Greater => Err(Error::new(ErrorKind::InvalidInput, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
@@ -295,7 +295,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Calculates list length
-    fn list_len(list: &'a Vec<Value<'a>>) -> Result<DataSize, Error> {
+    fn list_len(list: &'a Vec<Value<'a>>) -> io::Result<DataSize> {
         // Type + count
         let mut result: DataSize = sum!(Self::bytes_for_len(list.len())?, 1)?;
         // Items
@@ -317,7 +317,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Calculates map length
-    fn map_len(map: &'a BTreeMap<i32, Value<'a>>) -> Result<DataSize, Error> {
+    fn map_len(map: &'a BTreeMap<i32, Value<'a>>) -> io::Result<DataSize> {
         // Type + count
         let mut result = sum!(Self::bytes_for_len(map.len())?, 1)?;
         // Items
@@ -339,7 +339,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Calculates object length
-    fn object_len(object: &'a HashMap<&'a str, Value<'a>>) -> Result<DataSize, Error> {
+    fn object_len(object: &'a HashMap<&'a str, Value<'a>>) -> io::Result<DataSize> {
         // Type + count
         let mut result = sum!(Self::bytes_for_len(object.len())?, 1)?;
         // Items
@@ -371,7 +371,7 @@ impl<'a> Value<'a> {
     /// # Writes this value into a buffer
     ///
     /// Returns the number of bytes written.
-    pub fn write(&self, buf: &mut Write) -> Result<DataSize, Error> {
+    pub fn write(&self, buf: &mut Write) -> io::Result<DataSize> {
         let expected_result = self.len()?;
 
         let result = match *self {
@@ -408,7 +408,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes size into the buffer
-    fn write_size(size: DataSize, buf: &mut Write) -> Result<DataSize, Error> {
+    fn write_size(size: DataSize, buf: &mut Write) -> io::Result<DataSize> {
         match cmp_integers!(size, ::std::i8::MAX) {
             Ordering::Greater => write_int_be!(i32, size as i32, buf),
             _ => write_int_be!(u8, size as u8, buf),
@@ -416,7 +416,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes a string into the buffer
-    fn write_str(ty: u8, s: &str, buf: &mut Write) -> Result<DataSize, Error> {
+    fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
         let bytes = s.as_bytes();
         let str_len = {
             let tmp = bytes.len();
@@ -463,7 +463,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes blob into the buffer
-    fn write_blob(bytes: &[u8], buf: &mut Write) -> Result<DataSize, Error> {
+    fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
         let len = {
             let tmp = bytes.len();
             match cmp_integers!(tmp, Self::MAX_DATA_SIZE) {
@@ -495,7 +495,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes a list into the buffer
-    fn write_list(&self, size: DataSize, list: &'a Vec<Value<'a>>, buf: &mut Write) -> Result<DataSize, Error> {
+    fn write_list(&self, size: DataSize, list: &'a Vec<Value<'a>>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, LIST, buf)?,
@@ -514,7 +514,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes a map into the buffer
-    fn write_map(&self, size: DataSize, map: &'a BTreeMap<i32, Value<'a>>, buf: &mut Write) -> Result<DataSize, Error> {
+    fn write_map(&self, size: DataSize, map: &'a BTreeMap<i32, Value<'a>>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, MAP, buf)?,
@@ -537,7 +537,7 @@ impl<'a> Value<'a> {
     /// Caller _must_ verify that key lengths are valid. Calling [`len()`] will do that, the result can also be passed into `size`.
     ///
     /// [`len()`]: enum.Value.html#method.len
-    fn write_object(&self, size: DataSize, object: &'a HashMap<&'a str, Value<'a>>, buf: &mut Write) -> Result<DataSize, Error> {
+    fn write_object(&self, size: DataSize, object: &'a HashMap<&'a str, Value<'a>>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, OBJECT, buf)?,
@@ -567,7 +567,7 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    pub fn read(_buf: &mut Read) -> Result<Self, Error> {
+    pub fn read(_buf: &mut Read) -> io::Result<Self> {
         // Value::Null => write_int_be!(u8, NULL, buf)?,
         // Value::True => write_int_be!(u8, TRUE, buf)?,
         // Value::False => write_int_be!(u8, FALSE, buf)?,
