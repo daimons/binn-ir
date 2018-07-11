@@ -676,8 +676,6 @@ impl Value {
 
     /// # Writes an object into the buffer
     ///
-    /// Caller _must_ verify that key lengths are valid. Calling [`len()`] will do that, the result can also be passed into `size`.
-    ///
     /// [`len()`]: enum.Value.html#method.len
     fn write_object(&self, size: DataSize, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
@@ -693,8 +691,13 @@ impl Value {
 
         // Items
         for (key, value) in object {
-            // Caller already verified that key len is <= u8::MAX
-            result = sum!(result, write_int_be!(u8, key.len() as u8, buf)?)?;
+            result = match key.len() <= OBJECT_KEY_MAX_LEN {
+                true => sum!(result, write_int_be!(u8, key.len() as u8, buf)?)?,
+                false => return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key.len())
+                )),
+            };
 
             let written = buf.write(key.as_bytes())?;
             match cmp_integers!(written, key.len()) {
