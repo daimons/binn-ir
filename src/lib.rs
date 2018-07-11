@@ -49,6 +49,11 @@ pub const TAG: &'static str = concat!(crate_code_name!(), "_149dc8a5_", crate_ve
 // ║   IMPLEMENTATION   ║
 // ╚════════════════════╝
 
+#[test]
+fn test_crate_version() {
+    assert_eq!(CRATE_VERSION, env!("CARGO_PKG_VERSION"));
+}
+
 #[macro_use]
 mod cmp_integers;
 
