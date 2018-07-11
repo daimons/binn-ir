@@ -117,7 +117,7 @@ fn read_write_basic_types() {
 }
 
 #[test]
-fn write_lists() {
+fn read_write_lists() {
     let list = Value::List(vec![
         Value::U8(123), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
         Value::Text(String::from("Draco Malfoy")), Value::Text(String::from("Slytherin")),
@@ -148,7 +148,7 @@ fn write_lists() {
 }
 
 #[test]
-fn write_maps() {
+fn read_write_maps() {
     let map = Value::Map({
         let mut map_data = BTreeMap::new();
         map_data.insert(-1, Value::Text(String::from("Mars")));
@@ -186,58 +186,30 @@ fn write_maps() {
 }
 
 #[test]
-fn write_objects() {
-    let mut list = vec![];
-
-    let mut map = HashMap::new();
-    map.insert(String::from("id"), Value::U8(1));
-    map.insert(String::from("name"), Value::Text(String::from("John")));
-    let object = Value::Object(map);
-    let object1_len = object.len().unwrap();
-    list.push(object);
-
-    let mut map = HashMap::new();
-    map.insert(String::from("id"), Value::U8(2));
-    map.insert(String::from("name"), Value::Text(String::from("Eric")));
-    let object = Value::Object(map);
-    let object2_len = object.len().unwrap();
-    list.push(object);
-
-    let item_count = list.len();
-
-    let value = Value::List(list);
-    let mut buf = vec![];
-    value.write(&mut buf).unwrap();
-    println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
-    assert_eq!(&buf[0..6], &[
-        // Type
-        value::LIST,
-        // Size
-        buf.len() as u8,
-        // Count
-        item_count as u8,
-
-        value::OBJECT, object1_len as u8, 2,
+fn read_write_objects() {
+    let list = Value::List(vec![
+        Value::Object({
+            let mut map = HashMap::new();
+            map.insert(String::from("id"), Value::U8(1));
+            map.insert(String::from("name"), Value::Text(String::from("John")));
+            map
+        }),
+        Value::Object({
+            let mut map = HashMap::new();
+            map.insert(String::from("id"), Value::U8(2));
+            map.insert(String::from("name"), Value::Text(String::from("Eric")));
+            map
+        }),
     ]);
-    assert!((
-        &buf[6..23] == &[
-            0x02, b'i', b'd', value::U8, 1,
-            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
-        ]
-        || &buf[6..23] == &[
-            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'J', b'o', b'h', b'n', 0x00,
-            0x02, b'i', b'd', value::U8, 1,
-        ]
-    ));
-    assert_eq!(&buf[23..26], &[value::OBJECT, object2_len as u8, 2]);
-    assert!(
-        &buf[26..43] == &[
-            0x02, b'i', b'd', value::U8, 2,
-            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
-        ]
-        || &buf[26..43] == &[
-            0x04, b'n', b'a', b'm', b'e', value::TEXT, 4, b'E', b'r', b'i', b'c', 0x00,
-            0x02, b'i', b'd', value::U8, 2,
-        ]
-    );
+
+    let mut buf = vec![];
+    list.write(&mut buf).unwrap();
+
+    assert_eq!(cmp_integers!(list.len().unwrap(), buf.len()), Ordering::Equal);
+
+    let mut cursor = Cursor::new(&buf);
+    assert_eq!(Value::read(&mut cursor).unwrap(), list);
+
+    // Verify position
+    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
