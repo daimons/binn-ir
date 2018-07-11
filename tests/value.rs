@@ -140,32 +140,32 @@ fn write_lists() {
 
 #[test]
 fn write_maps() {
-    let mut map = BTreeMap::new();
-    map.insert(1, Value::Text(String::from("add")));
-    map.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
+    let map = Value::Map({
+        let mut map_data = BTreeMap::new();
+        map_data.insert(-1, Value::Text(String::from("Mars")));
+        map_data.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
+        map_data.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
+        map_data.insert(4, Value::Float(-12345_f32));
+        map_data.insert(-5, Value::Double(6789_f64));
+        map_data.insert(6, Value::Null);
+        map_data.insert(-7, Value::False);
+        map_data.insert(8, Value::True);
+        map_data.insert(-9, Value::Text(String::from("SUN")));
+        map_data.insert(10, Value::Text(String::from("earth")));
+        map_data.insert(-11, Value::Text(String::from("Saturn")));
+        map_data
+    });
 
-    let item_count = map.len();
-
-    let value = Value::Map(map);
     let mut buf = vec![];
-    value.write(&mut buf).unwrap();
-    println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
-    assert_eq!(buf.as_slice(), &[
-        // Type
-        value::MAP,
-        // Size
-        buf.len() as u8,
-        // Count
-        item_count as u8,
-        // Key: 1
-        0x00, 0x00, 0x00, 0x01,
-        value::TEXT, 0x03, b'a', b'd', b'd', 0x00,
-        // Key: 2
-        0x00, 0x00, 0x00, 0x02,
-        value::LIST, 0x09, 0x02,
-        value::I16, 0xCF, 0xC7,
-        value::U16, 0x1A, 0x85,
-    ]);
+    map.write(&mut buf).unwrap();
+
+    assert_eq!(cmp_integers!(map.len().unwrap(), buf.len()), Ordering::Equal);
+
+    let mut cursor = Cursor::new(&buf);
+    assert_eq!(Value::read(&mut cursor).unwrap(), map);
+
+    // Verify position
+    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
 
 #[test]

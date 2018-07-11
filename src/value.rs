@@ -733,7 +733,7 @@ impl Value {
             self::DECIMAL_STR => Ok(Value::DecimalStr(Self::read_str(source)?)),
             self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
             self::LIST => Self::read_list(source),
-            // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
+            self::MAP => Self::read_map(source),
             // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
             _ => unimplemented!(),
         }
@@ -778,6 +778,36 @@ impl Value {
         }
 
         Ok(Value::List(result))
+    }
+
+    /// # Reads a map from source
+    fn read_map(source: &mut Read) -> io::Result<Self> {
+        let size = read_size!(source)?;
+        let item_count = read_size!(source)?;
+
+        let mut result = BTreeMap::new();
+        let mut read: DataSize = 0;
+        for _ in 0..item_count {
+            let key = read_int_be!(i32, source)?;
+            let value = Self::read(source)?;
+            read = match read.checked_add(value.len()?) {
+                Some(v) => match cmp_integers!(size, v) {
+                    Ordering::Greater => v,
+                    _ => return Err(Error::new(
+                        ErrorKind::InvalidData, format!("Value::read_map() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    )),
+                },
+                None => return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "Value::read_map() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}", &size, &read, &key, &value,
+                    )
+                )),
+            };
+            result.insert(key, value);
+        }
+
+        Ok(Value::Map(result))
     }
 
 }
