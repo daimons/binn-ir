@@ -407,6 +407,127 @@ macro_rules! read_str { ($source: ident) => {{
     }
 }};}
 
+/// # Reads a list from source
+///
+/// Returns: `io::Result<Value>`
+macro_rules! read_list { ($source: ident) => {{
+    let size = read_size!($source)?;
+    let item_count = read_size!($source)?;
+
+    let mut result = vec![];
+    let mut read: DataSize = 0;
+    for _ in 0..item_count {
+        let value = Self::read($source)?;
+        read = match read.checked_add(value.len()?) {
+            Some(v) => match cmp_integers!(size, v) {
+                Ordering::Greater => v,
+                _ => return Err(Error::new(
+                    ErrorKind::InvalidData, format!("value::read_list!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                )),
+            },
+            None => return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("value::read_list!() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
+            )),
+        };
+        result.push(value);
+    }
+
+    Ok(Value::List(result))
+}};}
+
+/// # Reads a map from source
+///
+/// Returns: `io::Result<Value>`
+macro_rules! read_map { ($source: ident) => {{
+    let size = read_size!($source)?;
+    let item_count = read_size!($source)?;
+
+    let mut result = BTreeMap::new();
+    let mut read: DataSize = 0;
+    for _ in 0..item_count {
+        let key = read_int_be!(i32, $source)?;
+        let value = Self::read($source)?;
+        read = match read.checked_add(value.len()?) {
+            Some(v) => match cmp_integers!(size, v) {
+                Ordering::Greater => v,
+                _ => return Err(Error::new(
+                    ErrorKind::InvalidData, format!("value::read_map!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                )),
+            },
+            None => return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "value::read_map!() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}",
+                    &size, &read, &key, &value,
+                )
+            )),
+        };
+        result.insert(key, value);
+    }
+
+    Ok(Value::Map(result))
+}};}
+
+/// # Reads an object from source
+///
+/// Returns: `io::Result<Value>`
+macro_rules! read_object { ($source: ident) => {{
+    let size = read_size!($source)?;
+    let item_count = read_size!($source)?;
+
+    let mut result = HashMap::new();
+    let mut read: DataSize = 0;
+    for _ in 0..item_count {
+        // Read key (note that there's NO null terminator)
+        let key_len = read_size!($source)?;
+        match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
+            Ordering::Greater => return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("value::read_object!() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key_len)
+            )),
+            _ => read = match read.checked_add(key_len) {
+                Some(v) => match cmp_integers!(size, v) {
+                    Ordering::Greater => v,
+                    _ => return Err(Error::new(
+                        ErrorKind::InvalidData, format!("value::read_object!() -> expected to read less than {} bytes, got: {}",
+                        &size, &v)
+                    )),
+                },
+                None => return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "value::read_object!() -> invalid object size -> expected: {}, current: {}, new key length: {}",
+                        &size, &read, &key_len,
+                    )
+                )),
+            },
+        };
+        let key = String::from_utf8(read_into_new_vec!(key_len, $source)?).map_err(|err|
+            Error::new(ErrorKind::InvalidData, format!("value::read_object!() -> failed to decode UTF-8: {}", &err))
+        )?;
+
+        // Read value
+        let value = Self::read($source)?;
+        read = match read.checked_add(value.len()?) {
+            Some(v) => match cmp_integers!(size, v) {
+                Ordering::Greater => v,
+                _ => return Err(Error::new(
+                    ErrorKind::InvalidData, format!("value::read_object!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                )),
+            },
+            None => return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("value::read_object!() -> invalid object size -> expected: {}, current: {}, new value: {:?}",
+                &size, &read, &value)
+            )),
+        };
+        result.insert(key, value);
+    }
+
+    Ok(Value::Object(result))
+}};}
+
 impl Value {
 
     /// # Max data size, in bytes
@@ -758,10 +879,10 @@ impl Value {
             self::TIME => Ok(Value::Time(read_str!(source)?)),
             self::DECIMAL_STR => Ok(Value::DecimalStr(read_str!(source)?)),
             self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
-            self::LIST => Self::read_raw_list(source),
-            self::MAP => Self::read_map(source),
-            self::OBJECT => Self::read_object(source),
-            _ => unimplemented!(),
+            self::LIST => read_list!(source),
+            self::MAP => read_map!(source),
+            self::OBJECT => read_object!(source),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Data type is either invalid or not supported: {}", &other))),
         }
     }
 
@@ -926,118 +1047,6 @@ impl Value {
             Value::List(list) => Ok(list),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_list() -> got: {:?}", &other))),
         }
-    }
-
-    /// # Reads a raw list from source
-    fn read_raw_list(source: &mut Read) -> io::Result<Self> {
-        let size = read_size!(source)?;
-        let item_count = read_size!(source)?;
-
-        let mut result = vec![];
-        let mut read: DataSize = 0;
-        for _ in 0..item_count {
-            let value = Self::read(source)?;
-            read = match read.checked_add(value.len()?) {
-                Some(v) => match cmp_integers!(size, v) {
-                    Ordering::Greater => v,
-                    _ => return Err(Error::new(
-                        ErrorKind::InvalidData, format!("Value::read_raw_list() -> expected to read less than {} bytes, got: {}", &size, &v)
-                    )),
-                },
-                None => return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("Value::read_raw_list() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
-                )),
-            };
-            result.push(value);
-        }
-
-        Ok(Value::List(result))
-    }
-
-    /// # Reads a map from source
-    fn read_map(source: &mut Read) -> io::Result<Self> {
-        let size = read_size!(source)?;
-        let item_count = read_size!(source)?;
-
-        let mut result = BTreeMap::new();
-        let mut read: DataSize = 0;
-        for _ in 0..item_count {
-            let key = read_int_be!(i32, source)?;
-            let value = Self::read(source)?;
-            read = match read.checked_add(value.len()?) {
-                Some(v) => match cmp_integers!(size, v) {
-                    Ordering::Greater => v,
-                    _ => return Err(Error::new(
-                        ErrorKind::InvalidData, format!("Value::read_map() -> expected to read less than {} bytes, got: {}", &size, &v)
-                    )),
-                },
-                None => return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!(
-                        "Value::read_map() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}", &size, &read, &key, &value,
-                    )
-                )),
-            };
-            result.insert(key, value);
-        }
-
-        Ok(Value::Map(result))
-    }
-
-    /// # Reads an object from source
-    fn read_object(source: &mut Read) -> io::Result<Self> {
-        let size = read_size!(source)?;
-        let item_count = read_size!(source)?;
-
-        let mut result = HashMap::new();
-        let mut read: DataSize = 0;
-        for _ in 0..item_count {
-            // Read key (note that there's NO null terminator)
-            let key_len = read_size!(source)?;
-            match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
-                Ordering::Greater => return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("Value::read_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key_len)
-                )),
-                _ => read = match read.checked_add(key_len) {
-                    Some(v) => match cmp_integers!(size, v) {
-                        Ordering::Greater => v,
-                        _ => return Err(Error::new(
-                            ErrorKind::InvalidData, format!("Value::read_object() -> expected to read less than {} bytes, got: {}", &size, &v)
-                        )),
-                    },
-                    None => return Err(Error::new(
-                        ErrorKind::InvalidData,
-                        format!(
-                            "Value::read_object() -> invalid object size -> expected: {}, current: {}, new key length: {}",
-                            &size, &read, &key_len,
-                        )
-                    )),
-                },
-            };
-            let key = String::from_utf8(read_into_new_vec!(key_len, source)?).map_err(|err|
-                Error::new(ErrorKind::InvalidData, format!("Value::read_object() -> failed to decode UTF-8: {}", &err))
-            )?;
-
-            // Read value
-            let value = Self::read(source)?;
-            read = match read.checked_add(value.len()?) {
-                Some(v) => match cmp_integers!(size, v) {
-                    Ordering::Greater => v,
-                    _ => return Err(Error::new(
-                        ErrorKind::InvalidData, format!("Value::read_object() -> expected to read less than {} bytes, got: {}", &size, &v)
-                    )),
-                },
-                None => return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("Value::read_object() -> invalid object size -> expected: {}, current: {}, new value: {:?}", &size, &read, &value)
-                )),
-            };
-            result.insert(key, value);
-        }
-
-        Ok(Value::Object(result))
     }
 
 }
