@@ -873,8 +873,18 @@ impl Value {
     /// [`Text`]: enum.Value.html#text
     pub fn read_text(source: &mut Read) -> io::Result<String> {
         match Self::read(source)? {
-            Value::Text(s) => Ok(s),
+            Value::Text(t) => Ok(t),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_text() -> got: {:?}", &other))),
+        }
+    }
+
+    /// # Reads a [`DateTime`] from source
+    ///
+    /// [`DateTime`]: enum.Value.html#datetime
+    pub fn read_date_time(source: &mut Read) -> io::Result<String> {
+        match Self::read(source)? {
+            Value::DateTime(dt) => Ok(dt),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date_time() -> got: {:?}", &other))),
         }
     }
 
