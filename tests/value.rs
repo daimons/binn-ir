@@ -219,10 +219,12 @@ fn read_write_objects() {
         map
     });
 
+    // Write
     let mut buf = vec![];
     list.write(&mut buf).unwrap();
     object.write(&mut buf).unwrap();
 
+    // Read
     let mut cursor = Cursor::new(&buf);
     match list {
         Value::List(list) => {
