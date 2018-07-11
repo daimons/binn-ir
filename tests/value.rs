@@ -226,17 +226,13 @@ fn read_write_objects() {
 
     // Read
     let mut cursor = Cursor::new(&buf);
-    match list {
-        Value::List(list) => {
+    match (list, object) {
+        (Value::List(list), Value::Object(object)) => {
             assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
-            match object {
-                Value::Object(object) => {
-                    assert_eq!(Value::read_object(&mut cursor).unwrap(), object);
-                    // Verify position
-                    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
-                },
-                _ => unreachable!(),
-            };
+            assert_eq!(Value::read_object(&mut cursor).unwrap(), object);
+
+            // Verify position
+            assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };
