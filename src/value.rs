@@ -77,6 +77,14 @@ pub const OBJECT: u8 = 0b_1110_0010;
 /// # Size mask
 const SIZE_MASK: u32 = 0x_8000_0000_u32;
 
+/// # Object key's max length
+const OBJECT_KEY_MAX_LEN: usize = 255;
+
+#[test]
+fn test_object_key_max_len() {
+    assert_eq!(cmp_integers!(OBJECT_KEY_MAX_LEN, ::std::u8::MAX), Ordering::Equal);
+}
+
 /// # Values
 #[derive(PartialEq)]
 pub enum Value {
@@ -483,14 +491,13 @@ impl Value {
         let mut result = sum!(Self::bytes_for_len(object.len())?, 1)?;
         // Items
         for (key, value) in object {
-            // Key is limited to 255 bytes; and has NO null terminator
-            match cmp_integers!(key.len(), ::std::u8::MAX) {
-                Ordering::Greater => return Err(Error::new(
+            // Key has NO null terminator
+            if key.len() > OBJECT_KEY_MAX_LEN {
+                return Err(Error::new(
                     ErrorKind::InvalidData,
-                    format!("Value::object_len() -> key size is limited to {} bytes; got: {}", ::std::u8::MAX, key.len())
-                )),
-                _ => (),
-            };
+                    format!("Value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, key.len())
+                ));
+            }
             result = sum!(result, key.len(), value.len()?, 1)?;
         }
         // The len value itself:
