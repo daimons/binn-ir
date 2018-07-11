@@ -898,6 +898,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Time`] from source
+    ///
+    /// [`Time`]: enum.Value.html#time
+    pub fn read_time(source: &mut Read) -> io::Result<String> {
+        match Self::read(source)? {
+            Value::Time(t) => Ok(t),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_time() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a list from source
     fn read_list(source: &mut Read) -> io::Result<Self> {
         let size = read_size!(source)?;
