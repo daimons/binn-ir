@@ -71,9 +71,15 @@ fn read_write_basic_types() {
     Value::Time(String::from("harry")).write(&mut buf).unwrap();
     Value::DecimalStr(String::from("ginny\t\0\n")).write(&mut buf).unwrap();
 
-    let blob_str = "roy eats moss' orange".repeat(20);
-    assert_eq!(cmp_integers!(blob_str.len(), std::i8::MAX), Ordering::Greater);
-    Value::Blob(blob_str.as_bytes().to_vec()).write(&mut buf).unwrap();
+    let blob_strings = vec![
+        "roy eats moss' orange".repeat(20),
+        "moss kisses jen".repeat(30),
+        "richmond is a ghost".repeat(40),
+    ];
+    for s in blob_strings.iter() {
+        assert_eq!(cmp_integers!(s.len(), std::i8::MAX), Ordering::Greater);
+        Value::Blob(s.as_bytes().to_vec()).write(&mut buf).unwrap();
+    }
 
     let mut cursor = Cursor::new(&buf);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Null);
@@ -98,12 +104,13 @@ fn read_write_basic_types() {
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Time(String::from("harry")));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::DecimalStr(String::from("ginny\t\0\n")));
 
-    match Value::read(&mut cursor) {
-        // Ok(Value::Blob(bytes)) => assert_eq!(String::from_utf8(bytes).unwrap(), blob_str),
-        Ok(Value::Blob(_)) => { assert_eq!(cursor.position(), buf.len() as u64); },
-        Ok(other) => panic!("Expected a blob, got: {}", &other),
-        Err(err) => panic!("Expected a blob, got: {}", &err),
-    };
+    for s in blob_strings.iter() {
+        match Value::read(&mut cursor) {
+            Ok(Value::Blob(bytes)) => assert_eq!(&String::from_utf8(bytes).unwrap(), s),
+            Ok(other) => panic!("Expected a blob, got: {}", &other),
+            Err(err) => panic!("Expected a blob, got: {}", &err),
+        };
+    }
 
     // Verify position
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
