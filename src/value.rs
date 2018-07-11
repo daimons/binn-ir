@@ -768,6 +768,14 @@ impl Value {
         }
     }
 
+    /// # Reads a `u8` value from source
+    pub fn read_u8(source: &mut Read) -> io::Result<u8> {
+        match Self::read(source)? {
+            Value::U8(u) => Ok(u),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u8() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
