@@ -4,6 +4,7 @@
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
+use std::fmt;
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::mem;
 
@@ -74,6 +75,7 @@ pub const MAP: u8 = 0b_1110_0001;
 pub const OBJECT: u8 = 0b_1110_0010;
 
 /// # Values
+#[derive(PartialEq)]
 pub enum Value<'a> {
 
     /// # Null
@@ -144,6 +146,47 @@ pub enum Value<'a> {
 
 }
 
+impl<'a> fmt::Display for Value<'a> {
+
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Value::Null => write!(formatter, "Null"),
+            Value::True => write!(formatter, "True"),
+            Value::False => write!(formatter, "False"),
+            Value::U8(ref u) => write!(formatter, "U8({})", &u),
+            Value::I8(ref i) => write!(formatter, "I8({})", &i),
+            Value::U16(ref u) => write!(formatter, "U16({})", &u),
+            Value::I16(ref i) => write!(formatter, "I16({})", &i),
+            Value::U32(ref u) => write!(formatter, "U32({})", &u),
+            Value::I32(ref i) => write!(formatter, "I32({})", &i),
+            Value::Float(ref f) => write!(formatter, "Float({})", &f),
+            Value::U64(ref u) => write!(formatter, "U64({})", &u),
+            Value::I64(ref i) => write!(formatter, "I64({})", &i),
+            Value::Double(ref d) => write!(formatter, "Double({})", &d),
+            Value::Text(ref s) => write!(formatter, "Text({})", &s),
+            Value::DateTime(ref dt) => write!(formatter, "DateTime({})", &dt),
+            Value::Date(ref d) => write!(formatter, "Date({})", &d),
+            Value::Time(ref t) => write!(formatter, "Time({})", &t),
+            Value::DecimalStr(ref ds) => write!(formatter, "DecimalStr({})", &ds),
+            Value::Blob(ref blob) => write!(formatter, "Blob({} byte{})", &blob.len(), if blob.len() == 1 {""} else {"s"}),
+            Value::List(ref list) => write!(formatter, "List({} item{})", &list.len(), if list.len() == 1 {""} else {"s"}),
+            Value::Map(ref map) => write!(formatter, "Map({} item{})", &map.len(), if map.len() == 1 {""} else {"s"}),
+            Value::Object(ref object) => write!(formatter, "Object({} item{})", &object.len(), if object.len() == 1 {""} else {"s"}),
+        }
+    }
+
+}
+
+impl<'a> fmt::Debug for Value<'a> {
+
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(formatter, "\"")?;
+        fmt::Display::fmt(self, formatter)?;
+        write!(formatter, "\"")
+    }
+
+}
+
 /// # Converts a value to its underlying byte slice
 ///
 /// ## Notes
@@ -200,6 +243,15 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: expr) => {{
                 ErrorKind::Other, format!("value::write_int_be!() -> expected to write {} byte(s); result: {}", bytes.len(), count)
             )),
         },
+        Err(err) => Err(err),
+    }
+}};}
+
+/// # Reads an integer value in big-endian format from std::io::Read
+macro_rules! read_int_be { ($ty: ty, $source: expr) => {{
+    let mut buf = [0_u8; mem::size_of::<$ty>()];
+    match $source.read_exact(&mut buf) {
+        Ok(()) => Ok(<$ty>::from_be(unsafe { mem::transmute(buf) })),
         Err(err) => Err(err),
     }
 }};}
@@ -567,20 +619,32 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    pub fn read(_buf: &mut Read) -> io::Result<Self> {
-        // Value::Null => write_int_be!(u8, NULL, buf)?,
-        // Value::True => write_int_be!(u8, TRUE, buf)?,
-        // Value::False => write_int_be!(u8, FALSE, buf)?,
-        // Value::U8(u) => sum!(write_int_be!(u8, U8, buf)?, write_int_be!(u8, u, buf)?)?,
-        // Value::I8(i) => sum!(write_int_be!(u8, I8, buf)?, write_int_be!(i8, i, buf)?)?,
-        // Value::U16(u) => sum!(write_int_be!(u8, U16, buf)?, write_int_be!(u16, u, buf)?)?,
-        // Value::I16(i) => sum!(write_int_be!(u8, I16, buf)?, write_int_be!(i16, i, buf)?)?,
-        // Value::U32(u) => sum!(write_int_be!(u8, U32, buf)?, write_int_be!(u32, u, buf)?)?,
-        // Value::I32(i) => sum!(write_int_be!(u8, I32, buf)?, write_int_be!(i32, i, buf)?)?,
-        // Value::Float(f) => sum!(write_int_be!(u8, FLOAT, buf)?, write_int_be!(u32, f.to_bits(), buf)?)?,
-        // Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
-        // Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
-        // Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
+    pub fn read(source: &mut Read) -> io::Result<Self> {
+        let data_type = {
+            let mut buf = [0];
+            match source.read_exact(&mut buf) {
+                Ok(()) => buf[0],
+                Err(err) => return Err(err),
+            }
+        };
+        match data_type {
+            self::NULL => Ok(Value::Null),
+            self::TRUE => Ok(Value::True),
+            self::FALSE => Ok(Value::False),
+            self::U8 => Ok(Value::U8(read_int_be!(u8, source)?)),
+            self::I8 => Ok(Value::I8(read_int_be!(i8, source)?)),
+            self::U16 => Ok(Value::U16(read_int_be!(u16, source)?)),
+            self::I16 => Ok(Value::I16(read_int_be!(i16, source)?)),
+            self::U32 => Ok(Value::U32(read_int_be!(u32, source)?)),
+            self::I32 => Ok(Value::I32(read_int_be!(i32, source)?)),
+            self::FLOAT => Ok(Value::Float(f32::from_bits(read_int_be!(u32, source)?))),
+            self::U64 => Ok(Value::U64(read_int_be!(u64, source)?)),
+            self::I64 => Ok(Value::I64(read_int_be!(i64, source)?)),
+            self::DOUBLE => Ok(Value::Double(f64::from_bits(read_int_be!(u64, source)?))),
+            // self:: => Ok(),
+            _ => unimplemented!(),
+        }
+
         // Value::Text(t) => Self::write_str(TEXT, t, buf)?,
         // Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf)?,
         // Value::Date(d) => Self::write_str(DATE, d, buf)?,
@@ -590,7 +654,6 @@ impl<'a> Value<'a> {
         // Value::List(ref list) => self.write_list(expected_result, list, buf)?,
         // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
         // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
-        unimplemented!()
     }
 
 }

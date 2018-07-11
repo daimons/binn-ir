@@ -2,8 +2,13 @@
 
 extern crate binn_ir;
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::mem;
+use std::io::Cursor;
+
+#[macro_use]
+mod cmp_integers;
 
 use binn_ir::value::{self, Value};
 
@@ -41,31 +46,41 @@ fn values() {
 }
 
 #[test]
-fn write_basic_types() {
-    let v = Value::U8(123);
+fn read_write_basic_types() {
     let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf, [value::U8, 123]);
+    Value::Null.write(&mut buf).unwrap();
+    Value::True.write(&mut buf).unwrap();
+    Value::False.write(&mut buf).unwrap();
+    Value::U8(123).write(&mut buf).unwrap();
+    Value::I8(-123).write(&mut buf).unwrap();
+    Value::U16(12345).write(&mut buf).unwrap();
+    Value::I16(-12345).write(&mut buf).unwrap();
+    Value::U32(123456789).write(&mut buf).unwrap();
+    Value::I32(-123456789).write(&mut buf).unwrap();
+    Value::Float(123.0).write(&mut buf).unwrap();
+    Value::Float(-123.0).write(&mut buf).unwrap();
+    Value::U64(98765432123).write(&mut buf).unwrap();
+    Value::I64(-98765432123).write(&mut buf).unwrap();
+    Value::Double(0xAABB_CCDD_u64 as f64).write(&mut buf).unwrap();
+    Value::Double(-0xAABB_CCDD_i64 as f64).write(&mut buf).unwrap();
 
-    let v = Value::I16(-456);
-    let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf, [value::I16, 0xFE, 0x38]);
-
-    let v = Value::U16(789);
-    let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf, [value::U16, 0x03, 0x15]);
-
-    let v = Value::I16(-12345);
-    let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf, [value::I16, 0xCF, 0xC7]);
-
-    let v = Value::U16(6789);
-    let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf, [value::U16, 0x1A, 0x85]);
+    let mut cursor = Cursor::new(&buf);
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Null);
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::True);
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::False);
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::U8(123));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::I8(-123));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::U16(12345));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::I16(-12345));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::U32(123456789));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::I32(-123456789));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Float(123.0));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Float(-123.0));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::U64(98765432123));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::I64(-98765432123));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(0xAABB_CCDD_u64 as f64));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(-0xAABB_CCDD_i64 as f64));
+    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 
     let v = Value::Text("Binn-X");
     let mut buf = vec![];
