@@ -95,8 +95,8 @@ fn read_write_basic_types() {
     assert_eq!(Value::read_float(&mut cursor).unwrap(), -123.0);
     assert_eq!(Value::read_u64(&mut cursor).unwrap(), 98765432123);
     assert_eq!(Value::read_i64(&mut cursor).unwrap(), -98765432123);
-    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(0xAABB_CCDD_u64 as f64));
-    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(-0xAABB_CCDD_i64 as f64));
+    assert_eq!(Value::read_double(&mut cursor).unwrap(), 0xAABB_CCDD_u64 as f64);
+    assert_eq!(Value::read_double(&mut cursor).unwrap(), -0xAABB_CCDD_i64 as f64);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Text(String::from("Mr. Reynholm")));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Text(String::from("hello-jen")));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::DateTime(String::from("hermione")));

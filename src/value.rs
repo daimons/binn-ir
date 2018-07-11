@@ -842,6 +842,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Double`] value from source
+    ///
+    /// [`Double`]: enum.Value.html#double
+    pub fn read_double(source: &mut Read) -> io::Result<f64> {
+        match Self::read(source)? {
+            Value::Double(d) => Ok(d),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_double() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
