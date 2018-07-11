@@ -118,21 +118,24 @@ fn read_write_basic_types() {
 
 #[test]
 fn write_lists() {
-    let value = Value::List(vec![Value::U8(123), Value::I16(-456), Value::U16(789)]);
-    let mut buf = vec![];
-    value.write(&mut buf).unwrap();
-    println!("Expected {} bytes; got: {} -> {:02x?}", value.len().unwrap(), buf.len(), buf.as_slice());
-    assert_eq!(buf.as_slice(), &[
-        // Type
-        value::LIST,
-        // Size
-        buf.len() as u8,
-        // Count
-        3,
-        value::U8, 123,
-        value::I16, 0xFE, 0x38,
-        value::U16, 0x03, 0x15
+    let list = Value::List(vec![
+        Value::U8(123), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
+        Value::Text(String::from("Draco Malfoy")), Value::Text(String::from("Slytherin")),
+        Value::Time(String::from(std::u128::MAX.to_string().repeat(100))),
+        Value::List(vec![Value::Date(String::from("July 12th, 2018")), Value::DecimalStr(String::from("1234567890"))]),
     ]);
+    let list_len = list.len().unwrap();
+    assert_eq!(cmp_integers!(list_len, std::i8::MAX), Ordering::Greater);
+
+    let mut buf = vec![];
+    list.write(&mut buf).unwrap();
+    assert_eq!(cmp_integers!(list_len, buf.len()), Ordering::Equal);
+
+    let mut cursor = Cursor::new(&buf);
+    assert_eq!(Value::read(&mut cursor).unwrap(), list);
+
+    // Verify position
+    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
 
 #[test]

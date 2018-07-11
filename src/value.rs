@@ -732,7 +732,7 @@ impl Value {
             self::TIME => Ok(Value::Time(Self::read_str(source)?)),
             self::DECIMAL_STR => Ok(Value::DecimalStr(Self::read_str(source)?)),
             self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
-            // Value::List(ref list) => self.write_list(expected_result, list, buf)?,
+            self::LIST => Self::read_list(source),
             // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
             // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
             _ => unimplemented!(),
@@ -751,6 +751,33 @@ impl Value {
                 ErrorKind::InvalidData, format!("Value::read_str() -> expected to read a null terminator ('\\0'), got: {}", &other)
             )),
         }
+    }
+
+    /// # Reads a list from source
+    fn read_list(source: &mut Read) -> io::Result<Self> {
+        let size = read_size!(source)?;
+        let item_count = read_size!(source)?;
+
+        let mut result = vec![];
+        let mut read: DataSize = 0;
+        for _ in 0..item_count {
+            let value = Self::read(source)?;
+            read = match read.checked_add(value.len()?) {
+                Some(v) => match cmp_integers!(size, v) {
+                    Ordering::Greater => v,
+                    _ => return Err(Error::new(
+                        ErrorKind::InvalidData, format!("Value::read_list() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    )),
+                },
+                None => return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Value::read_list() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
+                )),
+            };
+            result.push(value);
+        }
+
+        Ok(Value::List(result))
     }
 
 }
