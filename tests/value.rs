@@ -106,7 +106,7 @@ fn read_write_basic_types() {
 
     for s in blob_strings.iter() {
         match Value::read(&mut cursor) {
-            Ok(Value::Blob(bytes)) => assert_eq!(&String::from_utf8(bytes).unwrap(), s),
+            Ok(Value::Blob(bytes)) => assert_eq!(bytes.as_slice(), s.as_bytes()),
             Ok(other) => panic!("Expected a blob, got: {}", &other),
             Err(err) => panic!("Expected a blob, got: {}", &err),
         };
