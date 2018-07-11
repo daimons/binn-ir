@@ -65,6 +65,8 @@ fn read_write_basic_types() {
     Value::I64(-98765432123).write(&mut buf).unwrap();
     Value::Double(0xAABB_CCDD_u64 as f64).write(&mut buf).unwrap();
     Value::Double(-0xAABB_CCDD_i64 as f64).write(&mut buf).unwrap();
+    Value::Text(String::from("Mr. Reynholm")).write(&mut buf).unwrap();
+    Value::Text(String::from("hello-jen")).write(&mut buf).unwrap();
 
     let mut cursor = Cursor::new(&buf);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Null);
@@ -82,28 +84,17 @@ fn read_write_basic_types() {
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::I64(-98765432123));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(0xAABB_CCDD_u64 as f64));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(-0xAABB_CCDD_i64 as f64));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Text(String::from("Mr. Reynholm")));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Text(String::from("hello-jen")));
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 
-    let v = Value::Text("Binn-X");
+    let bytes = "roy eats moss' orange".repeat(100).as_bytes().to_vec();
+    let blob = Value::Blob(bytes.clone());
     let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf[0..2], [value::TEXT, 0x06]);
-    assert_eq!(&buf[2..], b"Binn-X\0");
-
-    let v = Value::Blob(b"hello-jen");
-    let mut buf = vec![];
-    v.write(&mut buf).unwrap();
-    assert_eq!(buf[0..2], [value::BLOB, 0x09]);
-    assert_eq!(&buf[2..], b"hello-jen");
-
-    let s = "roy eats moss' orange".repeat(100);
-    let bytes = s.as_bytes();
-    let v = Value::Blob(bytes);
-    let mut buf = vec![];
-    v.write(&mut buf).unwrap();
+    blob.write(&mut buf).unwrap();
     assert_eq!(buf[0], value::BLOB);
     assert_eq!(&buf[1..5], unsafe { mem::transmute::<i32, [u8; mem::size_of::<i32>()]>((bytes.len() as i32).to_be()) });
-    assert_eq!(&buf[5..], bytes);
+    assert_eq!(&buf[5..], bytes.as_slice());
 }
 
 #[test]
@@ -128,7 +119,7 @@ fn write_lists() {
 #[test]
 fn write_maps() {
     let mut map = BTreeMap::new();
-    map.insert(1, Value::Text("add"));
+    map.insert(1, Value::Text(String::from("add")));
     map.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
 
     let item_count = map.len();
@@ -160,15 +151,15 @@ fn write_objects() {
     let mut list = vec![];
 
     let mut map = HashMap::new();
-    map.insert("id", Value::U8(1));
-    map.insert("name", Value::Text("John"));
+    map.insert(String::from("id"), Value::U8(1));
+    map.insert(String::from("name"), Value::Text(String::from("John")));
     let object = Value::Object(map);
     let object1_len = object.len().unwrap();
     list.push(object);
 
     let mut map = HashMap::new();
-    map.insert("id", Value::U8(2));
-    map.insert("name", Value::Text("Eric"));
+    map.insert(String::from("id"), Value::U8(2));
+    map.insert(String::from("name"), Value::Text(String::from("Eric")));
     let object = Value::Object(map);
     let object2_len = object.len().unwrap();
     list.push(object);

@@ -76,7 +76,7 @@ pub const OBJECT: u8 = 0b_1110_0010;
 
 /// # Values
 #[derive(PartialEq)]
-pub enum Value<'a> {
+pub enum Value {
 
     /// # Null
     Null,
@@ -118,35 +118,35 @@ pub enum Value<'a> {
     Double(f64),
 
     /// # Text
-    Text(&'a str),
+    Text(String),
 
     /// # Date time
-    DateTime(&'a str),
+    DateTime(String),
 
     /// # Date
-    Date(&'a str),
+    Date(String),
 
     /// # Time
-    Time(&'a str),
+    Time(String),
 
     /// # Decimal string
-    DecimalStr(&'a str),
+    DecimalStr(String),
 
     /// # Blob
-    Blob(&'a [u8]),
+    Blob(Vec<u8>),
 
     /// # List
-    List(Vec<Value<'a>>),
+    List(Vec<Value>),
 
     /// # Map
-    Map(BTreeMap<i32, Value<'a>>),
+    Map(BTreeMap<i32, Value>),
 
     /// # Object
-    Object(HashMap<&'a str, Value<'a>>),
+    Object(HashMap<String, Value>),
 
 }
 
-impl<'a> fmt::Display for Value<'a> {
+impl fmt::Display for Value {
 
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
@@ -177,7 +177,7 @@ impl<'a> fmt::Display for Value<'a> {
 
 }
 
-impl<'a> fmt::Debug for Value<'a> {
+impl fmt::Debug for Value {
 
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(formatter, "\"")?;
@@ -233,8 +233,8 @@ pub type DataSize = u32;
 
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
-/// Returns: number of bytes written, as `DataSize`.
-macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: expr) => {{
+/// Returns: number of bytes written, as `io::Result<DataSize>`.
+macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
     let bytes = as_bytes!($ty, $v.to_be());
     match $buf.write(&bytes) {
         Ok(count) => match count == bytes.len() {
@@ -248,7 +248,9 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: expr) => {{
 }};}
 
 /// # Reads an integer value in big-endian format from std::io::Read
-macro_rules! read_int_be { ($ty: ty, $source: expr) => {{
+///
+/// Result: `io::Result<$ty>`.
+macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
     let mut buf = [0_u8; mem::size_of::<$ty>()];
     match $source.read_exact(&mut buf) {
         Ok(()) => Ok(<$ty>::from_be(unsafe { mem::transmute(buf) })),
@@ -257,17 +259,18 @@ macro_rules! read_int_be { ($ty: ty, $source: expr) => {{
 }};}
 
 /// # Reads size from std::io::Read
-macro_rules! read_size { ($source: expr) => {{
-    let source = $source;
-    let first_byte = read_int_be!(u8, source)?;
+///
+/// Result: `io::Result<u32>`.
+macro_rules! read_size { ($source: ident) => {{
+    let first_byte = read_int_be!(u8, $source)?;
     match first_byte & 0b_1000_0000 {
         0b_1000_0000 => {
             let mut buf = [first_byte, 0, 0, 0];
-            match source.read_exact(&mut buf[1..]) {
+            match $source.read_exact(&mut buf[1..]) {
                 Ok(()) => {
                     let result = u32::from_be(unsafe { mem::transmute(buf) });
                     match cmp_integers!(result, Value::MAX_DATA_SIZE) {
-                        Ordering::Greater => Err(Error::new(ErrorKind::InvalidInput, format!("value::read_size!() -> too large: {}", &result))),
+                        Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::read_size!() -> too large: {}", &result))),
                         _ => Ok(result),
                     }
                 },
@@ -295,18 +298,18 @@ macro_rules! sum {
                     let b = $b;
                     match cmp_integers!(b, Value::MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
-                            ErrorKind::InvalidInput,
+                            ErrorKind::InvalidData,
                             format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, Value::MAX_DATA_SIZE)
                         )),
                         _ => match current.checked_add(b as DataSize) {
                             Some(new) => match cmp_integers!(new, Value::MAX_DATA_SIZE) {
                                 Ordering::Greater => Err(Error::new(
-                                    ErrorKind::InvalidInput,
+                                    ErrorKind::InvalidData,
                                     format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, Value::MAX_DATA_SIZE)
                                 )),
                                 _ => Ok(new),
                             },
-                            None => Err(Error::new(ErrorKind::InvalidInput, format!("sum!() -> can't add {} into {}", &b, &current))),
+                            None => Err(Error::new(ErrorKind::InvalidData, format!("sum!() -> can't add {} into {}", &b, &current))),
                         },
                     }
                 },
@@ -318,7 +321,45 @@ macro_rules! sum {
     }};
 }
 
-impl<'a> Value<'a> {
+/// # Makes new vector with capacity
+///
+/// Returns: `io::Result<Vec<_>>`
+macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
+    let capacity = $capacity;
+    match cmp_integers!(capacity, ::std::usize::MAX) {
+        Ordering::Greater => Err(Error::new(
+            ErrorKind::WriteZero,
+            format!(
+                "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, ::std::usize::MAX
+            )
+        )),
+        _ => Ok(Vec::with_capacity(capacity as usize)),
+    }
+}};}
+
+/// # Reads data into new vector
+///
+/// Returns: `io::Result<Vec<_>>`
+macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
+    let len = $len;
+    let mut result = new_vec_with_capacity!(len)?;
+
+    // Notes:
+    //
+    // - `len` was verified via above call to `new_vec_with_capacity!()`, that it must be <= `Value::MAX_DATA_SIZE`
+    // - `Value::MAX_DATA_SIZE` should be **tested** to be < `std::u64::MAX`
+    match $source.take(len as u64).read_to_end(&mut result) {
+        Ok(read) => match read == result.len() {
+            true => Ok(result),
+            false => Err(Error::new(
+                ErrorKind::WriteZero, format!("value::read_into_new_vec!() -> expected to read {} bytes, but: {}", &len, &read)
+            )),
+        },
+        Err(err) => Err(Error::new(ErrorKind::WriteZero, format!("value::read_into_new_vec!() -> failed to read {} bytes: {}", &len, &err))),
+    }
+}};}
+
+impl Value {
 
     /// # Max data size, in bytes
     pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
@@ -340,17 +381,17 @@ impl<'a> Value<'a> {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
-            Value::Text(t) => sum!(Self::bytes_for_len(t.len())?, 2, t.len()),
+            Value::Text(ref t) => sum!(Self::bytes_for_len(t.len())?, 2, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DateTime(dt) => sum!(Self::bytes_for_len(dt.len())?, 2, dt.len()),
+            Value::DateTime(ref dt) => sum!(Self::bytes_for_len(dt.len())?, 2, dt.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Date(d) => sum!(Self::bytes_for_len(d.len())?, 2, d.len()),
+            Value::Date(ref d) => sum!(Self::bytes_for_len(d.len())?, 2, d.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Time(t) => sum!(Self::bytes_for_len(t.len())?, 2, t.len()),
+            Value::Time(ref t) => sum!(Self::bytes_for_len(t.len())?, 2, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DecimalStr(ds) => sum!(Self::bytes_for_len(ds.len())?, 2, ds.len()),
+            Value::DecimalStr(ref ds) => sum!(Self::bytes_for_len(ds.len())?, 2, ds.len()),
             // 1 byte for type
-            Value::Blob(bytes) => sum!(Self::bytes_for_len(bytes.len())?, 1, bytes.len()),
+            Value::Blob(ref bytes) => sum!(Self::bytes_for_len(bytes.len())?, 1, bytes.len()),
             Value::List(ref list) => Self::list_len(list),
             Value::Map(ref map) => Self::map_len(map),
             Value::Object(ref object) => Self::object_len(object),
@@ -361,7 +402,7 @@ impl<'a> Value<'a> {
     fn bytes_for_len(len: usize) -> io::Result<DataSize> {
         match cmp_integers!(len, ::std::i8::MAX) {
             Ordering::Greater => match cmp_integers!(len, Self::MAX_DATA_SIZE) {
-                Ordering::Greater => Err(Error::new(ErrorKind::InvalidInput, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
+                Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
                 _ => Ok(4),
             },
             _ => Ok(1),
@@ -369,7 +410,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Calculates list length
-    fn list_len(list: &'a Vec<Value<'a>>) -> io::Result<DataSize> {
+    fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
         // Type + count
         let mut result: DataSize = sum!(Self::bytes_for_len(list.len())?, 1)?;
         // Items
@@ -386,12 +427,12 @@ impl<'a> Value<'a> {
         };
         match result <= Self::MAX_DATA_SIZE {
             true => Ok(result),
-            false => Err(Error::new(ErrorKind::InvalidInput, format!("Value::list_len() -> data too large: {} bytes", result))),
+            false => Err(Error::new(ErrorKind::InvalidData, format!("Value::list_len() -> data too large: {} bytes", result))),
         }
     }
 
     /// # Calculates map length
-    fn map_len(map: &'a BTreeMap<i32, Value<'a>>) -> io::Result<DataSize> {
+    fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
         // Type + count
         let mut result = sum!(Self::bytes_for_len(map.len())?, 1)?;
         // Items
@@ -408,12 +449,12 @@ impl<'a> Value<'a> {
         };
         match result <= Self::MAX_DATA_SIZE {
             true => Ok(result),
-            false => Err(Error::new(ErrorKind::InvalidInput, format!("Value::map_len() -> data too large: {} bytes", result))),
+            false => Err(Error::new(ErrorKind::InvalidData, format!("Value::map_len() -> data too large: {} bytes", result))),
         }
     }
 
     /// # Calculates object length
-    fn object_len(object: &'a HashMap<&'a str, Value<'a>>) -> io::Result<DataSize> {
+    fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
         // Type + count
         let mut result = sum!(Self::bytes_for_len(object.len())?, 1)?;
         // Items
@@ -421,7 +462,7 @@ impl<'a> Value<'a> {
             // Key is limited to 255 bytes; and has NO null terminator
             match cmp_integers!(key.len(), ::std::u8::MAX) {
                 Ordering::Greater => return Err(Error::new(
-                    ErrorKind::InvalidInput,
+                    ErrorKind::InvalidData,
                     format!("Value::object_len() -> key size is limited to {} bytes; got: {}", ::std::u8::MAX, key.len())
                 )),
                 _ => (),
@@ -438,7 +479,7 @@ impl<'a> Value<'a> {
         };
         match result <= Self::MAX_DATA_SIZE {
             true => Ok(result),
-            false => Err(Error::new(ErrorKind::InvalidInput, format!("len() -> data too large: {} bytes", result))),
+            false => Err(Error::new(ErrorKind::InvalidData, format!("len() -> data too large: {} bytes", result))),
         }
     }
 
@@ -462,12 +503,12 @@ impl<'a> Value<'a> {
             Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
             Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
             Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
-            Value::Text(t) => Self::write_str(TEXT, t, buf)?,
-            Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf)?,
-            Value::Date(d) => Self::write_str(DATE, d, buf)?,
-            Value::Time(t) => Self::write_str(TIME, t, buf)?,
-            Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf)?,
-            Value::Blob(bytes) => Self::write_blob(bytes, buf)?,
+            Value::Text(ref t) => Self::write_str(TEXT, t.as_str(), buf)?,
+            Value::DateTime(ref dt) => Self::write_str(DATE_TIME, dt.as_str(), buf)?,
+            Value::Date(ref d) => Self::write_str(DATE, d.as_str(), buf)?,
+            Value::Time(ref t) => Self::write_str(TIME, t.as_str(), buf)?,
+            Value::DecimalStr(ref ds) => Self::write_str(DECIMAL_STR, ds.as_str(), buf)?,
+            Value::Blob(ref bytes) => Self::write_blob(bytes.as_slice(), buf)?,
             Value::List(ref list) => self.write_list(expected_result, list, buf)?,
             Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
             Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
@@ -569,7 +610,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes a list into the buffer
-    fn write_list(&self, size: DataSize, list: &'a Vec<Value<'a>>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_list(&self, size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, LIST, buf)?,
@@ -588,7 +629,7 @@ impl<'a> Value<'a> {
     }
 
     /// # Writes a map into the buffer
-    fn write_map(&self, size: DataSize, map: &'a BTreeMap<i32, Value<'a>>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_map(&self, size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, MAP, buf)?,
@@ -611,7 +652,7 @@ impl<'a> Value<'a> {
     /// Caller _must_ verify that key lengths are valid. Calling [`len()`] will do that, the result can also be passed into `size`.
     ///
     /// [`len()`]: enum.Value.html#method.len
-    fn write_object(&self, size: DataSize, object: &'a HashMap<&'a str, Value<'a>>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_object(&self, size: DataSize, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, OBJECT, buf)?,
@@ -641,7 +682,7 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    pub fn read(source: &'a mut Read) -> io::Result<Self> {
+    pub fn read(source: &mut Read) -> io::Result<Self> {
         let data_type = {
             let mut buf = [0];
             match source.read_exact(&mut buf) {
@@ -678,11 +719,17 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    fn read_str(source: &'a mut Read) -> io::Result<&'a str> {
+    fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
-        // let len = read_size!(source)?;
-        // let mut buf = Vec::with_capacity();
-        unimplemented!()
+        let buf = read_into_new_vec!(read_size!(source)?, source)?;
+        match read_int_be!(u8, source)? {
+            0 => String::from_utf8(buf).map_err(|err|
+                Error::new(ErrorKind::InvalidData, format!("Value::read_str() -> failed to decode UTF-8: {}", &err))
+            ),
+            other => Err(Error::new(
+                ErrorKind::InvalidData, format!("Value::read_str() -> expected to read a null terminator ('\\0'), got: {}", &other)
+            )),
+        }
     }
 
 }
