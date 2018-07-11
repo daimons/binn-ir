@@ -67,6 +67,10 @@ fn read_write_basic_types() {
     Value::Double(-0xAABB_CCDD_i64 as f64).write(&mut buf).unwrap();
     Value::Text(String::from("Mr. Reynholm")).write(&mut buf).unwrap();
     Value::Text(String::from("hello-jen")).write(&mut buf).unwrap();
+    Value::DateTime(String::from("hermione")).write(&mut buf).unwrap();
+    Value::Date(String::from("ron")).write(&mut buf).unwrap();
+    Value::Time(String::from("harry")).write(&mut buf).unwrap();
+    Value::DecimalStr(String::from("ginny\t\0\n")).write(&mut buf).unwrap();
 
     let mut cursor = Cursor::new(&buf);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Null);
@@ -86,6 +90,10 @@ fn read_write_basic_types() {
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Double(-0xAABB_CCDD_i64 as f64));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Text(String::from("Mr. Reynholm")));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Text(String::from("hello-jen")));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::DateTime(String::from("hermione")));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Date(String::from("ron")));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Time(String::from("harry")));
+    assert_eq!(Value::read(&mut cursor).unwrap(), Value::DecimalStr(String::from("ginny\t\0\n")));
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 
     let bytes = "roy eats moss' orange".repeat(100).as_bytes().to_vec();
