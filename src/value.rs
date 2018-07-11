@@ -391,6 +391,22 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
     }
 }};}
 
+/// # Reads a string from source
+///
+/// Returns: `io::Result<String>`
+macro_rules! read_str { ($source: ident) => {{
+    // Note that null terminator does NOT count
+    let buf = read_into_new_vec!(read_size!($source)?, $source)?;
+    match read_int_be!(u8, $source)? {
+        0 => String::from_utf8(buf).map_err(|err|
+            Error::new(ErrorKind::InvalidData, format!("value::read_str!() -> failed to decode UTF-8: {}", &err))
+        ),
+        other => Err(Error::new(
+            ErrorKind::InvalidData, format!("value::read_str!() -> expected to read a null terminator ('\\0'), got: {}", &other)
+        )),
+    }
+}};}
+
 impl Value {
 
     /// # Max data size, in bytes
@@ -736,11 +752,11 @@ impl Value {
             self::U64 => Ok(Value::U64(read_int_be!(u64, source)?)),
             self::I64 => Ok(Value::I64(read_int_be!(i64, source)?)),
             self::DOUBLE => Ok(Value::Double(f64::from_bits(read_int_be!(u64, source)?))),
-            self::TEXT => Ok(Value::Text(Self::read_str(source)?)),
-            self::DATE_TIME => Ok(Value::DateTime(Self::read_str(source)?)),
-            self::DATE => Ok(Value::Date(Self::read_str(source)?)),
-            self::TIME => Ok(Value::Time(Self::read_str(source)?)),
-            self::DECIMAL_STR => Ok(Value::DecimalStr(Self::read_str(source)?)),
+            self::TEXT => Ok(Value::Text(read_str!(source)?)),
+            self::DATE_TIME => Ok(Value::DateTime(read_str!(source)?)),
+            self::DATE => Ok(Value::Date(read_str!(source)?)),
+            self::TIME => Ok(Value::Time(read_str!(source)?)),
+            self::DECIMAL_STR => Ok(Value::DecimalStr(read_str!(source)?)),
             self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
             self::LIST => Self::read_list(source),
             self::MAP => Self::read_map(source),
@@ -852,17 +868,13 @@ impl Value {
         }
     }
 
-    /// # Reads a string from source
-    fn read_str(source: &mut Read) -> io::Result<String> {
-        // Note that null terminator does NOT count
-        let buf = read_into_new_vec!(read_size!(source)?, source)?;
-        match read_int_be!(u8, source)? {
-            0 => String::from_utf8(buf).map_err(|err|
-                Error::new(ErrorKind::InvalidData, format!("Value::read_str() -> failed to decode UTF-8: {}", &err))
-            ),
-            other => Err(Error::new(
-                ErrorKind::InvalidData, format!("Value::read_str() -> expected to read a null terminator ('\\0'), got: {}", &other)
-            )),
+    /// # Reads a [`Text`] from source
+    ///
+    /// [`Text`]: enum.Value.html#text
+    pub fn read_text(source: &mut Read) -> io::Result<String> {
+        match Self::read(source)? {
+            Value::Text(s) => Ok(s),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_text() -> got: {:?}", &other))),
         }
     }
 
