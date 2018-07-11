@@ -188,16 +188,16 @@ fn test_macro_as_bytes() {
 /// # Data size
 pub type DataSize = u32;
 
-/// # Writes an integer value
+/// # Converts an integer value to big-endian order and writes it into the buffer
 ///
 /// Returns: number of bytes written, as `DataSize`.
-macro_rules! write_integer { ($ty: ty, $v: expr, $buf: expr) => {{
+macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: expr) => {{
     let bytes = as_bytes!($ty, $v.to_be());
     match $buf.write(&bytes) {
         Ok(count) => match count == bytes.len() {
             true => Ok(count as DataSize),
             false => Err(Error::new(
-                ErrorKind::Other, format!("value::write_integer!() -> expected to write {} byte(s); result: {}", bytes.len(), count)
+                ErrorKind::Other, format!("value::write_int_be!() -> expected to write {} byte(s); result: {}", bytes.len(), count)
             )),
         },
         Err(err) => Err(err),
@@ -375,19 +375,19 @@ impl<'a> Value<'a> {
         let expected_result = self.len()?;
 
         let result = match *self {
-            Value::Null => write_integer!(u8, NULL, buf)?,
-            Value::True => write_integer!(u8, TRUE, buf)?,
-            Value::False => write_integer!(u8, FALSE, buf)?,
-            Value::U8(u) => sum!(write_integer!(u8, U8, buf)?, write_integer!(u8, u, buf)?)?,
-            Value::I8(i) => sum!(write_integer!(u8, I8, buf)?, write_integer!(i8, i, buf)?)?,
-            Value::U16(u) => sum!(write_integer!(u8, U16, buf)?, write_integer!(u16, u, buf)?)?,
-            Value::I16(i) => sum!(write_integer!(u8, I16, buf)?, write_integer!(i16, i, buf)?)?,
-            Value::U32(u) => sum!(write_integer!(u8, U32, buf)?, write_integer!(u32, u, buf)?)?,
-            Value::I32(i) => sum!(write_integer!(u8, I32, buf)?, write_integer!(i32, i, buf)?)?,
-            Value::Float(f) => sum!(write_integer!(u8, FLOAT, buf)?, write_integer!(u32, f.to_bits(), buf)?)?,
-            Value::U64(u) => sum!(write_integer!(u8, U64, buf)?, write_integer!(u64, u, buf)?)?,
-            Value::I64(i) => sum!(write_integer!(u8, I64, buf)?, write_integer!(i64, i, buf)?)?,
-            Value::Double(f) => sum!(write_integer!(u8, DOUBLE, buf)?, write_integer!(u64, f.to_bits(), buf)?)?,
+            Value::Null => write_int_be!(u8, NULL, buf)?,
+            Value::True => write_int_be!(u8, TRUE, buf)?,
+            Value::False => write_int_be!(u8, FALSE, buf)?,
+            Value::U8(u) => sum!(write_int_be!(u8, U8, buf)?, write_int_be!(u8, u, buf)?)?,
+            Value::I8(i) => sum!(write_int_be!(u8, I8, buf)?, write_int_be!(i8, i, buf)?)?,
+            Value::U16(u) => sum!(write_int_be!(u8, U16, buf)?, write_int_be!(u16, u, buf)?)?,
+            Value::I16(i) => sum!(write_int_be!(u8, I16, buf)?, write_int_be!(i16, i, buf)?)?,
+            Value::U32(u) => sum!(write_int_be!(u8, U32, buf)?, write_int_be!(u32, u, buf)?)?,
+            Value::I32(i) => sum!(write_int_be!(u8, I32, buf)?, write_int_be!(i32, i, buf)?)?,
+            Value::Float(f) => sum!(write_int_be!(u8, FLOAT, buf)?, write_int_be!(u32, f.to_bits(), buf)?)?,
+            Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
+            Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
+            Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
             Value::Text(t) => Self::write_str(TEXT, t, buf)?,
             Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf)?,
             Value::Date(d) => Self::write_str(DATE, d, buf)?,
@@ -410,8 +410,8 @@ impl<'a> Value<'a> {
     /// # Writes size into the buffer
     fn write_size(size: DataSize, buf: &mut Write) -> Result<DataSize, Error> {
         match cmp_integers!(size, ::std::i8::MAX) {
-            Ordering::Greater => write_integer!(i32, size as i32, buf),
-            _ => write_integer!(u8, size as u8, buf),
+            Ordering::Greater => write_int_be!(i32, size as i32, buf),
+            _ => write_int_be!(u8, size as u8, buf),
         }
     }
 
@@ -498,7 +498,7 @@ impl<'a> Value<'a> {
     fn write_list(&self, size: DataSize, list: &'a Vec<Value<'a>>, buf: &mut Write) -> Result<DataSize, Error> {
         let mut result = sum!(
             // Type
-            write_integer!(u8, LIST, buf)?,
+            write_int_be!(u8, LIST, buf)?,
             // Size
             Self::write_size(size, buf)?,
             // Count
@@ -517,7 +517,7 @@ impl<'a> Value<'a> {
     fn write_map(&self, size: DataSize, map: &'a BTreeMap<i32, Value<'a>>, buf: &mut Write) -> Result<DataSize, Error> {
         let mut result = sum!(
             // Type
-            write_integer!(u8, MAP, buf)?,
+            write_int_be!(u8, MAP, buf)?,
             // Size
             Self::write_size(size, buf)?,
             // Count
@@ -526,7 +526,7 @@ impl<'a> Value<'a> {
 
         // Items
         for (key, value) in map {
-            result = sum!(result, write_integer!(i32, key, buf)?, value.write(buf)?)?;
+            result = sum!(result, write_int_be!(i32, key, buf)?, value.write(buf)?)?;
         }
 
         Ok(result)
@@ -540,7 +540,7 @@ impl<'a> Value<'a> {
     fn write_object(&self, size: DataSize, object: &'a HashMap<&'a str, Value<'a>>, buf: &mut Write) -> Result<DataSize, Error> {
         let mut result = sum!(
             // Type
-            write_integer!(u8, OBJECT, buf)?,
+            write_int_be!(u8, OBJECT, buf)?,
             // Size
             Self::write_size(size, buf)?,
             // Count
@@ -550,7 +550,7 @@ impl<'a> Value<'a> {
         // Items
         for (key, value) in object {
             // Caller already verified that key len is <= u8::MAX
-            result = sum!(result, write_integer!(u8, key.len() as u8, buf)?)?;
+            result = sum!(result, write_int_be!(u8, key.len() as u8, buf)?)?;
 
             let written = buf.write(key.as_bytes())?;
             match cmp_integers!(written, key.len()) {
