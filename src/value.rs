@@ -256,6 +256,28 @@ macro_rules! read_int_be { ($ty: ty, $source: expr) => {{
     }
 }};}
 
+/// # Reads size from std::io::Read
+macro_rules! read_size { ($source: expr) => {{
+    let source = $source;
+    let first_byte = read_int_be!(u8, source)?;
+    match first_byte & 0b_1000_0000 {
+        0b_1000_0000 => {
+            let mut buf = [first_byte, 0, 0, 0];
+            match source.read_exact(&mut buf[1..]) {
+                Ok(()) => {
+                    let result = u32::from_be(unsafe { mem::transmute(buf) });
+                    match cmp_integers!(result, Value::MAX_DATA_SIZE) {
+                        Ordering::Greater => Err(Error::new(ErrorKind::InvalidInput, format!("value::read_size!() -> too large: {}", &result))),
+                        _ => Ok(result),
+                    }
+                },
+                Err(err) => Err(err),
+            }
+        },
+        _ => Ok(first_byte as u32),
+    }
+}};}
+
 /// # Calculates sum of first value (`DataSize`) with integer(s)
 ///
 /// Result: `io::Result<DataSize>`.
@@ -619,7 +641,7 @@ impl<'a> Value<'a> {
     }
 
     /// # TODO
-    pub fn read(source: &mut Read) -> io::Result<Self> {
+    pub fn read(source: &'a mut Read) -> io::Result<Self> {
         let data_type = {
             let mut buf = [0];
             match source.read_exact(&mut buf) {
@@ -641,19 +663,26 @@ impl<'a> Value<'a> {
             self::U64 => Ok(Value::U64(read_int_be!(u64, source)?)),
             self::I64 => Ok(Value::I64(read_int_be!(i64, source)?)),
             self::DOUBLE => Ok(Value::Double(f64::from_bits(read_int_be!(u64, source)?))),
-            // self:: => Ok(),
+            self::TEXT => Ok(Value::Text(Self::read_str(source)?)),
+            // Value::Text(t) => Self::write_str(TEXT, t, buf)?,
+            // Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf)?,
+            // Value::Date(d) => Self::write_str(DATE, d, buf)?,
+            // Value::Time(t) => Self::write_str(TIME, t, buf)?,
+            // Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf)?,
+            // Value::Blob(bytes) => Self::write_blob(bytes, buf)?,
+            // Value::List(ref list) => self.write_list(expected_result, list, buf)?,
+            // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
+            // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
             _ => unimplemented!(),
         }
+    }
 
-        // Value::Text(t) => Self::write_str(TEXT, t, buf)?,
-        // Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf)?,
-        // Value::Date(d) => Self::write_str(DATE, d, buf)?,
-        // Value::Time(t) => Self::write_str(TIME, t, buf)?,
-        // Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf)?,
-        // Value::Blob(bytes) => Self::write_blob(bytes, buf)?,
-        // Value::List(ref list) => self.write_list(expected_result, list, buf)?,
-        // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
-        // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
+    /// # TODO
+    fn read_str(source: &'a mut Read) -> io::Result<&'a str> {
+        // Note that null terminator does NOT count
+        // let len = read_size!(source)?;
+        // let mut buf = Vec::with_capacity();
+        unimplemented!()
     }
 
 }

@@ -14,35 +14,37 @@ use binn_ir::value::{self, Value};
 
 #[test]
 fn values() {
-    assert!(value::NULL         == 0b_0000_0000 | 0x00 | 0);
-    assert!(value::TRUE         == 0b_0000_0001 | 0x01 | 1);
-    assert!(value::FALSE        == 0b_0000_0010 | 0x02 | 2);
+    assert_eq!(value::NULL,         0b_0000_0000 | 0x00 | 0);
+    assert_eq!(value::TRUE,         0b_0000_0001 | 0x01 | 1);
+    assert_eq!(value::FALSE,        0b_0000_0010 | 0x02 | 2);
 
-    assert!(value::U8           == 0b_0010_0000 | 0x20 | 32);
-    assert!(value::I8           == 0b_0010_0001 | 0x21 | 33);
+    assert_eq!(value::U8,           0b_0010_0000 | 0x20 | 32);
+    assert_eq!(value::I8,           0b_0010_0001 | 0x21 | 33);
 
-    assert!(value::U16          == 0b_0100_0000 | 0x40 | 64);
-    assert!(value::I16          == 0b_0100_0001 | 0x41 | 65);
+    assert_eq!(value::U16,          0b_0100_0000 | 0x40 | 64);
+    assert_eq!(value::I16,          0b_0100_0001 | 0x41 | 65);
 
-    assert!(value::U32          == 0b_0110_0000 | 0x60 | 96);
-    assert!(value::I32          == 0b_0110_0001 | 0x61 | 97);
-    assert!(value::FLOAT        == 0b_0110_0010 | 0x62 | 98);
+    assert_eq!(value::U32,          0b_0110_0000 | 0x60 | 96);
+    assert_eq!(value::I32,          0b_0110_0001 | 0x61 | 97);
+    assert_eq!(value::FLOAT,        0b_0110_0010 | 0x62 | 98);
 
-    assert!(value::U64          == 0b_1000_0000 | 0x80 | 128);
-    assert!(value::I64          == 0b_1000_0001 | 0x81 | 129);
-    assert!(value::DOUBLE       == 0b_1000_0010 | 0x82 | 130);
+    assert_eq!(value::U64,          0b_1000_0000 | 0x80 | 128);
+    assert_eq!(value::I64,          0b_1000_0001 | 0x81 | 129);
+    assert_eq!(value::DOUBLE,       0b_1000_0010 | 0x82 | 130);
 
-    assert!(value::TEXT         == 0b_1010_0000 | 0xA0 | 160);
-    assert!(value::DATE_TIME    == 0b_1010_0001 | 0xA1 | 161);
-    assert!(value::DATE         == 0b_1010_0010 | 0xA2 | 162);
-    assert!(value::TIME         == 0b_1010_0011 | 0xA3 | 163);
-    assert!(value::DECIMAL_STR  == 0b_1010_0100 | 0xA4 | 164);
+    assert_eq!(value::TEXT,         0b_1010_0000 | 0xA0 | 160);
+    assert_eq!(value::DATE_TIME,    0b_1010_0001 | 0xA1 | 161);
+    assert_eq!(value::DATE,         0b_1010_0010 | 0xA2 | 162);
+    assert_eq!(value::TIME,         0b_1010_0011 | 0xA3 | 163);
+    assert_eq!(value::DECIMAL_STR,  0b_1010_0100 | 0xA4 | 164);
 
-    assert!(value::BLOB         == 0b_1100_0000 | 0xC0 | 192);
+    assert_eq!(value::BLOB,         0b_1100_0000 | 0xC0 | 192);
 
-    assert!(value::LIST         == 0b_1110_0000 | 0xE0 | 224);
-    assert!(value::MAP          == 0b_1110_0001 | 0xE1 | 225);
-    assert!(value::OBJECT       == 0b_1110_0010 | 0xE2 | 226);
+    assert_eq!(value::LIST,         0b_1110_0000 | 0xE0 | 224);
+    assert_eq!(value::MAP,          0b_1110_0001 | 0xE1 | 225);
+    assert_eq!(value::OBJECT,       0b_1110_0010 | 0xE2 | 226);
+
+    assert_eq!(cmp_integers!(Value::MAX_DATA_SIZE, std::u64::MAX), Ordering::Less);
 }
 
 #[test]
