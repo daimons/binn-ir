@@ -717,7 +717,7 @@ impl Value {
         }
     }
 
-    /// # TODO
+    /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
         let buf = read_into_new_vec!(read_size!(source)?, source)?;
