@@ -888,6 +888,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Date`] from source
+    ///
+    /// [`Date`]: enum.Value.html#date
+    pub fn read_date(source: &mut Read) -> io::Result<String> {
+        match Self::read(source)? {
+            Value::Date(d) => Ok(d),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a list from source
     fn read_list(source: &mut Read) -> io::Result<Self> {
         let size = read_size!(source)?;
