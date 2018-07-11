@@ -195,6 +195,7 @@ fn read_write_maps() {
 
 #[test]
 fn read_write_objects() {
+    // Make a sample list from specification
     let list = Value::List(vec![
         Value::Object({
             let mut map = HashMap::new();
@@ -210,14 +211,31 @@ fn read_write_objects() {
         }),
     ]);
 
+    // Make an object
+    let object = Value::Object({
+        let mut map = HashMap::new();
+        map.insert(String::from("id"), Value::U64(999));
+        map.insert(String::from("name"), Value::Text(String::from("Moon")));
+        map
+    });
+
     let mut buf = vec![];
     list.write(&mut buf).unwrap();
-
-    assert_eq!(cmp_integers!(list.len().unwrap(), buf.len()), Ordering::Equal);
+    object.write(&mut buf).unwrap();
 
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(Value::read(&mut cursor).unwrap(), list);
-
-    // Verify position
-    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+    match list {
+        Value::List(list) => {
+            assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
+            match object {
+                Value::Object(object) => {
+                    assert_eq!(Value::read_object(&mut cursor).unwrap(), object);
+                    // Verify position
+                    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+                },
+                _ => unreachable!(),
+            };
+        },
+        _ => unreachable!(),
+    };
 }

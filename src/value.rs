@@ -1059,4 +1059,14 @@ impl Value {
         }
     }
 
+    /// # Reads an [`Object`] from source
+    ///
+    /// [`Object`]: enum.Value.html#object
+    pub fn read_object(source: &mut Read) -> io::Result<HashMap<String, Self>> {
+        match Self::read(source)? {
+            Value::Object(object) => Ok(object),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_object() -> got: {:?}", &other))),
+        }
+    }
+
 }
