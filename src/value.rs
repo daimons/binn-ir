@@ -442,7 +442,7 @@ impl Value {
     }
 
     /// # Calculates list length
-    fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
+    fn list_len(list: &Vec<Self>) -> io::Result<DataSize> {
         // Type + count
         let mut result: DataSize = sum!(Self::bytes_for_len(list.len())?, 1)?;
         // Items
@@ -464,7 +464,7 @@ impl Value {
     }
 
     /// # Calculates map length
-    fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
+    fn map_len(map: &BTreeMap<i32, Self>) -> io::Result<DataSize> {
         // Type + count
         let mut result = sum!(Self::bytes_for_len(map.len())?, 1)?;
         // Items
@@ -486,7 +486,7 @@ impl Value {
     }
 
     /// # Calculates object length
-    fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
+    fn object_len(object: &HashMap<String, Self>) -> io::Result<DataSize> {
         // Type + count
         let mut result = sum!(Self::bytes_for_len(object.len())?, 1)?;
         // Items
@@ -633,7 +633,7 @@ impl Value {
     }
 
     /// # Writes a list into the buffer
-    fn write_list(&self, size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_list(&self, size: DataSize, list: &Vec<Self>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, LIST, buf)?,
@@ -654,7 +654,7 @@ impl Value {
     }
 
     /// # Writes a map into the buffer
-    fn write_map(&self, size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_map(&self, size: DataSize, map: &BTreeMap<i32, Self>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, MAP, buf)?,
@@ -677,7 +677,7 @@ impl Value {
     /// # Writes an object into the buffer
     ///
     /// [`len()`]: enum.Value.html#method.len
-    fn write_object(&self, size: DataSize, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_object(&self, size: DataSize, object: &HashMap<String, Self>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, OBJECT, buf)?,
@@ -744,7 +744,7 @@ impl Value {
             self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
             self::LIST => Self::read_list(source),
             self::MAP => Self::read_map(source),
-            // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
+            self::OBJECT => Self::read_object(source),
             _ => unimplemented!(),
         }
     }
@@ -818,6 +818,61 @@ impl Value {
         }
 
         Ok(Value::Map(result))
+    }
+
+    /// # Reads an object from source
+    fn read_object(source: &mut Read) -> io::Result<Self> {
+        let size = read_size!(source)?;
+        let item_count = read_size!(source)?;
+
+        let mut result = HashMap::new();
+        let mut read: DataSize = 0;
+        for _ in 0..item_count {
+            // Read key (note that there's NO null terminator)
+            let key_len = read_size!(source)?;
+            match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
+                Ordering::Greater => return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Value::read_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key_len)
+                )),
+                _ => read = match read.checked_add(key_len) {
+                    Some(v) => match cmp_integers!(size, v) {
+                        Ordering::Greater => v,
+                        _ => return Err(Error::new(
+                            ErrorKind::InvalidData, format!("Value::read_object() -> expected to read less than {} bytes, got: {}", &size, &v)
+                        )),
+                    },
+                    None => return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "Value::read_object() -> invalid object size -> expected: {}, current: {}, new key length: {}",
+                            &size, &read, &key_len,
+                        )
+                    )),
+                },
+            };
+            let key = String::from_utf8(read_into_new_vec!(key_len, source)?).map_err(|err|
+                Error::new(ErrorKind::InvalidData, format!("Value::read_object() -> failed to decode UTF-8: {}", &err))
+            )?;
+
+            // Read value
+            let value = Self::read(source)?;
+            read = match read.checked_add(value.len()?) {
+                Some(v) => match cmp_integers!(size, v) {
+                    Ordering::Greater => v,
+                    _ => return Err(Error::new(
+                        ErrorKind::InvalidData, format!("Value::read_object() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    )),
+                },
+                None => return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Value::read_object() -> invalid object size -> expected: {}, current: {}, new value: {:?}", &size, &read, &value)
+                )),
+            };
+            result.insert(key, value);
+        }
+
+        Ok(Value::Object(result))
     }
 
 }
