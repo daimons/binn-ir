@@ -759,6 +759,15 @@ impl Value {
         }
     }
 
+    /// # Reads a boolean value from source
+    pub fn read_bool(source: &mut Read) -> io::Result<bool> {
+        match Self::read(source)? {
+            Value::True => Ok(true),
+            Value::False => Ok(false),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_bool() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
