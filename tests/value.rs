@@ -90,7 +90,7 @@ fn read_write_basic_types() {
     assert_eq!(Value::read_u16(&mut cursor).unwrap(), 12345);
     assert_eq!(Value::read_i16(&mut cursor).unwrap(), -12345);
     assert_eq!(Value::read_u32(&mut cursor).unwrap(), 123456789);
-    assert_eq!(Value::read(&mut cursor).unwrap(), Value::I32(-123456789));
+    assert_eq!(Value::read_i32(&mut cursor).unwrap(), -123456789);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Float(123.0));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::Float(-123.0));
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::U64(98765432123));
