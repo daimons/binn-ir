@@ -568,6 +568,28 @@ impl<'a> Value<'a> {
 
     /// # TODO
     pub fn read(_buf: &mut Read) -> Result<Self, Error> {
+        // Value::Null => write_int_be!(u8, NULL, buf)?,
+        // Value::True => write_int_be!(u8, TRUE, buf)?,
+        // Value::False => write_int_be!(u8, FALSE, buf)?,
+        // Value::U8(u) => sum!(write_int_be!(u8, U8, buf)?, write_int_be!(u8, u, buf)?)?,
+        // Value::I8(i) => sum!(write_int_be!(u8, I8, buf)?, write_int_be!(i8, i, buf)?)?,
+        // Value::U16(u) => sum!(write_int_be!(u8, U16, buf)?, write_int_be!(u16, u, buf)?)?,
+        // Value::I16(i) => sum!(write_int_be!(u8, I16, buf)?, write_int_be!(i16, i, buf)?)?,
+        // Value::U32(u) => sum!(write_int_be!(u8, U32, buf)?, write_int_be!(u32, u, buf)?)?,
+        // Value::I32(i) => sum!(write_int_be!(u8, I32, buf)?, write_int_be!(i32, i, buf)?)?,
+        // Value::Float(f) => sum!(write_int_be!(u8, FLOAT, buf)?, write_int_be!(u32, f.to_bits(), buf)?)?,
+        // Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
+        // Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
+        // Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
+        // Value::Text(t) => Self::write_str(TEXT, t, buf)?,
+        // Value::DateTime(dt) => Self::write_str(DATE_TIME, dt, buf)?,
+        // Value::Date(d) => Self::write_str(DATE, d, buf)?,
+        // Value::Time(t) => Self::write_str(TIME, t, buf)?,
+        // Value::DecimalStr(ds) => Self::write_str(DECIMAL_STR, ds, buf)?,
+        // Value::Blob(bytes) => Self::write_blob(bytes, buf)?,
+        // Value::List(ref list) => self.write_list(expected_result, list, buf)?,
+        // Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
+        // Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
         unimplemented!()
     }
 
