@@ -749,6 +749,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Null`] from source
+    ///
+    /// [`Null`]: enum.Value.html#null
+    pub fn read_null(source: &mut Read) -> io::Result<()> {
+        match Self::read(source)? {
+            Value::Null => Ok(()),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_null() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count

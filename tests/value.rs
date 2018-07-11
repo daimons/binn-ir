@@ -82,7 +82,7 @@ fn read_write_basic_types() {
     }
 
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(Value::read(&mut cursor).unwrap(), Value::Null);
+    Value::read_null(&mut cursor).unwrap();
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::True);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::False);
     assert_eq!(Value::read(&mut cursor).unwrap(), Value::U8(123));
