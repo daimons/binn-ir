@@ -908,6 +908,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`DecimalStr`] from source
+    ///
+    /// [`DecimalStr`]: enum.Value.html#decimalstr
+    pub fn read_decimal_str(source: &mut Read) -> io::Result<String> {
+        match Self::read(source)? {
+            Value::DecimalStr(ds) => Ok(ds),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_decimal_str() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a list from source
     fn read_list(source: &mut Read) -> io::Result<Self> {
         let size = read_size!(source)?;

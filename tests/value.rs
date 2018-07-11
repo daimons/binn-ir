@@ -102,7 +102,7 @@ fn read_write_basic_types() {
     assert_eq!(Value::read_date_time(&mut cursor).unwrap(), "hermione");
     assert_eq!(Value::read_date(&mut cursor).unwrap(), "ron");
     assert_eq!(Value::read_time(&mut cursor).unwrap(), "harry");
-    assert_eq!(Value::read(&mut cursor).unwrap(), Value::DecimalStr(String::from("ginny\t\0\n")));
+    assert_eq!(Value::read_decimal_str(&mut cursor).unwrap(), "ginny\t\0\n");
 
     for s in blob_strings.iter() {
         match Value::read(&mut cursor) {
