@@ -792,6 +792,14 @@ impl Value {
         }
     }
 
+    /// # Reads an `i16` value from source
+    pub fn read_i16(source: &mut Read) -> io::Result<i16> {
+        match Self::read(source)? {
+            Value::I16(i) => Ok(i),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i16() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
