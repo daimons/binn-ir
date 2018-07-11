@@ -206,7 +206,11 @@ macro_rules! write_integer { ($ty: ty, $v: expr, $buf: expr) => {{
 
 /// # Calculates sum of first value (`DataSize`) with integer(s)
 ///
-/// Returns: `Result<DataSize, Error>`
+/// Result: `Result<DataSize, Error>`.
+///
+/// If result > [`Value::MAX_DATA_SIZE`], an error is returned.
+///
+/// [`Value::MAX_DATA_SIZE`]: enum.Value.html#associatedconstant.MAX_DATA_SIZE
 macro_rules! sum {
     ($a: expr, $($b: expr),+) => {{
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
@@ -217,17 +221,25 @@ macro_rules! sum {
                     let b = $b;
                     match cmp_integers!(b, Value::MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
-                            ErrorKind::InvalidInput, format!("Data too large: {} (max allowed: {})", &b, Value::MAX_DATA_SIZE)
+                            ErrorKind::InvalidInput,
+                            format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, Value::MAX_DATA_SIZE)
                         )),
                         _ => match current.checked_add(b as DataSize) {
-                            Some(new) => Ok(new),
-                            None => Err(Error::new(ErrorKind::InvalidInput, format!("Can't add {} into {}", &b, &current))),
+                            Some(new) => match cmp_integers!(new, Value::MAX_DATA_SIZE) {
+                                Ordering::Greater => Err(Error::new(
+                                    ErrorKind::InvalidInput,
+                                    format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, Value::MAX_DATA_SIZE)
+                                )),
+                                _ => Ok(new),
+                            },
+                            None => Err(Error::new(ErrorKind::InvalidInput, format!("sum!() -> can't add {} into {}", &b, &current))),
                         },
                     }
                 },
                 Err(_) => (),
             };
         )+
+
         result
     }};
 }
