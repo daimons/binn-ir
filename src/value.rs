@@ -832,6 +832,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Float`] value from source
+    ///
+    /// [`Float`]: enum.Value.html#float
+    pub fn read_float(source: &mut Read) -> io::Result<f32> {
+        match Self::read(source)? {
+            Value::Float(f) => Ok(f),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_float() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a string from source
     fn read_str(source: &mut Read) -> io::Result<String> {
         // Note that null terminator does NOT count
