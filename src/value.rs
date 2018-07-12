@@ -1004,197 +1004,197 @@ impl Value {
         }
     }
 
-    /// # Reads a [`Null`] from source
-    ///
-    /// [`Null`]: enum.Value.html#null
-    pub fn read_null(source: &mut Read) -> io::Result<()> {
-        match Self::read(source)? {
-            Value::Null => Ok(()),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_null() -> got: {:?}", &other))),
-        }
-    }
+}
 
-    /// # Reads a boolean value from source
-    pub fn read_bool(source: &mut Read) -> io::Result<bool> {
-        match Self::read(source)? {
-            Value::True => Ok(true),
-            Value::False => Ok(false),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_bool() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Null`] from source
+///
+/// [`Null`]: enum.Value.html#variant.Null
+pub fn read_null(source: &mut Read) -> io::Result<()> {
+    match Value::read(source)? {
+        Value::Null => Ok(()),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_null() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a `u8` value from source
-    pub fn read_u8(source: &mut Read) -> io::Result<u8> {
-        match Self::read(source)? {
-            Value::U8(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u8() -> got: {:?}", &other))),
-        }
+/// # Reads a boolean value from source
+pub fn read_bool(source: &mut Read) -> io::Result<bool> {
+    match Value::read(source)? {
+        Value::True => Ok(true),
+        Value::False => Ok(false),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_bool() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads an `i8` value from source
-    pub fn read_i8(source: &mut Read) -> io::Result<i8> {
-        match Self::read(source)? {
-            Value::I8(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i8() -> got: {:?}", &other))),
-        }
+/// # Reads a `u8` value from source
+pub fn read_u8(source: &mut Read) -> io::Result<u8> {
+    match Value::read(source)? {
+        Value::U8(u) => Ok(u),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u8() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a `u16` value from source
-    pub fn read_u16(source: &mut Read) -> io::Result<u16> {
-        match Self::read(source)? {
-            Value::U16(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u16() -> got: {:?}", &other))),
-        }
+/// # Reads an `i8` value from source
+pub fn read_i8(source: &mut Read) -> io::Result<i8> {
+    match Value::read(source)? {
+        Value::I8(i) => Ok(i),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i8() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads an `i16` value from source
-    pub fn read_i16(source: &mut Read) -> io::Result<i16> {
-        match Self::read(source)? {
-            Value::I16(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i16() -> got: {:?}", &other))),
-        }
+/// # Reads a `u16` value from source
+pub fn read_u16(source: &mut Read) -> io::Result<u16> {
+    match Value::read(source)? {
+        Value::U16(u) => Ok(u),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u16() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a `u32` value from source
-    pub fn read_u32(source: &mut Read) -> io::Result<u32> {
-        match Self::read(source)? {
-            Value::U32(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u32() -> got: {:?}", &other))),
-        }
+/// # Reads an `i16` value from source
+pub fn read_i16(source: &mut Read) -> io::Result<i16> {
+    match Value::read(source)? {
+        Value::I16(i) => Ok(i),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i16() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads an `i32` value from source
-    pub fn read_i32(source: &mut Read) -> io::Result<i32> {
-        match Self::read(source)? {
-            Value::I32(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i32() -> got: {:?}", &other))),
-        }
+/// # Reads a `u32` value from source
+pub fn read_u32(source: &mut Read) -> io::Result<u32> {
+    match Value::read(source)? {
+        Value::U32(u) => Ok(u),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u32() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a `u64` value from source
-    pub fn read_u64(source: &mut Read) -> io::Result<u64> {
-        match Self::read(source)? {
-            Value::U64(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u64() -> got: {:?}", &other))),
-        }
+/// # Reads an `i32` value from source
+pub fn read_i32(source: &mut Read) -> io::Result<i32> {
+    match Value::read(source)? {
+        Value::I32(i) => Ok(i),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i32() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads an `i64` value from source
-    pub fn read_i64(source: &mut Read) -> io::Result<i64> {
-        match Self::read(source)? {
-            Value::I64(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i64() -> got: {:?}", &other))),
-        }
+/// # Reads a `u64` value from source
+pub fn read_u64(source: &mut Read) -> io::Result<u64> {
+    match Value::read(source)? {
+        Value::U64(u) => Ok(u),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u64() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Float`] value from source
-    ///
-    /// [`Float`]: enum.Value.html#float
-    pub fn read_float(source: &mut Read) -> io::Result<f32> {
-        match Self::read(source)? {
-            Value::Float(f) => Ok(f),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_float() -> got: {:?}", &other))),
-        }
+/// # Reads an `i64` value from source
+pub fn read_i64(source: &mut Read) -> io::Result<i64> {
+    match Value::read(source)? {
+        Value::I64(i) => Ok(i),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i64() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Double`] value from source
-    ///
-    /// [`Double`]: enum.Value.html#double
-    pub fn read_double(source: &mut Read) -> io::Result<f64> {
-        match Self::read(source)? {
-            Value::Double(d) => Ok(d),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_double() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Float`] value from source
+///
+/// [`Float`]: enum.Value.html#variant.Float
+pub fn read_float(source: &mut Read) -> io::Result<f32> {
+    match Value::read(source)? {
+        Value::Float(f) => Ok(f),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_float() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Text`] from source
-    ///
-    /// [`Text`]: enum.Value.html#text
-    pub fn read_text(source: &mut Read) -> io::Result<String> {
-        match Self::read(source)? {
-            Value::Text(t) => Ok(t),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_text() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Double`] value from source
+///
+/// [`Double`]: enum.Value.html#variant.Double
+pub fn read_double(source: &mut Read) -> io::Result<f64> {
+    match Value::read(source)? {
+        Value::Double(d) => Ok(d),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_double() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`DateTime`] from source
-    ///
-    /// [`DateTime`]: enum.Value.html#datetime
-    pub fn read_date_time(source: &mut Read) -> io::Result<String> {
-        match Self::read(source)? {
-            Value::DateTime(dt) => Ok(dt),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date_time() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Text`] from source
+///
+/// [`Text`]: enum.Value.html#variant.Text
+pub fn read_text(source: &mut Read) -> io::Result<String> {
+    match Value::read(source)? {
+        Value::Text(t) => Ok(t),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_text() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Date`] from source
-    ///
-    /// [`Date`]: enum.Value.html#date
-    pub fn read_date(source: &mut Read) -> io::Result<String> {
-        match Self::read(source)? {
-            Value::Date(d) => Ok(d),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date() -> got: {:?}", &other))),
-        }
+/// # Reads a [`DateTime`] from source
+///
+/// [`DateTime`]: enum.Value.html#variant.DateTime
+pub fn read_date_time(source: &mut Read) -> io::Result<String> {
+    match Value::read(source)? {
+        Value::DateTime(dt) => Ok(dt),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date_time() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Time`] from source
-    ///
-    /// [`Time`]: enum.Value.html#time
-    pub fn read_time(source: &mut Read) -> io::Result<String> {
-        match Self::read(source)? {
-            Value::Time(t) => Ok(t),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_time() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Date`] from source
+///
+/// [`Date`]: enum.Value.html#variant.Date
+pub fn read_date(source: &mut Read) -> io::Result<String> {
+    match Value::read(source)? {
+        Value::Date(d) => Ok(d),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`DecimalStr`] from source
-    ///
-    /// [`DecimalStr`]: enum.Value.html#decimalstr
-    pub fn read_decimal_str(source: &mut Read) -> io::Result<String> {
-        match Self::read(source)? {
-            Value::DecimalStr(ds) => Ok(ds),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_decimal_str() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Time`] from source
+///
+/// [`Time`]: enum.Value.html#variant.Time
+pub fn read_time(source: &mut Read) -> io::Result<String> {
+    match Value::read(source)? {
+        Value::Time(t) => Ok(t),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_time() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Blob`] from source
-    ///
-    /// [`Blob`]: enum.Value.html#blob
-    pub fn read_blob(source: &mut Read) -> io::Result<Vec<u8>> {
-        match Self::read(source)? {
-            Value::Blob(bytes) => Ok(bytes),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_blob() -> got: {:?}", &other))),
-        }
+/// # Reads a [`DecimalStr`] from source
+///
+/// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
+pub fn read_decimal_str(source: &mut Read) -> io::Result<String> {
+    match Value::read(source)? {
+        Value::DecimalStr(ds) => Ok(ds),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_decimal_str() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`List`] from source
-    ///
-    /// [`List`]: enum.Value.html#list
-    pub fn read_list(source: &mut Read) -> io::Result<Vec<Self>> {
-        match Self::read(source)? {
-            Value::List(list) => Ok(list),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_list() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Blob`] from source
+///
+/// [`Blob`]: enum.Value.html#variant.Blob
+pub fn read_blob(source: &mut Read) -> io::Result<Vec<u8>> {
+    match Value::read(source)? {
+        Value::Blob(bytes) => Ok(bytes),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_blob() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads a [`Map`] from source
-    ///
-    /// [`Map`]: enum.Value.html#map
-    pub fn read_map(source: &mut Read) -> io::Result<BTreeMap<i32, Self>> {
-        match Self::read(source)? {
-            Value::Map(map) => Ok(map),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_map() -> got: {:?}", &other))),
-        }
+/// # Reads a [`List`] from source
+///
+/// [`List`]: enum.Value.html#variant.List
+pub fn read_list(source: &mut Read) -> io::Result<Vec<Value>> {
+    match Value::read(source)? {
+        Value::List(list) => Ok(list),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_list() -> got: {:?}", &other))),
     }
+}
 
-    /// # Reads an [`Object`] from source
-    ///
-    /// [`Object`]: enum.Value.html#object
-    pub fn read_object(source: &mut Read) -> io::Result<HashMap<String, Self>> {
-        match Self::read(source)? {
-            Value::Object(object) => Ok(object),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_object() -> got: {:?}", &other))),
-        }
+/// # Reads a [`Map`] from source
+///
+/// [`Map`]: enum.Value.html#variant.Map
+pub fn read_map(source: &mut Read) -> io::Result<BTreeMap<i32, Value>> {
+    match Value::read(source)? {
+        Value::Map(map) => Ok(map),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_map() -> got: {:?}", &other))),
     }
+}
 
+/// # Reads an [`Object`] from source
+///
+/// [`Object`]: enum.Value.html#variant.Object
+pub fn read_object(source: &mut Read) -> io::Result<HashMap<String, Value>> {
+    match Value::read(source)? {
+        Value::Object(object) => Ok(object),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_object() -> got: {:?}", &other))),
+    }
 }

@@ -82,30 +82,30 @@ fn read_write_basic_types() {
     }
 
     let mut cursor = Cursor::new(&buf);
-    Value::read_null(&mut cursor).unwrap();
-    assert_eq!(Value::read_bool(&mut cursor).unwrap(), true);
-    assert_eq!(Value::read_bool(&mut cursor).unwrap(), false);
-    assert_eq!(Value::read_u8(&mut cursor).unwrap(), 123);
-    assert_eq!(Value::read_i8(&mut cursor).unwrap(), -123);
-    assert_eq!(Value::read_u16(&mut cursor).unwrap(), 12345);
-    assert_eq!(Value::read_i16(&mut cursor).unwrap(), -12345);
-    assert_eq!(Value::read_u32(&mut cursor).unwrap(), 123456789);
-    assert_eq!(Value::read_i32(&mut cursor).unwrap(), -123456789);
-    assert_eq!(Value::read_float(&mut cursor).unwrap(), 123.0);
-    assert_eq!(Value::read_float(&mut cursor).unwrap(), -123.0);
-    assert_eq!(Value::read_u64(&mut cursor).unwrap(), 98765432123);
-    assert_eq!(Value::read_i64(&mut cursor).unwrap(), -98765432123);
-    assert_eq!(Value::read_double(&mut cursor).unwrap(), 0xAABB_CCDD_u64 as f64);
-    assert_eq!(Value::read_double(&mut cursor).unwrap(), -0xAABB_CCDD_i64 as f64);
-    assert_eq!(Value::read_text(&mut cursor).unwrap(), "Mr. Reynholm");
-    assert_eq!(Value::read_text(&mut cursor).unwrap(), "hello-jen");
-    assert_eq!(Value::read_date_time(&mut cursor).unwrap(), "hermione");
-    assert_eq!(Value::read_date(&mut cursor).unwrap(), "ron");
-    assert_eq!(Value::read_time(&mut cursor).unwrap(), "harry");
-    assert_eq!(Value::read_decimal_str(&mut cursor).unwrap(), "ginny\t\0\n");
+    value::read_null(&mut cursor).unwrap();
+    assert_eq!(value::read_bool(&mut cursor).unwrap(), true);
+    assert_eq!(value::read_bool(&mut cursor).unwrap(), false);
+    assert_eq!(value::read_u8(&mut cursor).unwrap(), 123);
+    assert_eq!(value::read_i8(&mut cursor).unwrap(), -123);
+    assert_eq!(value::read_u16(&mut cursor).unwrap(), 12345);
+    assert_eq!(value::read_i16(&mut cursor).unwrap(), -12345);
+    assert_eq!(value::read_u32(&mut cursor).unwrap(), 123456789);
+    assert_eq!(value::read_i32(&mut cursor).unwrap(), -123456789);
+    assert_eq!(value::read_float(&mut cursor).unwrap(), 123.0);
+    assert_eq!(value::read_float(&mut cursor).unwrap(), -123.0);
+    assert_eq!(value::read_u64(&mut cursor).unwrap(), 98765432123);
+    assert_eq!(value::read_i64(&mut cursor).unwrap(), -98765432123);
+    assert_eq!(value::read_double(&mut cursor).unwrap(), 0xAABB_CCDD_u64 as f64);
+    assert_eq!(value::read_double(&mut cursor).unwrap(), -0xAABB_CCDD_i64 as f64);
+    assert_eq!(value::read_text(&mut cursor).unwrap(), "Mr. Reynholm");
+    assert_eq!(value::read_text(&mut cursor).unwrap(), "hello-jen");
+    assert_eq!(value::read_date_time(&mut cursor).unwrap(), "hermione");
+    assert_eq!(value::read_date(&mut cursor).unwrap(), "ron");
+    assert_eq!(value::read_time(&mut cursor).unwrap(), "harry");
+    assert_eq!(value::read_decimal_str(&mut cursor).unwrap(), "ginny\t\0\n");
 
     for s in blob_strings.iter() {
-        assert_eq!(Value::read_blob(&mut cursor).unwrap(), s.as_bytes());
+        assert_eq!(value::read_blob(&mut cursor).unwrap(), s.as_bytes());
     }
 
     // Verify position
@@ -139,7 +139,7 @@ fn read_write_lists() {
     let mut cursor = Cursor::new(&buf);
     match list {
         Value::List(list) => {
-            assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
+            assert_eq!(value::read_list(&mut cursor).unwrap(), list);
             println!("Verified: {:?}", &list);
 
             // Verify position
@@ -183,7 +183,7 @@ fn read_write_maps() {
     let mut cursor = Cursor::new(&buf);
     match map {
         Value::Map(map) => {
-            assert_eq!(Value::read_map(&mut cursor).unwrap(), map);
+            assert_eq!(value::read_map(&mut cursor).unwrap(), map);
             println!("Verified: {:?}", &map);
 
             // Verify position
@@ -228,9 +228,9 @@ fn read_write_objects() {
     let mut cursor = Cursor::new(&buf);
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {
-            assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
+            assert_eq!(value::read_list(&mut cursor).unwrap(), list);
             println!("Verified: {:?}", &list);
-            assert_eq!(Value::read_object(&mut cursor).unwrap(), object);
+            assert_eq!(value::read_object(&mut cursor).unwrap(), object);
             println!("Verified: {:?}", &object);
 
             // Verify position
