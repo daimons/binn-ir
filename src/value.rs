@@ -1164,6 +1164,16 @@ impl Value {
         }
     }
 
+    /// # Reads a [`Blob`] from source
+    ///
+    /// [`Blob`]: enum.Value.html#blob
+    pub fn read_blob(source: &mut Read) -> io::Result<Vec<u8>> {
+        match Self::read(source)? {
+            Value::Blob(bytes) => Ok(bytes),
+            other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_blob() -> got: {:?}", &other))),
+        }
+    }
+
     /// # Reads a [`List`] from source
     ///
     /// [`List`]: enum.Value.html#list
