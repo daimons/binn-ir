@@ -211,8 +211,8 @@ macro_rules! display_list { ($formatter: ident, $value: ident, $list: ident) => 
                 write!($formatter, "{}", &item)?;
             }
             match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
-                Some(more) => write!($formatter, ",... {} more]", &more),
-                None => write!($formatter, "]"),
+                Some(more) if more > 0 => write!($formatter, ",... {} more]", &more),
+                _ => write!($formatter, "]"),
             }
         },
         Err(err) => write!($formatter, "List({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
@@ -238,8 +238,8 @@ macro_rules! display_map { ($formatter: ident, $value: ident, $map: ident) => {{
                 write!($formatter, "{}: {}", &key, &value)?;
             }
             match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
-                Some(more) => write!($formatter, ",... {} more}}", &more),
-                None => write!($formatter, "}}"),
+                Some(more) if more > 0 => write!($formatter, ",... {} more}}", &more),
+                _ => write!($formatter, "}}"),
             }
         },
         Err(err) => write!($formatter, "Map({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
@@ -267,8 +267,8 @@ macro_rules! display_object { ($formatter: ident, $value: ident, $object: ident)
                 write!($formatter, "{:?}: {}", &key, &value)?;
             }
             match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
-                Some(more) => write!($formatter, ",... {} more}}", &more),
-                None => write!($formatter, "}}"),
+                Some(more) if more > 0 => write!($formatter, ",... {} more}}", &more),
+                _ => write!($formatter, "}}"),
             }
         },
         Err(err) => write!($formatter, "Object({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
