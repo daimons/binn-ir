@@ -671,105 +671,20 @@ impl Value {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
-            Value::Text(ref t) => sum!(Self::bytes_for_len(t.len())?, 2, t.len()),
+            Value::Text(ref t) => sum!(bytes_for_len(t.len())?, 2, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DateTime(ref dt) => sum!(Self::bytes_for_len(dt.len())?, 2, dt.len()),
+            Value::DateTime(ref dt) => sum!(bytes_for_len(dt.len())?, 2, dt.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Date(ref d) => sum!(Self::bytes_for_len(d.len())?, 2, d.len()),
+            Value::Date(ref d) => sum!(bytes_for_len(d.len())?, 2, d.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Time(ref t) => sum!(Self::bytes_for_len(t.len())?, 2, t.len()),
+            Value::Time(ref t) => sum!(bytes_for_len(t.len())?, 2, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DecimalStr(ref ds) => sum!(Self::bytes_for_len(ds.len())?, 2, ds.len()),
+            Value::DecimalStr(ref ds) => sum!(bytes_for_len(ds.len())?, 2, ds.len()),
             // 1 byte for type
-            Value::Blob(ref bytes) => sum!(Self::bytes_for_len(bytes.len())?, 1, bytes.len()),
-            Value::List(ref list) => Self::list_len(list),
-            Value::Map(ref map) => Self::map_len(map),
-            Value::Object(ref object) => Self::object_len(object),
-        }
-    }
-
-    /// # Calculates bytes needed for a length
-    fn bytes_for_len(len: usize) -> io::Result<DataSize> {
-        match cmp_integers!(len, ::std::i8::MAX) {
-            Ordering::Greater => match cmp_integers!(len, Self::MAX_DATA_SIZE) {
-                Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
-                _ => Ok(4),
-            },
-            _ => Ok(1),
-        }
-    }
-
-    /// # Calculates list length
-    fn list_len(list: &Vec<Self>) -> io::Result<DataSize> {
-        // Type + count
-        let mut result: DataSize = sum!(Self::bytes_for_len(list.len())?, 1)?;
-        // Items
-        for v in list {
-            result = sum!(result, v.len()?)?;
-        }
-        // The len value itself:
-        // First, assume that it needs just 1 byte
-        result = sum!(result, 1)?;
-        match cmp_integers!(result, ::std::i8::MAX) {
-            // Now we need 3 more bytes
-            Ordering::Greater => result = sum!(result, 3)?,
-            _ => (),
-        };
-        match result <= Self::MAX_DATA_SIZE {
-            true => Ok(result),
-            false => Err(Error::new(ErrorKind::InvalidData, format!("Value::list_len() -> data too large: {} bytes", result))),
-        }
-    }
-
-    /// # Calculates map length
-    fn map_len(map: &BTreeMap<i32, Self>) -> io::Result<DataSize> {
-        // Type + count
-        let mut result = sum!(Self::bytes_for_len(map.len())?, 1)?;
-        // Items
-        for v in map.values() {
-            result = sum!(result, mem::size_of::<i32>(), v.len()?)?;
-        }
-        // The len value itself:
-        // First, assume that it needs just 1 byte
-        result = sum!(result, 1)?;
-        match cmp_integers!(result, ::std::i8::MAX) {
-            // Now we need 3 more bytes
-            Ordering::Greater => result = sum!(result, 3)?,
-            _ => (),
-        };
-        match result <= Self::MAX_DATA_SIZE {
-            true => Ok(result),
-            false => Err(Error::new(ErrorKind::InvalidData, format!("Value::map_len() -> data too large: {} bytes", result))),
-        }
-    }
-
-    /// # Calculates object length
-    fn object_len(object: &HashMap<String, Self>) -> io::Result<DataSize> {
-        // Type + count
-        let mut result = sum!(Self::bytes_for_len(object.len())?, 1)?;
-        // Items
-        for (key, value) in object {
-            // Key has NO null terminator
-            let key_len = key.len();
-            if key_len > OBJECT_KEY_MAX_LEN {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("Value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)
-                ));
-            }
-            result = sum!(result, key_len, value.len()?, 1)?;
-        }
-        // The len value itself:
-        // First, assume that it needs just 1 byte
-        result = sum!(result, 1)?;
-        match cmp_integers!(result, ::std::i8::MAX) {
-            // Now we need 3 more bytes
-            Ordering::Greater => result = sum!(result, 3)?,
-            _ => (),
-        };
-        match result <= Self::MAX_DATA_SIZE {
-            true => Ok(result),
-            false => Err(Error::new(ErrorKind::InvalidData, format!("len() -> data too large: {} bytes", result))),
+            Value::Blob(ref bytes) => sum!(bytes_for_len(bytes.len())?, 1, bytes.len()),
+            Value::List(ref list) => list_len(list),
+            Value::Map(ref map) => map_len(map),
+            Value::Object(ref object) => object_len(object),
         }
     }
 
@@ -843,6 +758,91 @@ impl Value {
         }
     }
 
+}
+
+/// # Calculates bytes needed for a length
+fn bytes_for_len(len: usize) -> io::Result<DataSize> {
+    match cmp_integers!(len, ::std::i8::MAX) {
+        Ordering::Greater => match cmp_integers!(len, Value::MAX_DATA_SIZE) {
+            Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
+            _ => Ok(4),
+        },
+        _ => Ok(1),
+    }
+}
+
+/// # Calculates list length
+fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
+    // Type + count
+    let mut result: DataSize = sum!(bytes_for_len(list.len())?, 1)?;
+    // Items
+    for v in list {
+        result = sum!(result, v.len()?)?;
+    }
+    // The len value itself:
+    // First, assume that it needs just 1 byte
+    result = sum!(result, 1)?;
+    match cmp_integers!(result, ::std::i8::MAX) {
+        // Now we need 3 more bytes
+        Ordering::Greater => result = sum!(result, 3)?,
+        _ => (),
+    };
+    match result <= Value::MAX_DATA_SIZE {
+        true => Ok(result),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("Value::list_len() -> data too large: {} bytes", result))),
+    }
+}
+
+/// # Calculates map length
+fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
+    // Type + count
+    let mut result = sum!(bytes_for_len(map.len())?, 1)?;
+    // Items
+    for v in map.values() {
+        result = sum!(result, mem::size_of::<i32>(), v.len()?)?;
+    }
+    // The len value itself:
+    // First, assume that it needs just 1 byte
+    result = sum!(result, 1)?;
+    match cmp_integers!(result, ::std::i8::MAX) {
+        // Now we need 3 more bytes
+        Ordering::Greater => result = sum!(result, 3)?,
+        _ => (),
+    };
+    match result <= Value::MAX_DATA_SIZE {
+        true => Ok(result),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("Value::map_len() -> data too large: {} bytes", result))),
+    }
+}
+
+/// # Calculates object length
+fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
+    // Type + count
+    let mut result = sum!(bytes_for_len(object.len())?, 1)?;
+    // Items
+    for (key, value) in object {
+        // Key has NO null terminator
+        let key_len = key.len();
+        if key_len > OBJECT_KEY_MAX_LEN {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)
+            ));
+        }
+        result = sum!(result, key_len, value.len()?, 1)?;
+    }
+    // The len value itself:
+    // First, assume that it needs just 1 byte
+    result = sum!(result, 1)?;
+    match cmp_integers!(result, ::std::i8::MAX) {
+        // Now we need 3 more bytes
+        Ordering::Greater => result = sum!(result, 3)?,
+        _ => (),
+    };
+    match result <= Value::MAX_DATA_SIZE {
+        true => Ok(result),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("len() -> data too large: {} bytes", result))),
+    }
 }
 
 /// # Writes a string into the buffer
