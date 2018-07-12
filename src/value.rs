@@ -171,6 +171,24 @@ macro_rules! make_plural_suffix {
     }};
 }
 
+/// # Displays a string in a formatter
+///
+/// If the string is too long, just displays a part of it.
+///
+/// Result: `Result<(), fmt::Error>`
+macro_rules! display_str { ($formatter: ident, $prefix: expr, $s: ident, $suffix: expr) => {{
+    write!($formatter, "{}", $prefix)?;
+
+    let char_count = $s.chars().count();
+    let limit = 100;
+    match char_count.checked_sub(limit) {
+        Some(more) => write!($formatter, "\"{}...\" ({} more)", $s.chars().take(limit).collect::<String>(), more)?,
+        None => write!($formatter, "\"{}\"", $s)?,
+    };
+
+    write!($formatter, "{}", $suffix)
+}};}
+
 impl fmt::Display for Value {
 
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -188,11 +206,11 @@ impl fmt::Display for Value {
             Value::U64(ref u) => write!(formatter, "U64({})", &u),
             Value::I64(ref i) => write!(formatter, "I64({})", &i),
             Value::Double(ref d) => write!(formatter, "Double({})", &d),
-            Value::Text(ref s) => write!(formatter, "Text({})", &s),
-            Value::DateTime(ref dt) => write!(formatter, "DateTime({})", &dt),
-            Value::Date(ref d) => write!(formatter, "Date({})", &d),
-            Value::Time(ref t) => write!(formatter, "Time({})", &t),
-            Value::DecimalStr(ref ds) => write!(formatter, "DecimalStr({})", &ds),
+            Value::Text(ref s) => display_str!(formatter, "Text(", s, ')'),
+            Value::DateTime(ref dt) => display_str!(formatter, "DateTime(", dt, ')'),
+            Value::Date(ref d) => display_str!(formatter, "Date(", d, ')'),
+            Value::Time(ref t) => display_str!(formatter, "Time(", t, ')'),
+            Value::DecimalStr(ref ds) => display_str!(formatter, "DecimalStr(", ds, ')'),
             Value::Blob(ref blob) => {
                 let len = blob.len();
                 write!(formatter, "Blob({} byte{})", &len, make_plural_suffix!(&len))
