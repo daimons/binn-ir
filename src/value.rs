@@ -85,6 +85,9 @@ fn test_object_key_max_len() {
     assert_eq!(cmp_integers!(OBJECT_KEY_MAX_LEN, ::std::u8::MAX), Ordering::Equal);
 }
 
+/// # Data size
+pub type DataSize = u32;
+
 /// # Values
 #[derive(PartialEq)]
 pub enum Value {
@@ -359,9 +362,6 @@ fn test_macro_as_bytes() {
         [0xAA, 0xFF, 0x00, 0x00, 0xCC, 0xDD, 0x88, 0x99, 0x12, 0x34, 0x86, 0x78, 0xBC, 0xCB, 0x00, 0x00]
     );
 }
-
-/// # Data size
-pub type DataSize = u32;
 
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
