@@ -882,7 +882,9 @@ impl Value {
             self::LIST => read_list!(source),
             self::MAP => read_map!(source),
             self::OBJECT => read_object!(source),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Data type is either invalid or not supported: {}", &other))),
+            other => Err(Error::new(
+                ErrorKind::InvalidData, format!("Value::read() -> data type is either invalid or not supported: {}", &other)
+            )),
         }
     }
 
