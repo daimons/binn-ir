@@ -157,6 +157,20 @@ pub enum Value {
 
 }
 
+/// # Makes plural suffix
+macro_rules! make_plural_suffix {
+    ($size: expr, $one: expr, $other: expr) => {{
+        match $size {
+            1 => $one,
+            _ => $other,
+        }
+    }};
+    // This one make 's' plural suffix
+    ($size: expr) => {{
+        make_plural_suffix!($size, "", "s")
+    }};
+}
+
 impl fmt::Display for Value {
 
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -179,10 +193,38 @@ impl fmt::Display for Value {
             Value::Date(ref d) => write!(formatter, "Date({})", &d),
             Value::Time(ref t) => write!(formatter, "Time({})", &t),
             Value::DecimalStr(ref ds) => write!(formatter, "DecimalStr({})", &ds),
-            Value::Blob(ref blob) => write!(formatter, "Blob({} byte{})", &blob.len(), if blob.len() == 1 {""} else {"s"}),
-            Value::List(ref list) => write!(formatter, "List({} item{})", &list.len(), if list.len() == 1 {""} else {"s"}),
-            Value::Map(ref map) => write!(formatter, "Map({} item{})", &map.len(), if map.len() == 1 {""} else {"s"}),
-            Value::Object(ref object) => write!(formatter, "Object({} item{})", &object.len(), if object.len() == 1 {""} else {"s"}),
+            Value::Blob(ref blob) => {
+                let len = blob.len();
+                write!(formatter, "Blob({} byte{})", &len, make_plural_suffix!(&len))
+            },
+            Value::List(ref list) => {
+                let item_count = list.len();
+                match self.len() {
+                    Ok(len) => write!(
+                        formatter, "List({} item{}, {} byte{})", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len)
+                    ),
+                    Err(err) => write!(formatter, "List({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
+                }
+            },
+            Value::Map(ref map) => {
+                let item_count = map.len();
+                match self.len() {
+                    Ok(len) => write!(
+                        formatter, "Map({} item{}, {} byte{})", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len)
+                    ),
+                    Err(err) => write!(formatter, "Map({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
+                }
+            },
+            Value::Object(ref object) => {
+                let item_count = object.len();
+                match self.len() {
+                    Ok(len) => write!(
+                        formatter, "Object({} item{}, {} byte{})", &item_count, make_plural_suffix!(&item_count),
+                        &len, make_plural_suffix!(&len),
+                    ),
+                    Err(err) => write!(formatter, "Object({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
+                }
+            },
         }
     }
 
