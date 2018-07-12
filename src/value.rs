@@ -799,9 +799,9 @@ impl Value {
             Value::Time(ref t) => Self::write_str(TIME, t.as_str(), buf)?,
             Value::DecimalStr(ref ds) => Self::write_str(DECIMAL_STR, ds.as_str(), buf)?,
             Value::Blob(ref bytes) => Self::write_blob(bytes.as_slice(), buf)?,
-            Value::List(ref list) => self.write_list(expected_result, list, buf)?,
-            Value::Map(ref map) => self.write_map(expected_result, map, buf)?,
-            Value::Object(ref object) => self.write_object(expected_result, object, buf)?,
+            Value::List(ref list) => Self::write_list(expected_result, list, buf)?,
+            Value::Map(ref map) => Self::write_map(expected_result, map, buf)?,
+            Value::Object(ref object) => Self::write_object(expected_result, object, buf)?,
         };
 
         match result == expected_result {
@@ -892,7 +892,7 @@ impl Value {
     }
 
     /// # Writes a list into the buffer
-    fn write_list(&self, size: DataSize, list: &Vec<Self>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_list(size: DataSize, list: &Vec<Self>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, LIST, buf)?,
@@ -913,7 +913,7 @@ impl Value {
     }
 
     /// # Writes a map into the buffer
-    fn write_map(&self, size: DataSize, map: &BTreeMap<i32, Self>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_map(size: DataSize, map: &BTreeMap<i32, Self>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, MAP, buf)?,
@@ -936,7 +936,7 @@ impl Value {
     /// # Writes an object into the buffer
     ///
     /// [`len()`]: enum.Value.html#method.len
-    fn write_object(&self, size: DataSize, object: &HashMap<String, Self>, buf: &mut Write) -> io::Result<DataSize> {
+    fn write_object(size: DataSize, object: &HashMap<String, Self>, buf: &mut Write) -> io::Result<DataSize> {
         let mut result = sum!(
             // Type
             write_int_be!(u8, OBJECT, buf)?,
