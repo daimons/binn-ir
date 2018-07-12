@@ -975,14 +975,7 @@ impl Value {
 
     /// # Reads a value from source
     pub fn read(source: &mut Read) -> io::Result<Self> {
-        let data_type = {
-            let mut buf = [0];
-            match source.read_exact(&mut buf) {
-                Ok(()) => buf[0],
-                Err(err) => return Err(err),
-            }
-        };
-        match data_type {
+        match read_int_be!(u8, source)? {
             self::NULL => Ok(Value::Null),
             self::TRUE => Ok(Value::True),
             self::FALSE => Ok(Value::False),
