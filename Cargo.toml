@@ -1,9 +1,13 @@
 # License: see LICENSE file at root directory of `master` branch
 
 [package]
-publish = false
 name = "binn-ir"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Hai Bison <haibison.apps@gmail.com>"]
+description = "An implementation of Binn - https://github.com/liteserver/binn"
+repository = "https://bitbucket.org/haibison/binn-ir/"
+license-file = "LICENSE"
+keywords = ["binn", "implementation"]
+categories = ["data-structures", "encoding"]
 
 [dependencies]

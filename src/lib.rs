@@ -23,7 +23,7 @@
 // ╚═════════════════╝
 
 macro_rules! crate_code_name    { () => { "binn-ir" }}
-macro_rules! crate_version      { () => { "0.0.1" }}
+macro_rules! crate_version      { () => { "0.0.2" }}
 
 /// # Crate name
 ///
@@ -37,7 +37,7 @@ pub const CRATE_CODE_NAME: &'static str = crate_code_name!();
 pub const CRATE_VERSION: &'static str = crate_version!();
 
 /// # Crate release date (year/month/day)
-pub const CRATE_RELEASE_DATE: (u16, u8, u8) = (2018, 6, 20);
+pub const CRATE_RELEASE_DATE: (u16, u8, u8) = (2018, 7, 12);
 
 /// # Unique universally identifier of this crate. Its CRC-32 is `149dc8a5`.
 pub const UUID: &'static str = "acea8479-f233-4686-af1c-fe198f506ddb";

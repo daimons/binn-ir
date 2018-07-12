@@ -1,6 +1,6 @@
 # Binn-IR
 
-- Version: [`0.0.1`](version-info.md) _(June 20th, 2018)_
+- Version: [`0.0.2`](version-info.md) _(July 12th, 2018)_
     + _This project follows [Semantic Versioning 2.0.0]_
 - License: [Free Public License 1.0.0](LICENSE)
 
