@@ -793,15 +793,15 @@ impl Value {
             Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
             Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
             Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
-            Value::Text(ref t) => Self::write_str(TEXT, t.as_str(), buf)?,
-            Value::DateTime(ref dt) => Self::write_str(DATE_TIME, dt.as_str(), buf)?,
-            Value::Date(ref d) => Self::write_str(DATE, d.as_str(), buf)?,
-            Value::Time(ref t) => Self::write_str(TIME, t.as_str(), buf)?,
-            Value::DecimalStr(ref ds) => Self::write_str(DECIMAL_STR, ds.as_str(), buf)?,
-            Value::Blob(ref bytes) => Self::write_blob(bytes.as_slice(), buf)?,
-            Value::List(ref list) => Self::write_list(expected_result, list, buf)?,
-            Value::Map(ref map) => Self::write_map(expected_result, map, buf)?,
-            Value::Object(ref object) => Self::write_object(expected_result, object, buf)?,
+            Value::Text(ref t) => write_str(TEXT, t.as_str(), buf)?,
+            Value::DateTime(ref dt) => write_str(DATE_TIME, dt.as_str(), buf)?,
+            Value::Date(ref d) => write_str(DATE, d.as_str(), buf)?,
+            Value::Time(ref t) => write_str(TIME, t.as_str(), buf)?,
+            Value::DecimalStr(ref ds) => write_str(DECIMAL_STR, ds.as_str(), buf)?,
+            Value::Blob(ref bytes) => write_blob(bytes.as_slice(), buf)?,
+            Value::List(ref list) => write_list(expected_result, list, buf)?,
+            Value::Map(ref map) => write_map(expected_result, map, buf)?,
+            Value::Object(ref object) => write_object(expected_result, object, buf)?,
         };
 
         match result == expected_result {
@@ -810,167 +810,6 @@ impl Value {
                 ErrorKind::Other, format!("Value::write() -> expected to write {} bytes, result: {}", expected_result, result)
             )),
         }
-    }
-
-    /// # Writes a string into the buffer
-    fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
-        let bytes = s.as_bytes();
-        let str_len = {
-            let tmp = bytes.len();
-            match cmp_integers!(tmp, Self::MAX_DATA_SIZE) {
-                Ordering::Greater => return Err(Error::new(
-                    ErrorKind::Other, format!("Value::write_str() -> string too large ({} bytes)", &tmp)
-                )),
-                _ => tmp as DataSize,
-            }
-        };
-
-        let total_size = sum!(
-            str_len,
-            // 1 for type, 1 for null terminator
-            2 + if cmp_integers!(str_len, ::std::i8::MAX) == Ordering::Greater { 4 } else { 1 }
-        )?;
-
-        // Type
-        match buf.write(&[ty])? {
-            1 => (),
-            other => return Err(Error::new(ErrorKind::Other, format!("Value::write_str() -> expected to write 1 byte; result: {}", &other))),
-        };
-
-        // Size
-        // Note that null terminator does NOT count
-        write_size!(str_len, buf)?;
-
-        // Data
-        let written = buf.write(bytes)?;
-        match cmp_integers!(written, str_len) {
-            Ordering::Equal => (),
-            _ => return Err(Error::new(
-                ErrorKind::Other, format!("Value::write_str() -> expected to write {} byte(s); result: {}", str_len, written)
-            )),
-        };
-
-        // Null terminator
-        match buf.write(&[0])? {
-            1 => (),
-            other => return Err(Error::new(ErrorKind::Other, format!("Value::write_str() -> expected to write 1 byte; result: {}", &other))),
-        };
-
-        Ok(total_size)
-    }
-
-    /// # Writes blob into the buffer
-    fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
-        let len = {
-            let tmp = bytes.len();
-            match cmp_integers!(tmp, Self::MAX_DATA_SIZE) {
-                Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> too large: {} byte(s)", tmp))),
-                _ => tmp as DataSize,
-            }
-        };
-
-        // Type
-        let mut bytes_written = match buf.write(&[BLOB])? {
-            1 => 1 as DataSize,
-            other => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> expected to write 1 byte; result: {}", &other))),
-        };
-
-        // Size
-        bytes_written = sum!(write_size!(len, buf)?, bytes_written)?;
-
-        // Data
-        let written = buf.write(bytes)?;
-        match cmp_integers!(written, len) {
-            Ordering::Equal => (),
-            _ => return Err(Error::new(
-                ErrorKind::Other, format!("Value::write_blob() -> expected to write {} byte(s); result: {}", &len, &written)
-            )),
-        };
-        bytes_written = sum!(bytes_written, written)?;
-
-        Ok(bytes_written)
-    }
-
-    /// # Writes a list into the buffer
-    fn write_list(size: DataSize, list: &Vec<Self>, buf: &mut Write) -> io::Result<DataSize> {
-        let mut result = sum!(
-            // Type
-            write_int_be!(u8, LIST, buf)?,
-            // Size
-            write_size!(size, buf)?,
-            // Count
-            // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
-            // container's size.
-            write_size!(list.len() as DataSize, buf)?
-        )?;
-
-        // Items
-        for v in list {
-            result = sum!(result, v.write(buf)?)?;
-        }
-
-        Ok(result)
-    }
-
-    /// # Writes a map into the buffer
-    fn write_map(size: DataSize, map: &BTreeMap<i32, Self>, buf: &mut Write) -> io::Result<DataSize> {
-        let mut result = sum!(
-            // Type
-            write_int_be!(u8, MAP, buf)?,
-            // Size
-            write_size!(size, buf)?,
-            // Count
-            // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
-            // container's size.
-            write_size!(map.len() as DataSize, buf)?
-        )?;
-
-        // Items
-        for (key, value) in map {
-            result = sum!(result, write_int_be!(i32, key, buf)?, value.write(buf)?)?;
-        }
-
-        Ok(result)
-    }
-
-    /// # Writes an object into the buffer
-    ///
-    /// [`len()`]: enum.Value.html#method.len
-    fn write_object(size: DataSize, object: &HashMap<String, Self>, buf: &mut Write) -> io::Result<DataSize> {
-        let mut result = sum!(
-            // Type
-            write_int_be!(u8, OBJECT, buf)?,
-            // Size
-            write_size!(size, buf)?,
-            // Count
-            // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
-            // container's size.
-            write_size!(object.len() as DataSize, buf)?
-        )?;
-
-        // Items
-        for (key, value) in object {
-            let key_len = key.len();
-            result = match key_len <= OBJECT_KEY_MAX_LEN {
-                true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
-                false => return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("Value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
-                )),
-            };
-
-            let written = buf.write(key.as_bytes())?;
-            match cmp_integers!(written, key_len) {
-                Ordering::Equal => result = sum!(result, written)?,
-                _ => return Err(Error::new(
-                    ErrorKind::Other, format!("Value::write_object() -> expected to write {} byte(s) of key; result: {}", &key_len, &written)
-                )),
-            }
-
-            result = sum!(result, value.write(buf)?)?;
-        }
-
-        Ok(result)
     }
 
     /// # Reads a value from source
@@ -1004,6 +843,167 @@ impl Value {
         }
     }
 
+}
+
+/// # Writes a string into the buffer
+fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
+    let bytes = s.as_bytes();
+    let str_len = {
+        let tmp = bytes.len();
+        match cmp_integers!(tmp, Value::MAX_DATA_SIZE) {
+            Ordering::Greater => return Err(Error::new(
+                ErrorKind::Other, format!("Value::write_str() -> string too large ({} bytes)", &tmp)
+            )),
+            _ => tmp as DataSize,
+        }
+    };
+
+    let total_size = sum!(
+        str_len,
+        // 1 for type, 1 for null terminator
+        2 + if cmp_integers!(str_len, ::std::i8::MAX) == Ordering::Greater { 4 } else { 1 }
+    )?;
+
+    // Type
+    match buf.write(&[ty])? {
+        1 => (),
+        other => return Err(Error::new(ErrorKind::Other, format!("Value::write_str() -> expected to write 1 byte; result: {}", &other))),
+    };
+
+    // Size
+    // Note that null terminator does NOT count
+    write_size!(str_len, buf)?;
+
+    // Data
+    let written = buf.write(bytes)?;
+    match cmp_integers!(written, str_len) {
+        Ordering::Equal => (),
+        _ => return Err(Error::new(
+            ErrorKind::Other, format!("Value::write_str() -> expected to write {} byte(s); result: {}", str_len, written)
+        )),
+    };
+
+    // Null terminator
+    match buf.write(&[0])? {
+        1 => (),
+        other => return Err(Error::new(ErrorKind::Other, format!("Value::write_str() -> expected to write 1 byte; result: {}", &other))),
+    };
+
+    Ok(total_size)
+}
+
+/// # Writes blob into the buffer
+fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
+    let len = {
+        let tmp = bytes.len();
+        match cmp_integers!(tmp, Value::MAX_DATA_SIZE) {
+            Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> too large: {} byte(s)", tmp))),
+            _ => tmp as DataSize,
+        }
+    };
+
+    // Type
+    let mut bytes_written = match buf.write(&[BLOB])? {
+        1 => 1 as DataSize,
+        other => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> expected to write 1 byte; result: {}", &other))),
+    };
+
+    // Size
+    bytes_written = sum!(write_size!(len, buf)?, bytes_written)?;
+
+    // Data
+    let written = buf.write(bytes)?;
+    match cmp_integers!(written, len) {
+        Ordering::Equal => (),
+        _ => return Err(Error::new(
+            ErrorKind::Other, format!("Value::write_blob() -> expected to write {} byte(s); result: {}", &len, &written)
+        )),
+    };
+    bytes_written = sum!(bytes_written, written)?;
+
+    Ok(bytes_written)
+}
+
+/// # Writes a list into the buffer
+fn write_list(size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<DataSize> {
+    let mut result = sum!(
+        // Type
+        write_int_be!(u8, LIST, buf)?,
+        // Size
+        write_size!(size, buf)?,
+        // Count
+        // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+        // container's size.
+        write_size!(list.len() as DataSize, buf)?
+    )?;
+
+    // Items
+    for v in list {
+        result = sum!(result, v.write(buf)?)?;
+    }
+
+    Ok(result)
+}
+
+/// # Writes a map into the buffer
+fn write_map(size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Result<DataSize> {
+    let mut result = sum!(
+        // Type
+        write_int_be!(u8, MAP, buf)?,
+        // Size
+        write_size!(size, buf)?,
+        // Count
+        // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+        // container's size.
+        write_size!(map.len() as DataSize, buf)?
+    )?;
+
+    // Items
+    for (key, value) in map {
+        result = sum!(result, write_int_be!(i32, key, buf)?, value.write(buf)?)?;
+    }
+
+    Ok(result)
+}
+
+/// # Writes an object into the buffer
+///
+/// [`len()`]: enum.Value.html#method.len
+fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<DataSize> {
+    let mut result = sum!(
+        // Type
+        write_int_be!(u8, OBJECT, buf)?,
+        // Size
+        write_size!(size, buf)?,
+        // Count
+        // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+        // container's size.
+        write_size!(object.len() as DataSize, buf)?
+    )?;
+
+    // Items
+    for (key, value) in object {
+        let key_len = key.len();
+        result = match key_len <= OBJECT_KEY_MAX_LEN {
+            true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
+            false => return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
+            )),
+        };
+
+        let written = buf.write(key.as_bytes())?;
+        match cmp_integers!(written, key_len) {
+            Ordering::Equal => result = sum!(result, written)?,
+            _ => return Err(Error::new(
+                ErrorKind::Other, format!("Value::write_object() -> expected to write {} byte(s) of key; result: {}", &key_len, &written)
+            )),
+        }
+
+        result = sum!(result, value.write(buf)?)?;
+    }
+
+    Ok(result)
 }
 
 /// # Reads a [`Null`] from source
