@@ -165,7 +165,7 @@ macro_rules! make_plural_suffix {
             _ => $other,
         }
     }};
-    // This one make 's' plural suffix
+    // This one makes 's' plural suffix
     ($size: expr) => {{
         make_plural_suffix!($size, "", "s")
     }};
