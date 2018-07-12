@@ -186,7 +186,7 @@ macro_rules! display_str { ($formatter: ident, $prefix: expr, $s: ident, $suffix
     write!($formatter, "{}", $prefix)?;
 
     let char_count = &$s.chars().count();
-    let limit = 100;
+    let limit = 50;
     match char_count.checked_sub(limit) {
         Some(more) => write!($formatter, "\"{}...\" ({} more)", &$s.chars().take(limit).collect::<String>(), more)?,
         None => write!($formatter, "\"{}\"", &$s)?,
@@ -764,7 +764,7 @@ impl Value {
 fn bytes_for_len(len: usize) -> io::Result<DataSize> {
     match cmp_integers!(len, ::std::i8::MAX) {
         Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
-            Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
+            Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::bytes_for_len() -> too large: {} bytes", len))),
             _ => Ok(4),
         },
         _ => Ok(1),
@@ -789,7 +789,7 @@ fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::new(ErrorKind::InvalidData, format!("Value::list_len() -> data too large: {} bytes", result))),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("value::list_len() -> data too large: {} bytes", result))),
     }
 }
 
@@ -811,7 +811,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::new(ErrorKind::InvalidData, format!("Value::map_len() -> data too large: {} bytes", result))),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("value::map_len() -> data too large: {} bytes", result))),
     }
 }
 
@@ -826,7 +826,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
         if key_len > OBJECT_KEY_MAX_LEN {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("Value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)
+                format!("value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)
             ));
         }
         result = sum!(result, key_len, value.len()?, 1)?;
@@ -852,7 +852,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
         let tmp = bytes.len();
         match cmp_integers!(tmp, MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
-                ErrorKind::Other, format!("Value::write_str() -> string too large ({} bytes)", &tmp)
+                ErrorKind::Other, format!("value::write_str() -> string too large ({} bytes)", &tmp)
             )),
             _ => tmp as DataSize,
         }
@@ -867,7 +867,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
     // Type
     match buf.write(&[ty])? {
         1 => (),
-        other => return Err(Error::new(ErrorKind::Other, format!("Value::write_str() -> expected to write 1 byte; result: {}", &other))),
+        other => return Err(Error::new(ErrorKind::Other, format!("value::write_str() -> expected to write 1 byte; result: {}", &other))),
     };
 
     // Size
@@ -879,14 +879,14 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
     match cmp_integers!(written, str_len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
-            ErrorKind::Other, format!("Value::write_str() -> expected to write {} byte(s); result: {}", str_len, written)
+            ErrorKind::Other, format!("value::write_str() -> expected to write {} byte(s); result: {}", str_len, written)
         )),
     };
 
     // Null terminator
     match buf.write(&[0])? {
         1 => (),
-        other => return Err(Error::new(ErrorKind::Other, format!("Value::write_str() -> expected to write 1 byte; result: {}", &other))),
+        other => return Err(Error::new(ErrorKind::Other, format!("value::write_str() -> expected to write 1 byte; result: {}", &other))),
     };
 
     Ok(total_size)
@@ -897,7 +897,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
     let len = {
         let tmp = bytes.len();
         match cmp_integers!(tmp, MAX_DATA_SIZE) {
-            Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> too large: {} byte(s)", tmp))),
+            Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("value::write_blob() -> too large: {} byte(s)", tmp))),
             _ => tmp as DataSize,
         }
     };
@@ -905,7 +905,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
     // Type
     let mut bytes_written = match buf.write(&[BLOB])? {
         1 => 1 as DataSize,
-        other => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> expected to write 1 byte; result: {}", &other))),
+        other => return Err(Error::new(ErrorKind::Other, format!("value::write_blob() -> expected to write 1 byte; result: {}", &other))),
     };
 
     // Size
@@ -916,7 +916,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
     match cmp_integers!(written, len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
-            ErrorKind::Other, format!("Value::write_blob() -> expected to write {} byte(s); result: {}", &len, &written)
+            ErrorKind::Other, format!("value::write_blob() -> expected to write {} byte(s); result: {}", &len, &written)
         )),
     };
     bytes_written = sum!(bytes_written, written)?;
@@ -988,7 +988,7 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
             true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
             false => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("Value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
+                format!("value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
             )),
         };
 
@@ -996,7 +996,7 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
         match cmp_integers!(written, key_len) {
             Ordering::Equal => result = sum!(result, written)?,
             _ => return Err(Error::new(
-                ErrorKind::Other, format!("Value::write_object() -> expected to write {} byte(s) of key; result: {}", &key_len, &written)
+                ErrorKind::Other, format!("value::write_object() -> expected to write {} byte(s) of key; result: {}", &key_len, &written)
             )),
         }
 
@@ -1012,7 +1012,7 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
 pub fn read_null(source: &mut Read) -> io::Result<()> {
     match Value::read(source)? {
         Value::Null => Ok(()),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_null() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_null() -> got: {:?}", &other))),
     }
 }
 
@@ -1021,7 +1021,7 @@ pub fn read_bool(source: &mut Read) -> io::Result<bool> {
     match Value::read(source)? {
         Value::True => Ok(true),
         Value::False => Ok(false),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_bool() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_bool() -> got: {:?}", &other))),
     }
 }
 
@@ -1029,7 +1029,7 @@ pub fn read_bool(source: &mut Read) -> io::Result<bool> {
 pub fn read_u8(source: &mut Read) -> io::Result<u8> {
     match Value::read(source)? {
         Value::U8(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u8() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u8() -> got: {:?}", &other))),
     }
 }
 
@@ -1037,7 +1037,7 @@ pub fn read_u8(source: &mut Read) -> io::Result<u8> {
 pub fn read_i8(source: &mut Read) -> io::Result<i8> {
     match Value::read(source)? {
         Value::I8(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i8() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i8() -> got: {:?}", &other))),
     }
 }
 
@@ -1045,7 +1045,7 @@ pub fn read_i8(source: &mut Read) -> io::Result<i8> {
 pub fn read_u16(source: &mut Read) -> io::Result<u16> {
     match Value::read(source)? {
         Value::U16(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u16() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u16() -> got: {:?}", &other))),
     }
 }
 
@@ -1053,7 +1053,7 @@ pub fn read_u16(source: &mut Read) -> io::Result<u16> {
 pub fn read_i16(source: &mut Read) -> io::Result<i16> {
     match Value::read(source)? {
         Value::I16(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i16() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i16() -> got: {:?}", &other))),
     }
 }
 
@@ -1061,7 +1061,7 @@ pub fn read_i16(source: &mut Read) -> io::Result<i16> {
 pub fn read_u32(source: &mut Read) -> io::Result<u32> {
     match Value::read(source)? {
         Value::U32(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u32() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u32() -> got: {:?}", &other))),
     }
 }
 
@@ -1069,7 +1069,7 @@ pub fn read_u32(source: &mut Read) -> io::Result<u32> {
 pub fn read_i32(source: &mut Read) -> io::Result<i32> {
     match Value::read(source)? {
         Value::I32(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i32() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i32() -> got: {:?}", &other))),
     }
 }
 
@@ -1077,7 +1077,7 @@ pub fn read_i32(source: &mut Read) -> io::Result<i32> {
 pub fn read_u64(source: &mut Read) -> io::Result<u64> {
     match Value::read(source)? {
         Value::U64(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_u64() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u64() -> got: {:?}", &other))),
     }
 }
 
@@ -1085,7 +1085,7 @@ pub fn read_u64(source: &mut Read) -> io::Result<u64> {
 pub fn read_i64(source: &mut Read) -> io::Result<i64> {
     match Value::read(source)? {
         Value::I64(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_i64() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i64() -> got: {:?}", &other))),
     }
 }
 
@@ -1095,7 +1095,7 @@ pub fn read_i64(source: &mut Read) -> io::Result<i64> {
 pub fn read_float(source: &mut Read) -> io::Result<f32> {
     match Value::read(source)? {
         Value::Float(f) => Ok(f),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_float() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_float() -> got: {:?}", &other))),
     }
 }
 
@@ -1105,7 +1105,7 @@ pub fn read_float(source: &mut Read) -> io::Result<f32> {
 pub fn read_double(source: &mut Read) -> io::Result<f64> {
     match Value::read(source)? {
         Value::Double(d) => Ok(d),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_double() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_double() -> got: {:?}", &other))),
     }
 }
 
@@ -1115,7 +1115,7 @@ pub fn read_double(source: &mut Read) -> io::Result<f64> {
 pub fn read_text(source: &mut Read) -> io::Result<String> {
     match Value::read(source)? {
         Value::Text(t) => Ok(t),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_text() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_text() -> got: {:?}", &other))),
     }
 }
 
@@ -1125,7 +1125,7 @@ pub fn read_text(source: &mut Read) -> io::Result<String> {
 pub fn read_date_time(source: &mut Read) -> io::Result<String> {
     match Value::read(source)? {
         Value::DateTime(dt) => Ok(dt),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date_time() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_date_time() -> got: {:?}", &other))),
     }
 }
 
@@ -1135,7 +1135,7 @@ pub fn read_date_time(source: &mut Read) -> io::Result<String> {
 pub fn read_date(source: &mut Read) -> io::Result<String> {
     match Value::read(source)? {
         Value::Date(d) => Ok(d),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_date() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_date() -> got: {:?}", &other))),
     }
 }
 
@@ -1145,7 +1145,7 @@ pub fn read_date(source: &mut Read) -> io::Result<String> {
 pub fn read_time(source: &mut Read) -> io::Result<String> {
     match Value::read(source)? {
         Value::Time(t) => Ok(t),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_time() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_time() -> got: {:?}", &other))),
     }
 }
 
@@ -1155,7 +1155,7 @@ pub fn read_time(source: &mut Read) -> io::Result<String> {
 pub fn read_decimal_str(source: &mut Read) -> io::Result<String> {
     match Value::read(source)? {
         Value::DecimalStr(ds) => Ok(ds),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_decimal_str() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_decimal_str() -> got: {:?}", &other))),
     }
 }
 
@@ -1165,7 +1165,7 @@ pub fn read_decimal_str(source: &mut Read) -> io::Result<String> {
 pub fn read_blob(source: &mut Read) -> io::Result<Vec<u8>> {
     match Value::read(source)? {
         Value::Blob(bytes) => Ok(bytes),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_blob() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_blob() -> got: {:?}", &other))),
     }
 }
 
@@ -1175,7 +1175,7 @@ pub fn read_blob(source: &mut Read) -> io::Result<Vec<u8>> {
 pub fn read_list(source: &mut Read) -> io::Result<Vec<Value>> {
     match Value::read(source)? {
         Value::List(list) => Ok(list),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_list() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_list() -> got: {:?}", &other))),
     }
 }
 
@@ -1185,7 +1185,7 @@ pub fn read_list(source: &mut Read) -> io::Result<Vec<Value>> {
 pub fn read_map(source: &mut Read) -> io::Result<BTreeMap<i32, Value>> {
     match Value::read(source)? {
         Value::Map(map) => Ok(map),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_map() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_map() -> got: {:?}", &other))),
     }
 }
 
@@ -1195,6 +1195,6 @@ pub fn read_map(source: &mut Read) -> io::Result<BTreeMap<i32, Value>> {
 pub fn read_object(source: &mut Read) -> io::Result<HashMap<String, Value>> {
     match Value::read(source)? {
         Value::Object(object) => Ok(object),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("Value::read_object() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_object() -> got: {:?}", &other))),
     }
 }
