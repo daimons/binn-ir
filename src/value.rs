@@ -78,7 +78,7 @@ pub const OBJECT: u8 = 0b_1110_0010;
 const SIZE_MASK: u32 = 0x_8000_0000_u32;
 
 /// # Object key's max length
-const OBJECT_KEY_MAX_LEN: usize = 255;
+pub const OBJECT_KEY_MAX_LEN: usize = 255;
 
 #[test]
 fn test_object_key_max_len() {
