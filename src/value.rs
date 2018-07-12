@@ -179,14 +179,100 @@ macro_rules! make_plural_suffix {
 macro_rules! display_str { ($formatter: ident, $prefix: expr, $s: ident, $suffix: expr) => {{
     write!($formatter, "{}", $prefix)?;
 
-    let char_count = $s.chars().count();
+    let char_count = &$s.chars().count();
     let limit = 100;
     match char_count.checked_sub(limit) {
-        Some(more) => write!($formatter, "\"{}...\" ({} more)", $s.chars().take(limit).collect::<String>(), more)?,
-        None => write!($formatter, "\"{}\"", $s)?,
+        Some(more) => write!($formatter, "\"{}...\" ({} more)", &$s.chars().take(limit).collect::<String>(), more)?,
+        None => write!($formatter, "\"{}\"", &$s)?,
     };
 
     write!($formatter, "{}", $suffix)
+}};}
+
+/// # Max display items of list/map/object
+const LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS: usize = 10;
+
+/// # Displays a list in a formatter
+///
+/// If the items are too much, just displays a part of them.
+///
+/// Result: `Result<(), fmt::Error>`
+macro_rules! display_list { ($formatter: ident, $value: ident, $list: ident) => {{
+    let item_count = $list.len();
+
+    match $value.len() {
+        Ok(len) => {
+            write!($formatter, "List({} item{}, {} byte{}: [", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len))?;
+            for (index, item) in $list.iter().enumerate() {
+                if index > 0 {
+                    if index >= LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS { break; }
+                    write!($formatter, ", ")?;
+                }
+                write!($formatter, "{}", &item)?;
+            }
+            match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
+                Some(more) => write!($formatter, ",... {} more]", &more),
+                None => write!($formatter, "]"),
+            }
+        },
+        Err(err) => write!($formatter, "List({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
+    }
+}};}
+
+/// # Displays a map in a formatter
+///
+/// If the items are too much, just displays a part of them.
+///
+/// Result: `Result<(), fmt::Error>`
+macro_rules! display_map { ($formatter: ident, $value: ident, $map: ident) => {{
+    let item_count = $map.len();
+
+    match $value.len() {
+        Ok(len) => {
+            write!($formatter, "Map({} item{}, {} byte{}: {{", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len))?;
+            for (index, (key, value)) in $map.iter().enumerate() {
+                if index > 0 {
+                    if index >= LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS { break; }
+                    write!($formatter, ", ")?;
+                }
+                write!($formatter, "{}: {}", &key, &value)?;
+            }
+            match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
+                Some(more) => write!($formatter, ",... {} more}}", &more),
+                None => write!($formatter, "}}"),
+            }
+        },
+        Err(err) => write!($formatter, "Map({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
+    }
+}};}
+
+/// # Displays an object in a formatter
+///
+/// If the items are too much, just displays a part of them.
+///
+/// Result: `Result<(), fmt::Error>`
+macro_rules! display_object { ($formatter: ident, $value: ident, $object: ident) => {{
+    let item_count = $object.len();
+
+    match $value.len() {
+        Ok(len) => {
+            write!(
+                $formatter, "Object({} item{}, {} byte{}: {{", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len)
+            )?;
+            for (index, (key, value)) in $object.iter().enumerate() {
+                if index > 0 {
+                    if index >= LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS { break; }
+                    write!($formatter, ", ")?;
+                }
+                write!($formatter, "{:?}: {}", &key, &value)?;
+            }
+            match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
+                Some(more) => write!($formatter, ",... {} more}}", &more),
+                None => write!($formatter, "}}"),
+            }
+        },
+        Err(err) => write!($formatter, "Object({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
+    }
 }};}
 
 impl fmt::Display for Value {
@@ -215,34 +301,9 @@ impl fmt::Display for Value {
                 let len = blob.len();
                 write!(formatter, "Blob({} byte{})", &len, make_plural_suffix!(&len))
             },
-            Value::List(ref list) => {
-                let item_count = list.len();
-                match self.len() {
-                    Ok(len) => write!(
-                        formatter, "List({} item{}, {} byte{})", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len)
-                    ),
-                    Err(err) => write!(formatter, "List({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
-                }
-            },
-            Value::Map(ref map) => {
-                let item_count = map.len();
-                match self.len() {
-                    Ok(len) => write!(
-                        formatter, "Map({} item{}, {} byte{})", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len)
-                    ),
-                    Err(err) => write!(formatter, "Map({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
-                }
-            },
-            Value::Object(ref object) => {
-                let item_count = object.len();
-                match self.len() {
-                    Ok(len) => write!(
-                        formatter, "Object({} item{}, {} byte{})", &item_count, make_plural_suffix!(&item_count),
-                        &len, make_plural_suffix!(&len),
-                    ),
-                    Err(err) => write!(formatter, "Object({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
-                }
-            },
+            Value::List(ref list) => display_list!(formatter, self, list),
+            Value::Map(ref map) => display_map!(formatter, self, map),
+            Value::Object(ref object) => display_object!(formatter, self, object),
         }
     }
 
