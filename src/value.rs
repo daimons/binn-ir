@@ -4,6 +4,7 @@
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
+use std::convert::AsRef;
 use std::fmt;
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::mem;
@@ -321,6 +322,14 @@ impl fmt::Debug for Value {
         write!(formatter, "\"")?;
         fmt::Display::fmt(self, formatter)?;
         write!(formatter, "\"")
+    }
+
+}
+
+impl AsRef<Value> for Value {
+
+    fn as_ref(&self) -> &Self {
+        self
     }
 
 }
