@@ -88,6 +88,9 @@ fn test_object_key_max_len() {
 /// # Data size
 pub type DataSize = u32;
 
+/// # Max data size, in bytes
+pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
+
 /// # Values
 #[derive(PartialEq)]
 pub enum Value {
@@ -412,7 +415,7 @@ macro_rules! read_size { ($source: ident) => {{
             match $source.read_exact(&mut buf[1..]) {
                 Ok(()) => {
                     let result = u32::from_be(unsafe { mem::transmute(buf) }) & !(SIZE_MASK);
-                    match cmp_integers!(result, Value::MAX_DATA_SIZE) {
+                    match cmp_integers!(result, MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::read_size!() -> too large: {}", &result))),
                         _ => Ok(result),
                     }
@@ -428,9 +431,9 @@ macro_rules! read_size { ($source: ident) => {{
 ///
 /// Result: `io::Result<DataSize>`.
 ///
-/// If result > [`Value::MAX_DATA_SIZE`], an error is returned.
+/// If result > [`MAX_DATA_SIZE`], an error is returned.
 ///
-/// [`Value::MAX_DATA_SIZE`]: enum.Value.html#associatedconstant.MAX_DATA_SIZE
+/// [`MAX_DATA_SIZE`]: constant.MAX_DATA_SIZE.html
 macro_rules! sum {
     ($a: expr, $($b: expr),+) => {{
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
@@ -439,16 +442,16 @@ macro_rules! sum {
             match result {
                 Ok(current) => result = {
                     let b = $b;
-                    match cmp_integers!(b, Value::MAX_DATA_SIZE) {
+                    match cmp_integers!(b, MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
                             ErrorKind::InvalidData,
-                            format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, Value::MAX_DATA_SIZE)
+                            format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
                         )),
                         _ => match current.checked_add(b as DataSize) {
-                            Some(new) => match cmp_integers!(new, Value::MAX_DATA_SIZE) {
+                            Some(new) => match cmp_integers!(new, MAX_DATA_SIZE) {
                                 Ordering::Greater => Err(Error::new(
                                     ErrorKind::InvalidData,
-                                    format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, Value::MAX_DATA_SIZE)
+                                    format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
                                 )),
                                 _ => Ok(new),
                             },
@@ -469,12 +472,12 @@ macro_rules! sum {
 /// Returns: `io::Result<Vec<_>>`
 macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
     let capacity = $capacity;
-    match cmp_integers!(capacity, Value::MAX_DATA_SIZE) {
+    match cmp_integers!(capacity, MAX_DATA_SIZE) {
         Ordering::Greater => Err(Error::new(
             ErrorKind::WriteZero,
             format!(
                 "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
-                &capacity, Value::MAX_DATA_SIZE
+                &capacity, MAX_DATA_SIZE
             )
         )),
         _ => match cmp_integers!(capacity, ::std::usize::MAX) {
@@ -499,8 +502,8 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
 
     // Notes:
     //
-    // - `len` was verified via above call to `new_vec_with_capacity!()`, that it must be <= `Value::MAX_DATA_SIZE`
-    // - `Value::MAX_DATA_SIZE` should be **tested** to be < `std::u64::MAX`
+    // - `len` was verified via above call to `new_vec_with_capacity!()`, that it must be <= `MAX_DATA_SIZE`
+    // - `MAX_DATA_SIZE` should be **tested** to be < `std::u64::MAX`
     match $source.take(len as u64).read_to_end(&mut result) {
         Ok(read) => match read == result.len() {
             true => Ok(result),
@@ -651,9 +654,6 @@ macro_rules! read_object { ($source: ident) => {{
 
 impl Value {
 
-    /// # Max data size, in bytes
-    pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
-
     /// # Calculates length of this value
     pub fn len(&self) -> io::Result<DataSize> {
         match *self {
@@ -763,7 +763,7 @@ impl Value {
 /// # Calculates bytes needed for a length
 fn bytes_for_len(len: usize) -> io::Result<DataSize> {
     match cmp_integers!(len, ::std::i8::MAX) {
-        Ordering::Greater => match cmp_integers!(len, Value::MAX_DATA_SIZE) {
+        Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
             Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("Value::bytes_for_len() -> too large: {} bytes", len))),
             _ => Ok(4),
         },
@@ -787,7 +787,7 @@ fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
         Ordering::Greater => result = sum!(result, 3)?,
         _ => (),
     };
-    match result <= Value::MAX_DATA_SIZE {
+    match result <= MAX_DATA_SIZE {
         true => Ok(result),
         false => Err(Error::new(ErrorKind::InvalidData, format!("Value::list_len() -> data too large: {} bytes", result))),
     }
@@ -809,7 +809,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
         Ordering::Greater => result = sum!(result, 3)?,
         _ => (),
     };
-    match result <= Value::MAX_DATA_SIZE {
+    match result <= MAX_DATA_SIZE {
         true => Ok(result),
         false => Err(Error::new(ErrorKind::InvalidData, format!("Value::map_len() -> data too large: {} bytes", result))),
     }
@@ -839,7 +839,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
         Ordering::Greater => result = sum!(result, 3)?,
         _ => (),
     };
-    match result <= Value::MAX_DATA_SIZE {
+    match result <= MAX_DATA_SIZE {
         true => Ok(result),
         false => Err(Error::new(ErrorKind::InvalidData, format!("len() -> data too large: {} bytes", result))),
     }
@@ -850,7 +850,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
-        match cmp_integers!(tmp, Value::MAX_DATA_SIZE) {
+        match cmp_integers!(tmp, MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::Other, format!("Value::write_str() -> string too large ({} bytes)", &tmp)
             )),
@@ -896,7 +896,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
 fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
     let len = {
         let tmp = bytes.len();
-        match cmp_integers!(tmp, Value::MAX_DATA_SIZE) {
+        match cmp_integers!(tmp, MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("Value::write_blob() -> too large: {} byte(s)", tmp))),
             _ => tmp as DataSize,
         }

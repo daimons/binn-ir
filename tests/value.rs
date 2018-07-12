@@ -43,7 +43,7 @@ fn values() {
     assert_eq!(value::MAP,          0b_1110_0001 | 0xE1 | 225);
     assert_eq!(value::OBJECT,       0b_1110_0010 | 0xE2 | 226);
 
-    assert_eq!(cmp_integers!(Value::MAX_DATA_SIZE, std::u64::MAX), Ordering::Less);
+    assert_eq!(cmp_integers!(value::MAX_DATA_SIZE, std::u64::MAX), Ordering::Less);
 }
 
 #[test]
