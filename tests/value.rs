@@ -144,6 +144,8 @@ fn read_write_lists() {
     match list {
         Value::List(list) => {
             assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
+            println!("Verified: {:?}", &list);
+
             // Verify position
             assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
         },
@@ -186,6 +188,8 @@ fn read_write_maps() {
     match map {
         Value::Map(map) => {
             assert_eq!(Value::read_map(&mut cursor).unwrap(), map);
+            println!("Verified: {:?}", &map);
+
             // Verify position
             assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
         },
@@ -229,7 +233,9 @@ fn read_write_objects() {
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {
             assert_eq!(Value::read_list(&mut cursor).unwrap(), list);
+            println!("Verified: {:?}", &list);
             assert_eq!(Value::read_object(&mut cursor).unwrap(), object);
+            println!("Verified: {:?}", &object);
 
             // Verify position
             assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
