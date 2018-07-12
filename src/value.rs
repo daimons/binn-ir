@@ -750,13 +750,14 @@ impl Value {
         // Items
         for (key, value) in object {
             // Key has NO null terminator
-            if key.len() > OBJECT_KEY_MAX_LEN {
+            let key_len = key.len();
+            if key_len > OBJECT_KEY_MAX_LEN {
                 return Err(Error::new(
                     ErrorKind::InvalidData,
-                    format!("Value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, key.len())
+                    format!("Value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)
                 ));
             }
-            result = sum!(result, key.len(), value.len()?, 1)?;
+            result = sum!(result, key_len, value.len()?, 1)?;
         }
         // The len value itself:
         // First, assume that it needs just 1 byte
@@ -949,19 +950,20 @@ impl Value {
 
         // Items
         for (key, value) in object {
-            result = match key.len() <= OBJECT_KEY_MAX_LEN {
-                true => sum!(result, write_int_be!(u8, key.len() as u8, buf)?)?,
+            let key_len = key.len();
+            result = match key_len <= OBJECT_KEY_MAX_LEN {
+                true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
                 false => return Err(Error::new(
                     ErrorKind::InvalidData,
-                    format!("Value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key.len())
+                    format!("Value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
                 )),
             };
 
             let written = buf.write(key.as_bytes())?;
-            match cmp_integers!(written, key.len()) {
+            match cmp_integers!(written, key_len) {
                 Ordering::Equal => result = sum!(result, written)?,
                 _ => return Err(Error::new(
-                    ErrorKind::Other, format!("Value::write_object() -> expected to write {} byte(s) of key; result: {}", key.len(), &written)
+                    ErrorKind::Other, format!("Value::write_object() -> expected to write {} byte(s) of key; result: {}", &key_len, &written)
                 )),
             }
 
