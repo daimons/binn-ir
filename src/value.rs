@@ -85,11 +85,8 @@ fn test_object_key_max_len() {
     assert_eq!(cmp_integers!(OBJECT_KEY_MAX_LEN, ::std::u8::MAX), Ordering::Equal);
 }
 
-/// # Data size
-pub type DataSize = u32;
-
 /// # Max data size, in bytes
-pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
+pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 
 /// # Values
 #[derive(Clone, PartialEq)]
@@ -634,12 +631,12 @@ fn test_macro_as_bytes() {
 
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
-/// Returns: number of bytes written, as `io::Result<DataSize>`.
+/// Returns: number of bytes written, as `io::Result<u32>`.
 macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
     let bytes = as_bytes!($ty, $v.to_be());
     match $buf.write(&bytes) {
         Ok(count) => match count == bytes.len() {
-            true => Ok(count as DataSize),
+            true => Ok(count as u32),
             false => Err(Error::new(
                 ErrorKind::Other, format!("value::write_int_be!() -> expected to write {} byte(s); result: {}", bytes.len(), count)
             )),
@@ -661,7 +658,7 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
 
 /// # Writes size (u32) into the buffer
 ///
-/// Result: number of bytes written - `io::Result<DataSize>`.
+/// Result: number of bytes written - `io::Result<u32>`.
 macro_rules! write_size { ($size: expr, $buf: ident) => {{
     let size = $size;
     match cmp_integers!(size, ::std::i8::MAX) {
@@ -693,9 +690,9 @@ macro_rules! read_size { ($source: ident) => {{
     }
 }};}
 
-/// # Calculates sum of first value (`DataSize`) with integer(s)
+/// # Calculates sum of first value (`u32`) with integer(s)
 ///
-/// Result: `io::Result<DataSize>`.
+/// Result: `io::Result<u32>`.
 ///
 /// If result > [`MAX_DATA_SIZE`], an error is returned.
 ///
@@ -703,7 +700,7 @@ macro_rules! read_size { ($source: ident) => {{
 macro_rules! sum {
     ($a: expr, $($b: expr),+) => {{
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
-        let mut result: io::Result<DataSize> = Ok($a);
+        let mut result: io::Result<u32> = Ok($a);
         $(
             match result {
                 Ok(current) => result = {
@@ -713,7 +710,7 @@ macro_rules! sum {
                             ErrorKind::InvalidData,
                             format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
                         )),
-                        _ => match current.checked_add(b as DataSize) {
+                        _ => match current.checked_add(b as u32) {
                             Some(new) => match cmp_integers!(new, MAX_DATA_SIZE) {
                                 Ordering::Greater => Err(Error::new(
                                     ErrorKind::InvalidData,
@@ -805,7 +802,7 @@ macro_rules! read_list { ($source: ident) => {{
     let item_count = read_size!($source)?;
 
     let mut result = vec![];
-    let mut read: DataSize = 0;
+    let mut read: u32 = 0;
     for _ in 0..item_count {
         let value = Value::decode($source)?;
         read = match read.checked_add(value.len()?) {
@@ -834,7 +831,7 @@ macro_rules! read_map { ($source: ident) => {{
     let item_count = read_size!($source)?;
 
     let mut result = BTreeMap::new();
-    let mut read: DataSize = 0;
+    let mut read: u32 = 0;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
         let value = Value::decode($source)?;
@@ -867,7 +864,7 @@ macro_rules! read_object { ($source: ident) => {{
     let item_count = read_size!($source)?;
 
     let mut result = HashMap::new();
-    let mut read: DataSize = 0;
+    let mut read: u32 = 0;
     for _ in 0..item_count {
         // Read key (note that there's NO null terminator)
         let key_len = read_size!($source)?;
@@ -921,7 +918,7 @@ macro_rules! read_object { ($source: ident) => {{
 impl Value {
 
     /// # Calculates length of this value
-    pub fn len(&self) -> io::Result<DataSize> {
+    pub fn len(&self) -> io::Result<u32> {
         match *self {
             Value::Null => Ok(1),
             Value::True => Ok(1),
@@ -957,7 +954,7 @@ impl Value {
     /// # Encodes this value into a buffer
     ///
     /// Returns the number of bytes written.
-    pub fn encode(&self, buf: &mut Write) -> io::Result<DataSize> {
+    pub fn encode(&self, buf: &mut Write) -> io::Result<u32> {
         let expected_result = self.len()?;
 
         let result = match *self {
@@ -1027,7 +1024,7 @@ impl Value {
 }
 
 /// # Calculates bytes needed for a length
-fn bytes_for_len(len: usize) -> io::Result<DataSize> {
+fn bytes_for_len(len: usize) -> io::Result<u32> {
     match cmp_integers!(len, ::std::i8::MAX) {
         Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
             Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::bytes_for_len() -> too large: {} bytes", len))),
@@ -1038,9 +1035,9 @@ fn bytes_for_len(len: usize) -> io::Result<DataSize> {
 }
 
 /// # Calculates list length
-fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
+fn list_len(list: &Vec<Value>) -> io::Result<u32> {
     // Type + count
-    let mut result: DataSize = sum!(bytes_for_len(list.len())?, 1)?;
+    let mut result: u32 = sum!(bytes_for_len(list.len())?, 1)?;
     // Items
     for v in list {
         result = sum!(result, v.len()?)?;
@@ -1060,7 +1057,7 @@ fn list_len(list: &Vec<Value>) -> io::Result<DataSize> {
 }
 
 /// # Calculates map length
-fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
+fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<u32> {
     // Type + count
     let mut result = sum!(bytes_for_len(map.len())?, 1)?;
     // Items
@@ -1082,7 +1079,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<DataSize> {
 }
 
 /// # Calculates object length
-fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
+fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
     // Type + count
     let mut result = sum!(bytes_for_len(object.len())?, 1)?;
     // Items
@@ -1112,7 +1109,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<DataSize> {
 }
 
 /// # Writes a string into the buffer
-fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
+fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
@@ -1120,7 +1117,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::Other, format!("value::write_str() -> string too large ({} bytes)", &tmp)
             )),
-            _ => tmp as DataSize,
+            _ => tmp as u32,
         }
     };
 
@@ -1159,18 +1156,18 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<DataSize> {
 }
 
 /// # Writes blob into the buffer
-fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
+fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     let len = {
         let tmp = bytes.len();
         match cmp_integers!(tmp, MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("value::write_blob() -> too large: {} byte(s)", tmp))),
-            _ => tmp as DataSize,
+            _ => tmp as u32,
         }
     };
 
     // Type
     let mut bytes_written = match buf.write(&[BLOB])? {
-        1 => 1 as DataSize,
+        1 => 1 as u32,
         other => return Err(Error::new(ErrorKind::Other, format!("value::write_blob() -> expected to write 1 byte; result: {}", &other))),
     };
 
@@ -1191,7 +1188,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<DataSize> {
 }
 
 /// # Writes a list into the buffer
-fn write_list(size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<DataSize> {
+fn write_list(size: u32, list: &Vec<Value>, buf: &mut Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, LIST, buf)?,
@@ -1200,7 +1197,7 @@ fn write_list(size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called ::len(), which verified the whole
         // container's size.
-        write_size!(list.len() as DataSize, buf)?
+        write_size!(list.len() as u32, buf)?
     )?;
 
     // Items
@@ -1212,7 +1209,7 @@ fn write_list(size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<
 }
 
 /// # Writes a map into the buffer
-fn write_map(size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Result<DataSize> {
+fn write_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, MAP, buf)?,
@@ -1221,7 +1218,7 @@ fn write_map(size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io:
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called ::len(), which verified the whole
         // container's size.
-        write_size!(map.len() as DataSize, buf)?
+        write_size!(map.len() as u32, buf)?
     )?;
 
     // Items
@@ -1235,7 +1232,7 @@ fn write_map(size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io:
 /// # Writes an object into the buffer
 ///
 /// [`len()`]: enum.Value.html#method.len
-fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<DataSize> {
+fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, OBJECT, buf)?,
@@ -1244,7 +1241,7 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called ::len(), which verified the whole
         // container's size.
-        write_size!(object.len() as DataSize, buf)?
+        write_size!(object.len() as u32, buf)?
     )?;
 
     // Items
@@ -1280,7 +1277,7 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
 pub trait Encoder: Write + Sized {
 
     /// # Encodes a value
-    fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<DataSize> {
+    fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<u32> {
         let value = value.as_ref();
         value.encode(self)
     }
