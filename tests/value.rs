@@ -9,7 +9,7 @@ use std::io::Cursor;
 #[macro_use]
 mod cmp_integers;
 
-use binn_ir::value::{self, Value};
+use binn_ir::value::{self, Value, Encoder, Decoder};
 
 #[test]
 fn values() {
@@ -49,27 +49,27 @@ fn values() {
 #[test]
 fn read_write_basic_types() {
     let mut buf = vec![];
-    Value::Null.write(&mut buf).unwrap();
-    Value::True.write(&mut buf).unwrap();
-    Value::False.write(&mut buf).unwrap();
-    Value::U8(123).write(&mut buf).unwrap();
-    Value::I8(-123).write(&mut buf).unwrap();
-    Value::U16(12345).write(&mut buf).unwrap();
-    Value::I16(-12345).write(&mut buf).unwrap();
-    Value::U32(123456789).write(&mut buf).unwrap();
-    Value::I32(-123456789).write(&mut buf).unwrap();
-    Value::Float(123.0).write(&mut buf).unwrap();
-    Value::Float(-123.0).write(&mut buf).unwrap();
-    Value::U64(98765432123).write(&mut buf).unwrap();
-    Value::I64(-98765432123).write(&mut buf).unwrap();
-    Value::Double(0xAABB_CCDD_u64 as f64).write(&mut buf).unwrap();
-    Value::Double(-0xAABB_CCDD_i64 as f64).write(&mut buf).unwrap();
-    Value::Text(String::from("Mr. Reynholm")).write(&mut buf).unwrap();
-    Value::Text(String::from("hello-jen")).write(&mut buf).unwrap();
-    Value::DateTime(String::from("hermione")).write(&mut buf).unwrap();
-    Value::Date(String::from("ron")).write(&mut buf).unwrap();
-    Value::Time(String::from("harry")).write(&mut buf).unwrap();
-    Value::DecimalStr(String::from("ginny\t\0\n")).write(&mut buf).unwrap();
+    buf.encode(Value::Null).unwrap();
+    buf.encode(Value::True).unwrap();
+    buf.encode(Value::False).unwrap();
+    buf.encode(Value::U8(123)).unwrap();
+    buf.encode(Value::I8(-123)).unwrap();
+    buf.encode(Value::U16(12345)).unwrap();
+    buf.encode(Value::I16(-12345)).unwrap();
+    buf.encode(Value::U32(123456789)).unwrap();
+    buf.encode(Value::I32(-123456789)).unwrap();
+    buf.encode(Value::Float(123.0)).unwrap();
+    buf.encode(Value::Float(-123.0)).unwrap();
+    buf.encode(Value::U64(98765432123)).unwrap();
+    buf.encode(Value::I64(-98765432123)).unwrap();
+    buf.encode(Value::Double(0xAABB_CCDD_u64 as f64)).unwrap();
+    buf.encode(Value::Double(-0xAABB_CCDD_i64 as f64)).unwrap();
+    buf.encode(Value::Text(String::from("Mr. Reynholm"))).unwrap();
+    buf.encode(Value::Text(String::from("hello-jen"))).unwrap();
+    buf.encode(Value::DateTime(String::from("hermione"))).unwrap();
+    buf.encode(Value::Date(String::from("ron"))).unwrap();
+    buf.encode(Value::Time(String::from("harry"))).unwrap();
+    buf.encode(Value::DecimalStr(String::from("ginny\t\0\n"))).unwrap();
 
     let blob_strings = vec![
         "roy eats moss' orange".repeat(20),
@@ -78,34 +78,34 @@ fn read_write_basic_types() {
     ];
     for s in blob_strings.iter() {
         assert_eq!(cmp_integers!(s.len(), std::i8::MAX), Ordering::Greater);
-        Value::Blob(s.as_bytes().to_vec()).write(&mut buf).unwrap();
+        buf.encode(Value::Blob(s.as_bytes().to_vec())).unwrap();
     }
 
     let mut cursor = Cursor::new(&buf);
-    value::read_null(&mut cursor).unwrap();
-    assert_eq!(value::read_bool(&mut cursor).unwrap(), true);
-    assert_eq!(value::read_bool(&mut cursor).unwrap(), false);
-    assert_eq!(value::read_u8(&mut cursor).unwrap(), 123);
-    assert_eq!(value::read_i8(&mut cursor).unwrap(), -123);
-    assert_eq!(value::read_u16(&mut cursor).unwrap(), 12345);
-    assert_eq!(value::read_i16(&mut cursor).unwrap(), -12345);
-    assert_eq!(value::read_u32(&mut cursor).unwrap(), 123456789);
-    assert_eq!(value::read_i32(&mut cursor).unwrap(), -123456789);
-    assert_eq!(value::read_float(&mut cursor).unwrap(), 123.0);
-    assert_eq!(value::read_float(&mut cursor).unwrap(), -123.0);
-    assert_eq!(value::read_u64(&mut cursor).unwrap(), 98765432123);
-    assert_eq!(value::read_i64(&mut cursor).unwrap(), -98765432123);
-    assert_eq!(value::read_double(&mut cursor).unwrap(), 0xAABB_CCDD_u64 as f64);
-    assert_eq!(value::read_double(&mut cursor).unwrap(), -0xAABB_CCDD_i64 as f64);
-    assert_eq!(value::read_text(&mut cursor).unwrap(), "Mr. Reynholm");
-    assert_eq!(value::read_text(&mut cursor).unwrap(), "hello-jen");
-    assert_eq!(value::read_date_time(&mut cursor).unwrap(), "hermione");
-    assert_eq!(value::read_date(&mut cursor).unwrap(), "ron");
-    assert_eq!(value::read_time(&mut cursor).unwrap(), "harry");
-    assert_eq!(value::read_decimal_str(&mut cursor).unwrap(), "ginny\t\0\n");
+    cursor.decode_null().unwrap();
+    assert_eq!(cursor.decode_bool().unwrap(), true);
+    assert_eq!(cursor.decode_bool().unwrap(), false);
+    assert_eq!(cursor.decode_u8().unwrap(), 123);
+    assert_eq!(cursor.decode_i8().unwrap(), -123);
+    assert_eq!(cursor.decode_u16().unwrap(), 12345);
+    assert_eq!(cursor.decode_i16().unwrap(), -12345);
+    assert_eq!(cursor.decode_u32().unwrap(), 123456789);
+    assert_eq!(cursor.decode_i32().unwrap(), -123456789);
+    assert_eq!(cursor.decode_float().unwrap(), 123.0);
+    assert_eq!(cursor.decode_float().unwrap(), -123.0);
+    assert_eq!(cursor.decode_u64().unwrap(), 98765432123);
+    assert_eq!(cursor.decode_i64().unwrap(), -98765432123);
+    assert_eq!(cursor.decode_double().unwrap(), 0xAABB_CCDD_u64 as f64);
+    assert_eq!(cursor.decode_double().unwrap(), -0xAABB_CCDD_i64 as f64);
+    assert_eq!(cursor.decode_text().unwrap(), "Mr. Reynholm");
+    assert_eq!(cursor.decode_text().unwrap(), "hello-jen");
+    assert_eq!(cursor.decode_date_time().unwrap(), "hermione");
+    assert_eq!(cursor.decode_date().unwrap(), "ron");
+    assert_eq!(cursor.decode_time().unwrap(), "harry");
+    assert_eq!(cursor.decode_decimal_str().unwrap(), "ginny\t\0\n");
 
     for s in blob_strings.iter() {
-        assert_eq!(value::read_blob(&mut cursor).unwrap(), s.as_bytes());
+        assert_eq!(cursor.decode_blob().unwrap(), s.as_bytes());
     }
 
     // Verify position
@@ -133,13 +133,13 @@ fn read_write_lists() {
     assert_eq!(cmp_integers!(list_len, std::i8::MAX), Ordering::Greater);
 
     let mut buf = vec![];
-    list.write(&mut buf).unwrap();
+    buf.encode(&list).unwrap();
     assert_eq!(cmp_integers!(list_len, buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
     match list {
         Value::List(list) => {
-            assert_eq!(value::read_list(&mut cursor).unwrap(), list);
+            assert_eq!(cursor.decode_list().unwrap(), list);
             println!("Verified: {:?}", &list);
 
             // Verify position
@@ -176,14 +176,14 @@ fn read_write_maps() {
     });
 
     let mut buf = vec![];
-    map.write(&mut buf).unwrap();
+    buf.encode(&map).unwrap();
 
     assert_eq!(cmp_integers!(map.len().unwrap(), buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
     match map {
         Value::Map(map) => {
-            assert_eq!(value::read_map(&mut cursor).unwrap(), map);
+            assert_eq!(cursor.decode_map().unwrap(), map);
             println!("Verified: {:?}", &map);
 
             // Verify position
@@ -221,16 +221,16 @@ fn read_write_objects() {
 
     // Write
     let mut buf = vec![];
-    list.write(&mut buf).unwrap();
-    object.write(&mut buf).unwrap();
+    buf.encode(&list).unwrap();
+    buf.encode(&object).unwrap();
 
     // Read
     let mut cursor = Cursor::new(&buf);
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {
-            assert_eq!(value::read_list(&mut cursor).unwrap(), list);
+            assert_eq!(cursor.decode_list().unwrap(), list);
             println!("Verified: {:?}", &list);
-            assert_eq!(value::read_object(&mut cursor).unwrap(), object);
+            assert_eq!(cursor.decode_object().unwrap(), object);
             println!("Verified: {:?}", &object);
 
             // Verify position

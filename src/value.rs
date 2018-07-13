@@ -1207,3 +1207,206 @@ pub fn read_object(source: &mut Read) -> io::Result<HashMap<String, Value>> {
         other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_object() -> got: {:?}", &other))),
     }
 }
+
+/// # Encoder
+///
+/// Default implementors are copied from [`Write`]'s.
+///
+/// [`Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
+pub trait Encoder: Write + Sized {
+
+    /// # Encodes a value
+    fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<DataSize> {
+        let value = value.as_ref();
+        value.write(self)
+    }
+
+}
+
+impl Encoder for ::std::fs::File {}
+impl<'a> Encoder for &'a ::std::fs::File {}
+impl<W: Write> Encoder for ::std::io::BufWriter<W> {}
+impl<'a> Encoder for ::std::io::Cursor<&'a mut [u8]> {}
+impl<'a> Encoder for ::std::io::Cursor<&'a mut Vec<u8>> {}
+impl Encoder for ::std::io::Cursor<Vec<u8>> {}
+impl Encoder for ::std::io::Cursor<Box<[u8]>> {}
+impl<W: Write + ?Sized> Encoder for Box<W> {}
+impl<'a> Encoder for &'a mut [u8] {}
+impl Encoder for Vec<u8> {}
+impl Encoder for ::std::io::Sink {}
+impl Encoder for ::std::io::Stdout {}
+impl<'a> Encoder for ::std::io::StdoutLock<'a> {}
+impl Encoder for ::std::io::Stderr {}
+impl<'a> Encoder for ::std::io::StderrLock<'a> {}
+impl Encoder for ::std::net::TcpStream {}
+impl<'a> Encoder for &'a ::std::net::TcpStream {}
+impl Encoder for ::std::process::ChildStdin {}
+#[cfg(unix)]
+impl Encoder for ::std::os::unix::net::UnixStream {}
+#[cfg(unix)]
+impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
+
+/// # Decoder
+///
+/// Default implementors are copied from [`Read`]'s.
+///
+/// [`Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
+pub trait Decoder: Read + Sized {
+
+    /// # Decodes a value
+    fn decode(&mut self) -> io::Result<Value> {
+        Value::read(self)
+    }
+
+    /// # Decodes a [`Null`]
+    ///
+    /// [`Null`]: enum.Value.html#variant.Null
+    fn decode_null(&mut self) -> io::Result<()> {
+        read_null(self)
+    }
+
+    /// # Decodes a boolean value
+    fn decode_bool(&mut self) -> io::Result<bool> {
+        read_bool(self)
+    }
+
+    /// # Decodes a `u8` value
+    fn decode_u8(&mut self) -> io::Result<u8> {
+        read_u8(self)
+    }
+
+    /// # Decodes an `i8` value
+    fn decode_i8(&mut self) -> io::Result<i8> {
+        read_i8(self)
+    }
+
+    /// # Decodes a `u16` value
+    fn decode_u16(&mut self) -> io::Result<u16> {
+        read_u16(self)
+    }
+
+    /// # Decodes an `i16` value
+    fn decode_i16(&mut self) -> io::Result<i16> {
+        read_i16(self)
+    }
+
+    /// # Decodes a `u32` value
+    fn decode_u32(&mut self) -> io::Result<u32> {
+        read_u32(self)
+    }
+
+    /// # Decodes an `i32` value
+    fn decode_i32(&mut self) -> io::Result<i32> {
+        read_i32(self)
+    }
+
+    /// # Decodes a `u64` value
+    fn decode_u64(&mut self) -> io::Result<u64> {
+        read_u64(self)
+    }
+
+    /// # Decodes an `i64` value
+    fn decode_i64(&mut self) -> io::Result<i64> {
+        read_i64(self)
+    }
+
+    /// # Decodes a [`Float`] value
+    ///
+    /// [`Float`]: enum.Value.html#variant.Float
+    fn decode_float(&mut self) -> io::Result<f32> {
+        read_float(self)
+    }
+
+    /// # Decodes a [`Double`] value
+    ///
+    /// [`Double`]: enum.Value.html#variant.Double
+    fn decode_double(&mut self) -> io::Result<f64> {
+        read_double(self)
+    }
+
+    /// # Decodes a [`Text`]
+    ///
+    /// [`Text`]: enum.Value.html#variant.Text
+    fn decode_text(&mut self) -> io::Result<String> {
+        read_text(self)
+    }
+
+    /// # Decodes a [`DateTime`]
+    ///
+    /// [`DateTime`]: enum.Value.html#variant.DateTime
+    fn decode_date_time(&mut self) -> io::Result<String> {
+        read_date_time(self)
+    }
+
+    /// # Decodes a [`Date`]
+    ///
+    /// [`Date`]: enum.Value.html#variant.Date
+    fn decode_date(&mut self) -> io::Result<String> {
+        read_date(self)
+    }
+
+    /// # Decodes a [`Time`]
+    ///
+    /// [`Time`]: enum.Value.html#variant.Time
+    fn decode_time(&mut self) -> io::Result<String> {
+        read_time(self)
+    }
+
+    /// # Decodes a [`DecimalStr`]
+    ///
+    /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
+    fn decode_decimal_str(&mut self) -> io::Result<String> {
+        read_decimal_str(self)
+    }
+
+    /// # Decodes a [`Blob`]
+    ///
+    /// [`Blob`]: enum.Value.html#variant.Blob
+    fn decode_blob(&mut self) -> io::Result<Vec<u8>> {
+        read_blob(self)
+    }
+
+    /// # Decodes a [`List`]
+    ///
+    /// [`List`]: enum.Value.html#variant.List
+    fn decode_list(&mut self) -> io::Result<Vec<Value>> {
+        read_list(self)
+    }
+
+    /// # Decodes a [`Map`]
+    ///
+    /// [`Map`]: enum.Value.html#variant.Map
+    fn decode_map(&mut self) -> io::Result<BTreeMap<i32, Value>> {
+        read_map(self)
+    }
+
+    /// # Decodes an [`Object`]
+    ///
+    /// [`Object`]: enum.Value.html#variant.Object
+    fn decode_object(&mut self) -> io::Result<HashMap<String, Value>> {
+        read_object(self)
+    }
+
+}
+
+impl Decoder for ::std::fs::File {}
+impl<'a> Decoder for &'a ::std::fs::File {}
+impl<R: Read> Decoder for ::std::io::BufReader<R> {}
+impl<T> Decoder for ::std::io::Cursor<T> where T: AsRef<[u8]> {}
+impl<'a, R: Read + ?Sized> Decoder for &'a mut R {}
+impl<R: Read + ?Sized> Decoder for Box<R> {}
+impl<'a> Decoder for &'a [u8] {}
+impl Decoder for ::std::io::Empty {}
+impl Decoder for ::std::io::Repeat {}
+impl Decoder for ::std::io::Stdin {}
+impl<'a> Decoder for ::std::io::StdinLock<'a> {}
+impl<T: Read, U: Read> Decoder for ::std::io::Chain<T, U> {}
+impl<T: Read> Decoder for ::std::io::Take<T> {}
+impl Decoder for ::std::net::TcpStream {}
+impl<'a> Decoder for &'a ::std::net::TcpStream {}
+impl Decoder for ::std::process::ChildStdout {}
+impl Decoder for ::std::process::ChildStderr {}
+#[cfg(unix)]
+impl Decoder for ::std::os::unix::net::UnixStream {}
+#[cfg(unix)]
+impl<'a> Decoder for &'a ::std::os::unix::net::UnixStream {}
