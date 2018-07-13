@@ -51,21 +51,21 @@ fn read_write_basic_types() {
     let mut buf = vec![];
     buf.encode(Value::Null).unwrap();
     buf.encode(Value::True).unwrap();
-    buf.encode(Value::False).unwrap();
+    buf.encode(Value::from(false)).unwrap();
     buf.encode(Value::U8(123)).unwrap();
-    buf.encode(Value::I8(-123)).unwrap();
+    buf.encode(Value::from(-123_i8)).unwrap();
     buf.encode(Value::U16(12345)).unwrap();
-    buf.encode(Value::I16(-12345)).unwrap();
+    buf.encode(Value::from(-12345_i16)).unwrap();
     buf.encode(Value::U32(123456789)).unwrap();
-    buf.encode(Value::I32(-123456789)).unwrap();
+    buf.encode(Value::from(-123456789_i32)).unwrap();
     buf.encode(Value::Float(123.0)).unwrap();
-    buf.encode(Value::Float(-123.0)).unwrap();
+    buf.encode(Value::from(-123.0_f32)).unwrap();
     buf.encode(Value::U64(98765432123)).unwrap();
-    buf.encode(Value::I64(-98765432123)).unwrap();
+    buf.encode(Value::from(-98765432123_i64)).unwrap();
     buf.encode(Value::Double(0xAABB_CCDD_u64 as f64)).unwrap();
-    buf.encode(Value::Double(-0xAABB_CCDD_i64 as f64)).unwrap();
+    buf.encode(Value::from(-0xAABB_CCDD_i64 as f64)).unwrap();
     buf.encode(Value::Text(String::from("Mr. Reynholm"))).unwrap();
-    buf.encode(Value::Text(String::from("hello-jen"))).unwrap();
+    buf.encode(Value::from("hello-jen")).unwrap();
     buf.encode(Value::DateTime(String::from("hermione"))).unwrap();
     buf.encode(Value::Date(String::from("ron"))).unwrap();
     buf.encode(Value::Time(String::from("harry"))).unwrap();
@@ -115,17 +115,17 @@ fn read_write_basic_types() {
 #[test]
 fn read_write_lists() {
     let list = Value::List(vec![
-        Value::U8(123), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
-        Value::Text(String::from("Draco Malfoy")), Value::Text(String::from("Slytherin")),
+        Value::from(123_u8), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
+        Value::from(String::from("Draco Malfoy")), Value::from("Slytherin"),
         Value::Time(String::from(std::u128::MAX.to_string().repeat(100))),
         Value::List(vec![Value::Date(String::from("July 12th, 2018")), Value::DecimalStr(String::from("1234567890"))]),
         Value::Map({
             let mut map_data = BTreeMap::new();
             map_data.insert(0, Value::Null);
-            map_data.insert(-1, Value::True);
+            map_data.insert(-1, Value::from(true));
             map_data.insert(2, Value::False);
-            map_data.insert(-3, Value::Text(String::from("Ravenclaw")));
-            map_data.insert(4, Value::Blob(b"Hogwarts".to_vec()));
+            map_data.insert(-3, Value::from("Ravenclaw"));
+            map_data.insert(4, Value::from(b"Hogwarts".to_vec()));
             map_data
         }),
     ]);
