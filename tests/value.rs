@@ -118,8 +118,8 @@ fn read_write_lists() {
         Value::from(123_u8), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
         Value::from(String::from("Draco Malfoy")), Value::from("Slytherin"),
         Value::Time(String::from(std::u128::MAX.to_string().repeat(100))),
-        Value::List(vec![Value::Date(String::from("July 12th, 2018")), Value::DecimalStr(String::from("1234567890"))]),
-        Value::Map({
+        Value::from(vec![Value::Date(String::from("July 12th, 2018")), Value::DecimalStr(String::from("1234567890"))]),
+        Value::from({
             let mut map_data = BTreeMap::new();
             map_data.insert(0, Value::Null);
             map_data.insert(-1, Value::from(true));
@@ -153,7 +153,7 @@ fn read_write_lists() {
 fn read_write_maps() {
     let map = Value::Map({
         let mut map_data = BTreeMap::new();
-        map_data.insert(-1, Value::Text(String::from("Mars")));
+        map_data.insert(-1, Value::from("Mars"));
         map_data.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
         map_data.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
         map_data.insert(4, Value::Float(-12345_f32));
@@ -161,15 +161,15 @@ fn read_write_maps() {
         map_data.insert(6, Value::Null);
         map_data.insert(-7, Value::False);
         map_data.insert(8, Value::True);
-        map_data.insert(-9, Value::Text(String::from("SUN")));
-        map_data.insert(10, Value::Text(String::from("earth")));
-        map_data.insert(-11, Value::Text(String::from("Saturn")));
-        map_data.insert(-12, Value::Map({
+        map_data.insert(-9, Value::from("SUN"));
+        map_data.insert(10, Value::from(String::from("earth")));
+        map_data.insert(-11, Value::from("Saturn"));
+        map_data.insert(-12, Value::from({
             let mut map_data = BTreeMap::new();
             map_data.insert(0, Value::Null);
             map_data.insert(-1, Value::True);
             map_data.insert(2, Value::False);
-            map_data.insert(-3, Value::List(vec![Value::Text(String::from("Oracle")), Value::Blob(b"Universe, time and space".to_vec())]));
+            map_data.insert(-3, Value::from(vec![Value::from("Oracle"), Value::Blob(b"Universe, time and space".to_vec())]));
             map_data
         }));
         map_data
@@ -197,25 +197,25 @@ fn read_write_maps() {
 fn read_write_objects() {
     // Make a sample list from specification
     let list = Value::List(vec![
-        Value::Object({
+        Value::from({
             let mut map = HashMap::new();
             map.insert(String::from("id"), Value::U8(1));
-            map.insert(String::from("name"), Value::Text(String::from("John")));
+            map.insert(String::from("name"), Value::from("John"));
             map
         }),
-        Value::Object({
+        Value::from({
             let mut map = HashMap::new();
             map.insert(String::from("id"), Value::U8(2));
-            map.insert(String::from("name"), Value::Text(String::from("Eric")));
+            map.insert(String::from("name"), Value::from("Eric"));
             map
         }),
     ]);
 
     // Make an object
-    let object = Value::Object({
+    let object = Value::from({
         let mut map = HashMap::new();
         map.insert(String::from("id"), Value::U64(999));
-        map.insert(String::from("name"), Value::Text(String::from("Moon")));
+        map.insert(String::from("name"), Value::from("Moon"));
         map
     });
 
