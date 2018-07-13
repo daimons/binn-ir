@@ -49,7 +49,7 @@ fn values() {
 #[test]
 fn read_write_basic_types() {
     let mut buf = vec![];
-    buf.encode(Value::Null).unwrap();
+    buf.encode_null().unwrap();
     buf.encode_bool(true).unwrap();
     buf.encode_bool(false).unwrap();
     buf.encode_u8(123_u8).unwrap();
