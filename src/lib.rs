@@ -18,6 +18,7 @@
 //! # Notes
 //!
 //! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
+//! - `IR` stands for _implementation in Rust_.
 //!
 //! _Special thanks to [Binn]'s authors for their hard work._
 //!
