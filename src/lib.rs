@@ -34,7 +34,7 @@
 // ╚═════════════════╝
 
 macro_rules! crate_code_name    { () => { "binn-ir" }}
-macro_rules! crate_version      { () => { "0.2.0" }}
+macro_rules! crate_version      { () => { "0.3.0" }}
 
 /// # Crate name
 ///
