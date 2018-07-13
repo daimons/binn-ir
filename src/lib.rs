@@ -15,6 +15,8 @@
 //! - All official types are supported.
 //! - User defined types are _not_ yet supported.
 //!
+//! # TODO: docs for beginners
+//!
 //! # Notes
 //!
 //! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
