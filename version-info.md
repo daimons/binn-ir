@@ -1,22 +1,24 @@
 <!-- License: see LICENSE file at root directory of `master` branch -->
 
-# `0.1.0` _(July 12th, 2018)_
+# `0.2.0` _(July 13th, 2018)_
 
 ---
 
 - `value::Value`:
 
-    + Moved all static functions `::read_*()` to parent module.
-    + Moved constant `::MAX_DATA_SIZE` to parent module.
+    + Implemented `AsRef`, `Clone`.
+    + Implemented `From<_>` for some data types that its variants hold.
 
 - `value`:
 
-    + Added new function:
+    + Added new traits with all provided helper functions:
 
             ::rust
-            pub fn read_blob(&mut std::io::Read) -> std::io::Result<std::vec::Vec<u8>>
+            pub trait Encoder: std::io::Write + Sized
+            pub trait Decoder: std::io::Read + Sized
 
-    + Published constant `::OBJECT_KEY_MAX_LEN`.
+    + Implemented `Encoder` for all implementors of `Write`'s.
+    + Implemented `Decoder` for all implementors of `Read`'s.
 
 - Optimized code.
 
