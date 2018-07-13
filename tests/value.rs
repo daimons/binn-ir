@@ -47,6 +47,23 @@ fn values() {
 }
 
 #[test]
+fn basic_types() {
+    assert_eq!(Value::Null.len().unwrap(), 1);
+    assert_eq!(Value::True.len().unwrap(), 1);
+    assert_eq!(Value::False.len().unwrap(), 1);
+    assert_eq!(Value::U8(0).len().unwrap(), 2);
+    assert_eq!(Value::I8(0).len().unwrap(), 2);
+    assert_eq!(Value::U16(0).len().unwrap(), 3);
+    assert_eq!(Value::I16(0).len().unwrap(), 3);
+    assert_eq!(Value::U32(0).len().unwrap(), 5);
+    assert_eq!(Value::I32(0).len().unwrap(), 5);
+    assert_eq!(Value::Float(0.0).len().unwrap(), 5);
+    assert_eq!(Value::U64(0).len().unwrap(), 9);
+    assert_eq!(Value::I64(0).len().unwrap(), 9);
+    assert_eq!(Value::Double(0.0).len().unwrap(), 9);
+}
+
+#[test]
 fn read_write_basic_types() {
     let mut buf = vec![];
     buf.encode_null().unwrap();
