@@ -48,6 +48,7 @@ fn values() {
 
 #[test]
 fn basic_types() {
+    // Lengths
     assert_eq!(Value::Null.len().unwrap(), 1);
     assert_eq!(Value::True.len().unwrap(), 1);
     assert_eq!(Value::False.len().unwrap(), 1);
@@ -61,6 +62,31 @@ fn basic_types() {
     assert_eq!(Value::U64(0).len().unwrap(), 9);
     assert_eq!(Value::I64(0).len().unwrap(), 9);
     assert_eq!(Value::Double(0.0).len().unwrap(), 9);
+
+    // Encoded lengths
+    let mut buf = vec![];
+    macro_rules! write_and_assert { ($($call: expr, $size: expr,)+) => {{
+        $(
+            $call;
+            assert_eq!(buf.len(), $size);
+            buf.clear();
+        )+
+    }};}
+    write_and_assert!(
+        buf.encode_null().unwrap(), 1,
+        buf.encode_bool(true).unwrap(), 1,
+        buf.encode_bool(false).unwrap(), 1,
+        buf.encode_u8(0_u8).unwrap(), 2,
+        buf.encode_i8(0_i8).unwrap(), 2,
+        buf.encode_u16(0_u16).unwrap(), 3,
+        buf.encode_i16(0_i16).unwrap(), 3,
+        buf.encode_u32(0_u32).unwrap(), 5,
+        buf.encode_i32(0_i32).unwrap(), 5,
+        buf.encode_u64(0_u64).unwrap(), 9,
+        buf.encode_i64(0_i64).unwrap(), 9,
+        buf.encode_float(0.0).unwrap(), 5,
+        buf.encode_double(0.0).unwrap(), 9,
+    );
 }
 
 #[test]
