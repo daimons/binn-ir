@@ -64,7 +64,7 @@ fn read_write_basic_types() {
     buf.encode(Value::from(-98765432123_i64)).unwrap();
     buf.encode(Value::Double(0xAABB_CCDD_u64 as f64)).unwrap();
     buf.encode(Value::from(-0xAABB_CCDD_i64 as f64)).unwrap();
-    buf.encode(Value::Text(String::from("Mr. Reynholm"))).unwrap();
+    buf.encode(Value::from(String::from("Mr. Reynholm"))).unwrap();
     buf.encode(Value::from("hello-jen")).unwrap();
     buf.encode(Value::DateTime(String::from("hermione"))).unwrap();
     buf.encode(Value::Date(String::from("ron"))).unwrap();
@@ -78,7 +78,7 @@ fn read_write_basic_types() {
     ];
     for s in blob_strings.iter() {
         assert_eq!(cmp_integers!(s.len(), std::i8::MAX), Ordering::Greater);
-        buf.encode(Value::Blob(s.as_bytes().to_vec())).unwrap();
+        buf.encode(Value::from(s.as_bytes())).unwrap();
     }
 
     let mut cursor = Cursor::new(&buf);
