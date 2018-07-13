@@ -1401,7 +1401,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// [`Text`]: enum.Value.html#variant.Text
     fn encode_text(&mut self, s: impl Into<String>) -> io::Result<u32> {
-        Value::from(s.into()).encode(self)
+        Value::Text(s.into()).encode(self)
     }
 
     /// # Encodes a [`DateTime`]
