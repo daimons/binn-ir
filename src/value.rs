@@ -1280,8 +1280,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<u32> {
-        let value = value.as_ref();
-        value.encode(self)
+        value.as_ref().encode(self)
     }
 
     /// # Encodes a [`Null`]
