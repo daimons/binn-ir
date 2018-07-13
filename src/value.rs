@@ -4,7 +4,6 @@
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
-use std::convert::AsRef;
 use std::fmt;
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::mem;
@@ -93,7 +92,7 @@ pub type DataSize = u32;
 pub const MAX_DATA_SIZE: DataSize = ::std::i32::MAX as DataSize;
 
 /// # Values
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Value {
 
     /// # Null
@@ -330,6 +329,193 @@ impl AsRef<Value> for Value {
 
     fn as_ref(&self) -> &Self {
         self
+    }
+
+}
+
+impl Into<Value> for () {
+
+    fn into(self) -> Value {
+        Value::Null
+    }
+
+}
+
+impl Into<Value> for bool {
+
+    fn into(self) -> Value {
+        match self {
+            true => Value::True,
+            false => Value::False,
+        }
+    }
+
+}
+
+impl Into<Value> for u8 {
+
+    fn into(self) -> Value {
+        Value::U8(self)
+    }
+
+}
+
+impl Into<Value> for i8 {
+
+    fn into(self) -> Value {
+        Value::I8(self)
+    }
+
+}
+
+impl Into<Value> for u16 {
+
+    fn into(self) -> Value {
+        Value::U16(self)
+    }
+
+}
+
+impl Into<Value> for i16 {
+
+    fn into(self) -> Value {
+        Value::I16(self)
+    }
+
+}
+
+impl Into<Value> for u32 {
+
+    fn into(self) -> Value {
+        Value::U32(self)
+    }
+
+}
+
+impl Into<Value> for i32 {
+
+    fn into(self) -> Value {
+        Value::I32(self)
+    }
+
+}
+
+impl Into<Value> for f32 {
+
+    fn into(self) -> Value {
+        Value::Float(self)
+    }
+
+}
+
+impl Into<Value> for u64 {
+
+    fn into(self) -> Value {
+        Value::U64(self)
+    }
+
+}
+
+impl Into<Value> for i64 {
+
+    fn into(self) -> Value {
+        Value::I64(self)
+    }
+
+}
+
+impl Into<Value> for f64 {
+
+    fn into(self) -> Value {
+        Value::Double(self)
+    }
+
+}
+
+impl Into<Value> for String {
+
+    fn into(self) -> Value {
+        Value::Text(self)
+    }
+
+}
+
+impl<'a> Into<Value> for &'a str {
+
+    fn into(self) -> Value {
+        Value::Text(self.into())
+    }
+
+}
+
+impl Into<Value> for Vec<u8> {
+
+    fn into(self) -> Value {
+        Value::Blob(self)
+    }
+
+}
+
+impl<'a> Into<Value> for &'a Vec<u8> {
+
+    fn into(self) -> Value {
+        Value::Blob(self.to_owned())
+    }
+
+}
+
+impl<'a> Into<Value> for &'a [u8] {
+
+    fn into(self) -> Value {
+        Value::Blob(self.into())
+    }
+
+}
+
+impl Into<Value> for Vec<Value> {
+
+    fn into(self) -> Value {
+        Value::List(self)
+    }
+
+}
+
+impl<'a> Into<Value> for &'a Vec<Value> {
+
+    fn into(self) -> Value {
+        Value::List(self.to_vec())
+    }
+
+}
+
+impl Into<Value> for BTreeMap<i32, Value> {
+
+    fn into(self) -> Value {
+        Value::Map(self)
+    }
+
+}
+
+impl<'a> Into<Value> for &'a BTreeMap<i32, Value> {
+
+    fn into(self) -> Value {
+        Value::Map(self.to_owned())
+    }
+
+}
+
+impl Into<Value> for HashMap<String, Value> {
+
+    fn into(self) -> Value {
+        Value::Object(self)
+    }
+
+}
+
+impl<'a> Into<Value> for &'a HashMap<String, Value> {
+
+    fn into(self) -> Value {
+        Value::Object(self.to_owned())
     }
 
 }
