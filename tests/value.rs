@@ -158,17 +158,17 @@ fn read_write_maps() {
         map_data.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
         map_data.insert(4, Value::Float(-12345_f32));
         map_data.insert(-5, Value::Double(6789_f64));
-        map_data.insert(6, Value::Null);
-        map_data.insert(-7, Value::False);
-        map_data.insert(8, Value::True);
-        map_data.insert(-9, Value::from("SUN"));
-        map_data.insert(10, Value::from(String::from("earth")));
+        map_data.insert(6, ().into());
+        map_data.insert(-7, false.into());
+        map_data.insert(8, true.into());
+        map_data.insert(-9, "SUN".into());
+        map_data.insert(10, String::from("earth").into());
         map_data.insert(-11, Value::from("Saturn"));
-        map_data.insert(-12, Value::from({
+        map_data.insert(12, Value::from({
             let mut map_data = BTreeMap::new();
-            map_data.insert(0, Value::Null);
+            map_data.insert(0, Value::from(()));
             map_data.insert(-1, Value::True);
-            map_data.insert(2, Value::False);
+            map_data.insert(2, Value::from(false));
             map_data.insert(-3, Value::from(vec![Value::from("Oracle"), Value::Blob(b"Universe, time and space".to_vec())]));
             map_data
         }));
