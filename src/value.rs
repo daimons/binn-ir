@@ -1277,9 +1277,204 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
 pub trait Encoder: Write + Sized {
 
     /// # Encodes a value
+    ///
+    /// Result: total bytes that have been written.
     fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<u32> {
         let value = value.as_ref();
         value.encode(self)
+    }
+
+    /// # Encodes a [`Null`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Null`]: enum.Value.html#variant.Null
+    fn encode_null(&mut self) -> io::Result<u32> {
+        Value::Null.encode(self)
+    }
+
+    /// # Encodes a `bool` via [`True`] or [`False`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`True`]: enum.Value.html#variant.True
+    /// [`False`]: enum.Value.html#variant.False
+    fn encode_bool(&mut self, b: impl Into<bool>) -> io::Result<u32> {
+        match b.into() {
+            true => Value::True.encode(self),
+            false => Value::False.encode(self),
+        }
+    }
+
+    /// # Encodes a [`U8`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`U8`]: enum.Value.html#variant.U8
+    fn encode_u8(&mut self, u: impl Into<u8>) -> io::Result<u32> {
+        Value::U8(u.into()).encode(self)
+    }
+
+    /// # Encodes an [`I8`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`I8`]: enum.Value.html#variant.I8
+    fn encode_i8(&mut self, i: impl Into<i8>) -> io::Result<u32> {
+        Value::I8(i.into()).encode(self)
+    }
+
+    /// # Encodes a [`U16`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`U16`]: enum.Value.html#variant.U16
+    fn encode_u16(&mut self, u: impl Into<u16>) -> io::Result<u32> {
+        Value::U16(u.into()).encode(self)
+    }
+
+    /// # Encodes an [`I16`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`I16`]: enum.Value.html#variant.I16
+    fn encode_i16(&mut self, i: impl Into<i16>) -> io::Result<u32> {
+        Value::I16(i.into()).encode(self)
+    }
+
+    /// # Encodes a [`U32`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`U32`]: enum.Value.html#variant.U32
+    fn encode_u32(&mut self, u: impl Into<u32>) -> io::Result<u32> {
+        Value::U32(u.into()).encode(self)
+    }
+
+    /// # Encodes an [`I32`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`I32`]: enum.Value.html#variant.I32
+    fn encode_i32(&mut self, i: impl Into<i32>) -> io::Result<u32> {
+        Value::I32(i.into()).encode(self)
+    }
+
+    /// # Encodes a [`U64`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`U64`]: enum.Value.html#variant.U64
+    fn encode_u64(&mut self, u: impl Into<u64>) -> io::Result<u32> {
+        Value::U64(u.into()).encode(self)
+    }
+
+    /// # Encodes an [`I64`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`I64`]: enum.Value.html#variant.I64
+    fn encode_i64(&mut self, i: impl Into<i64>) -> io::Result<u32> {
+        Value::I64(i.into()).encode(self)
+    }
+
+    /// # Encodes a [`Float`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Float`]: enum.Value.html#variant.Float
+    fn encode_float(&mut self, f: impl Into<f32>) -> io::Result<u32> {
+        Value::Float(f.into()).encode(self)
+    }
+
+    /// # Encodes a [`Double`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Double`]: enum.Value.html#variant.Double
+    fn encode_double(&mut self, f: impl Into<f64>) -> io::Result<u32> {
+        Value::Double(f.into()).encode(self)
+    }
+
+    /// # Encodes a [`Text`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Text`]: enum.Value.html#variant.Text
+    fn encode_text(&mut self, s: impl Into<String>) -> io::Result<u32> {
+        Value::from(s.into()).encode(self)
+    }
+
+    /// # Encodes a [`DateTime`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`DateTime`]: enum.Value.html#variant.DateTime
+    fn encode_date_time(&mut self, s: impl Into<String>) -> io::Result<u32> {
+        Value::DateTime(s.into()).encode(self)
+    }
+
+    /// # Encodes a [`Date`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Date`]: enum.Value.html#variant.Date
+    fn encode_date(&mut self, s: impl Into<String>) -> io::Result<u32> {
+        Value::Date(s.into()).encode(self)
+    }
+
+    /// # Encodes a [`Time`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Time`]: enum.Value.html#variant.Time
+    fn encode_time(&mut self, s: impl Into<String>) -> io::Result<u32> {
+        Value::Time(s.into()).encode(self)
+    }
+
+    /// # Encodes a [`DecimalStr`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
+    fn encode_decimal_str(&mut self, s: impl Into<String>) -> io::Result<u32> {
+        Value::DecimalStr(s.into()).encode(self)
+    }
+
+    /// # Encodes a [`Blob`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Blob`]: enum.Value.html#variant.Blob
+    fn encode_blob(&mut self, bytes: impl Into<Vec<u8>>) -> io::Result<u32> {
+        Value::Blob(bytes.into()).encode(self)
+    }
+
+    /// # Encodes a [`List`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`List`]: enum.Value.html#variant.List
+    fn encode_list(&mut self, list: impl Into<Vec<Value>>) -> io::Result<u32> {
+        Value::List(list.into()).encode(self)
+    }
+
+    /// # Encodes a [`Map`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Map`]: enum.Value.html#variant.Map
+    fn encode_map(&mut self, map: impl Into<BTreeMap<i32, Value>>) -> io::Result<u32> {
+        Value::Map(map.into()).encode(self)
+    }
+
+    /// # Encodes an [`Object`]
+    ///
+    /// Result: total bytes that have been written.
+    ///
+    /// [`Object`]: enum.Value.html#variant.Object
+    fn encode_object(&mut self, object: impl Into<HashMap<String, Value>>) -> io::Result<u32> {
+        Value::Object(object.into()).encode(self)
     }
 
 }

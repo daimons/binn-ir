@@ -50,26 +50,26 @@ fn values() {
 fn read_write_basic_types() {
     let mut buf = vec![];
     buf.encode(Value::Null).unwrap();
-    buf.encode(Value::True).unwrap();
-    buf.encode(Value::from(false)).unwrap();
-    buf.encode(Value::U8(123)).unwrap();
-    buf.encode(Value::from(-123_i8)).unwrap();
-    buf.encode(Value::U16(12345)).unwrap();
-    buf.encode(Value::from(-12345_i16)).unwrap();
-    buf.encode(Value::U32(123456789)).unwrap();
-    buf.encode(Value::from(-123456789_i32)).unwrap();
-    buf.encode(Value::Float(123.0)).unwrap();
-    buf.encode(Value::from(-123.0_f32)).unwrap();
-    buf.encode(Value::U64(98765432123)).unwrap();
-    buf.encode(Value::from(-98765432123_i64)).unwrap();
-    buf.encode(Value::Double(0xAABB_CCDD_u64 as f64)).unwrap();
-    buf.encode(Value::from(-0xAABB_CCDD_i64 as f64)).unwrap();
-    buf.encode(Value::from(String::from("Mr. Reynholm"))).unwrap();
-    buf.encode(Value::from("hello-jen")).unwrap();
-    buf.encode(Value::DateTime(String::from("hermione"))).unwrap();
-    buf.encode(Value::Date(String::from("ron"))).unwrap();
-    buf.encode(Value::Time(String::from("harry"))).unwrap();
-    buf.encode(Value::DecimalStr(String::from("ginny\t\0\n"))).unwrap();
+    buf.encode_bool(true).unwrap();
+    buf.encode_bool(false).unwrap();
+    buf.encode_u8(123_u8).unwrap();
+    buf.encode_i8(-123_i8).unwrap();
+    buf.encode_u16(12345_u16).unwrap();
+    buf.encode_i16(-12345_i16).unwrap();
+    buf.encode_u32(123456789_u32).unwrap();
+    buf.encode_i32(-123456789_i32).unwrap();
+    buf.encode_float(123.0).unwrap();
+    buf.encode_float(-123.0).unwrap();
+    buf.encode_u64(98765432123_u64).unwrap();
+    buf.encode_i64(-98765432123_i64).unwrap();
+    buf.encode_double(0xAABB_CCDD_u64 as f64).unwrap();
+    buf.encode_double(-0xAABB_CCDD_i64 as f64).unwrap();
+    buf.encode_text(String::from("Mr. Reynholm")).unwrap();
+    buf.encode_text("hello-jen").unwrap();
+    buf.encode_date_time(String::from("hermione")).unwrap();
+    buf.encode_date("ron").unwrap();
+    buf.encode_time(String::from("harry")).unwrap();
+    buf.encode_decimal_str("ginny\t\0\n").unwrap();
 
     let blob_strings = vec![
         "roy eats moss' orange".repeat(20),
@@ -78,7 +78,7 @@ fn read_write_basic_types() {
     ];
     for s in blob_strings.iter() {
         assert_eq!(cmp_integers!(s.len(), std::i8::MAX), Ordering::Greater);
-        buf.encode(Value::from(s.as_bytes())).unwrap();
+        buf.encode_blob(s.as_bytes()).unwrap();
     }
 
     let mut cursor = Cursor::new(&buf);
