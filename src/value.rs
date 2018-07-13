@@ -333,18 +333,25 @@ impl AsRef<Value> for Value {
 
 }
 
-impl Into<Value> for () {
+impl From<()> for Value {
 
-    fn into(self) -> Value {
+    /// # Converts input to a [`Null`]
+    ///
+    /// [`Null`]: enum.Value.html#variant.Null
+    fn from(_: ()) -> Self {
         Value::Null
     }
 
 }
 
-impl Into<Value> for bool {
+impl From<bool> for Value {
 
-    fn into(self) -> Value {
-        match self {
+    /// # Converts input to either [`True`] or [`False`]
+    ///
+    /// [`True`]: enum.Value.html#variant.True
+    /// [`False`]: enum.Value.html#variant.False
+    fn from(b: bool) -> Self {
+        match b {
             true => Value::True,
             false => Value::False,
         }
@@ -352,170 +359,234 @@ impl Into<Value> for bool {
 
 }
 
-impl Into<Value> for u8 {
+impl From<u8> for Value {
 
-    fn into(self) -> Value {
-        Value::U8(self)
+    /// # Converts input to a [`U8`]
+    ///
+    /// [`U8`]: enum.Value.html#variant.U8
+    fn from(u: u8) -> Self {
+        Value::U8(u)
     }
 
 }
 
-impl Into<Value> for i8 {
+impl From<i8> for Value {
 
-    fn into(self) -> Value {
-        Value::I8(self)
+    /// # Converts input to an [`I8`]
+    ///
+    /// [`I8`]: enum.Value.html#variant.I8
+    fn from(i: i8) -> Self {
+        Value::I8(i)
     }
 
 }
 
-impl Into<Value> for u16 {
+impl From<u16> for Value {
 
-    fn into(self) -> Value {
-        Value::U16(self)
+    /// # Converts input to a [`U16`]
+    ///
+    /// [`U16`]: enum.Value.html#variant.U16
+    fn from(u: u16) -> Self {
+        Value::U16(u)
     }
 
 }
 
-impl Into<Value> for i16 {
+impl From<i16> for Value {
 
-    fn into(self) -> Value {
-        Value::I16(self)
+    /// # Converts input to an [`I16`]
+    ///
+    /// [`I16`]: enum.Value.html#variant.I16
+    fn from(i: i16) -> Self {
+        Value::I16(i)
     }
 
 }
 
-impl Into<Value> for u32 {
+impl From<u32> for Value {
 
-    fn into(self) -> Value {
-        Value::U32(self)
+    /// # Converts input to a [`U32`]
+    ///
+    /// [`U32`]: enum.Value.html#variant.U32
+    fn from(u: u32) -> Self {
+        Value::U32(u)
     }
 
 }
 
-impl Into<Value> for i32 {
+impl From<i32> for Value {
 
-    fn into(self) -> Value {
-        Value::I32(self)
+    /// # Converts input to an [`I32`]
+    ///
+    /// [`I32`]: enum.Value.html#variant.I32
+    fn from(i: i32) -> Self {
+        Value::I32(i)
     }
 
 }
 
-impl Into<Value> for f32 {
+impl From<f32> for Value {
 
-    fn into(self) -> Value {
-        Value::Float(self)
+    /// # Converts input to a [`Float`]
+    ///
+    /// [`Float`]: enum.Value.html#variant.Float
+    fn from(f: f32) -> Self {
+        Value::Float(f)
     }
 
 }
 
-impl Into<Value> for u64 {
+impl From<u64> for Value {
 
-    fn into(self) -> Value {
-        Value::U64(self)
+    /// # Converts input to a [`U64`]
+    ///
+    /// [`U64`]: enum.Value.html#variant.U64
+    fn from(u: u64) -> Self {
+        Value::U64(u)
     }
 
 }
 
-impl Into<Value> for i64 {
+impl From<i64> for Value {
 
-    fn into(self) -> Value {
-        Value::I64(self)
+    /// # Converts input to an [`I64`]
+    ///
+    /// [`I64`]: enum.Value.html#variant.I64
+    fn from(i: i64) -> Self {
+        Value::I64(i)
     }
 
 }
 
-impl Into<Value> for f64 {
+impl From<f64> for Value {
 
-    fn into(self) -> Value {
-        Value::Double(self)
+    /// # Converts input to a [`Double`]
+    ///
+    /// [`Double`]: enum.Value.html#variant.Double
+    fn from(f: f64) -> Self {
+        Value::Double(f)
     }
 
 }
 
-impl Into<Value> for String {
+impl From<String> for Value {
 
-    fn into(self) -> Value {
-        Value::Text(self)
+    /// # Converts input to a [`Text`]
+    ///
+    /// [`Text`]: enum.Value.html#variant.Text
+    fn from(s: String) -> Self {
+        Value::Text(s)
     }
 
 }
 
-impl<'a> Into<Value> for &'a str {
+impl<'a> From<&'a str> for Value {
 
-    fn into(self) -> Value {
-        Value::Text(self.into())
+    /// # Converts input to a [`Text`]
+    ///
+    /// [`Text`]: enum.Value.html#variant.Text
+    fn from(s: &'a str) -> Self {
+        // Note that some variants also accept a String, so forward this call to implementation of `From<String> for Value`, let it decide.
+        Self::from(s.to_owned())
     }
 
 }
 
-impl Into<Value> for Vec<u8> {
+impl From<Vec<u8>> for Value {
 
-    fn into(self) -> Value {
-        Value::Blob(self)
+    /// # Converts input to a [`Blob`]
+    ///
+    /// [`Blob`]: enum.Value.html#variant.Blob
+    fn from(v: Vec<u8>) -> Self {
+        Value::Blob(v)
     }
 
 }
 
-impl<'a> Into<Value> for &'a Vec<u8> {
+impl<'a> From<&'a Vec<u8>> for Value {
 
-    fn into(self) -> Value {
-        Value::Blob(self.to_owned())
+    /// # Converts input to a [`Blob`]
+    ///
+    /// [`Blob`]: enum.Value.html#variant.Blob
+    fn from(v: &'a Vec<u8>) -> Self {
+        Self::from(v.to_owned())
     }
 
 }
 
-impl<'a> Into<Value> for &'a [u8] {
+impl<'a> From<&'a [u8]> for Value {
 
-    fn into(self) -> Value {
-        Value::Blob(self.into())
+    /// # Converts input to a [`Blob`]
+    ///
+    /// [`Blob`]: enum.Value.html#variant.Blob
+    fn from(v: &'a [u8]) -> Self {
+        Self::from(v.to_owned())
     }
 
 }
 
-impl Into<Value> for Vec<Value> {
+impl From<Vec<Value>> for Value {
 
-    fn into(self) -> Value {
-        Value::List(self)
+    /// # Converts input to a [`List`]
+    ///
+    /// [`List`]: enum.Value.html#variant.List
+    fn from(list: Vec<Value>) -> Self {
+        Value::List(list)
     }
 
 }
 
-impl<'a> Into<Value> for &'a Vec<Value> {
+impl<'a> From<&'a Vec<Value>> for Value {
 
-    fn into(self) -> Value {
-        Value::List(self.to_vec())
+    /// # Converts input to a [`List`]
+    ///
+    /// [`List`]: enum.Value.html#variant.List
+    fn from(list: &'a Vec<Value>) -> Self {
+        Self::from(list.to_owned())
     }
 
 }
 
-impl Into<Value> for BTreeMap<i32, Value> {
+impl From<BTreeMap<i32, Value>> for Value {
 
-    fn into(self) -> Value {
-        Value::Map(self)
+    /// # Converts input to a [`Map`]
+    ///
+    /// [`Map`]: enum.Value.html#variant.Map
+    fn from(map: BTreeMap<i32, Value>) -> Self {
+        Value::Map(map)
     }
 
 }
 
-impl<'a> Into<Value> for &'a BTreeMap<i32, Value> {
+impl<'a> From<&'a BTreeMap<i32, Value>> for Value {
 
-    fn into(self) -> Value {
-        Value::Map(self.to_owned())
+    /// # Converts input to a [`Map`]
+    ///
+    /// [`Map`]: enum.Value.html#variant.Map
+    fn from(map: &'a BTreeMap<i32, Value>) -> Self {
+        Self::from(map.to_owned())
     }
 
 }
 
-impl Into<Value> for HashMap<String, Value> {
+impl From<HashMap<String, Value>> for Value {
 
-    fn into(self) -> Value {
-        Value::Object(self)
+    /// # Converts input to an [`Object`]
+    ///
+    /// [`Object`]: enum.Value.html#variant.Object
+    fn from(object: HashMap<String, Value>) -> Self {
+        Value::Object(object)
     }
 
 }
 
-impl<'a> Into<Value> for &'a HashMap<String, Value> {
+impl<'a> From<&'a HashMap<String, Value>> for Value {
 
-    fn into(self) -> Value {
-        Value::Object(self.to_owned())
+    /// # Converts input to an [`Object`]
+    ///
+    /// [`Object`]: enum.Value.html#variant.Object
+    fn from(object: &'a HashMap<String, Value>) -> Self {
+        Self::from(object.to_owned())
     }
 
 }
