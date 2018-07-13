@@ -65,14 +65,14 @@ fn basic_types() {
 
     // Encoded lengths
     let mut buf = vec![];
-    macro_rules! write_and_assert { ($($call: expr, $size: expr,)+) => {{
+    macro_rules! encode_and_verify { ($($call: expr, $size: expr,)+) => {{
         $(
             $call;
             assert_eq!(buf.len(), $size);
             buf.clear();
         )+
     }};}
-    write_and_assert!(
+    encode_and_verify!(
         buf.encode_null().unwrap(), 1,
         buf.encode_bool(true).unwrap(), 1,
         buf.encode_bool(false).unwrap(), 1,
