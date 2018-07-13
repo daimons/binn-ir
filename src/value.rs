@@ -807,7 +807,7 @@ macro_rules! read_list { ($source: ident) => {{
     let mut result = vec![];
     let mut read: DataSize = 0;
     for _ in 0..item_count {
-        let value = Self::read($source)?;
+        let value = Value::decode($source)?;
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
@@ -837,7 +837,7 @@ macro_rules! read_map { ($source: ident) => {{
     let mut read: DataSize = 0;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
-        let value = Self::read($source)?;
+        let value = Value::decode($source)?;
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
@@ -898,7 +898,7 @@ macro_rules! read_object { ($source: ident) => {{
         )?;
 
         // Read value
-        let value = Self::read($source)?;
+        let value = Value::decode($source)?;
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
@@ -954,10 +954,10 @@ impl Value {
         }
     }
 
-    /// # Writes this value into a buffer
+    /// # Encodes this value into a buffer
     ///
     /// Returns the number of bytes written.
-    pub fn write(&self, buf: &mut Write) -> io::Result<DataSize> {
+    pub fn encode(&self, buf: &mut Write) -> io::Result<DataSize> {
         let expected_result = self.len()?;
 
         let result = match *self {
@@ -988,13 +988,13 @@ impl Value {
         match result == expected_result {
             true => Ok(result),
             false => Err(Error::new(
-                ErrorKind::Other, format!("Value::write() -> expected to write {} bytes, result: {}", expected_result, result)
+                ErrorKind::Other, format!("Value::encode() -> expected to write {} bytes, result: {}", expected_result, result)
             )),
         }
     }
 
-    /// # Reads a value from source
-    pub fn read(source: &mut Read) -> io::Result<Self> {
+    /// # Decodes a value from source
+    pub fn decode(source: &mut Read) -> io::Result<Self> {
         match read_int_be!(u8, source)? {
             self::NULL => Ok(Value::Null),
             self::TRUE => Ok(Value::True),
@@ -1019,7 +1019,7 @@ impl Value {
             self::MAP => read_map!(source),
             self::OBJECT => read_object!(source),
             other => Err(Error::new(
-                ErrorKind::InvalidData, format!("Value::read() -> data type is either invalid or not supported: {}", &other)
+                ErrorKind::InvalidData, format!("Value::decode() -> data type is either invalid or not supported: {}", &other)
             )),
         }
     }
@@ -1198,14 +1198,14 @@ fn write_list(size: DataSize, list: &Vec<Value>, buf: &mut Write) -> io::Result<
         // Size
         write_size!(size, buf)?,
         // Count
-        // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+        // We don't have to verify this value. Since at the beginning of Value::encode(), we already called ::len(), which verified the whole
         // container's size.
         write_size!(list.len() as DataSize, buf)?
     )?;
 
     // Items
     for v in list {
-        result = sum!(result, v.write(buf)?)?;
+        result = sum!(result, v.encode(buf)?)?;
     }
 
     Ok(result)
@@ -1219,14 +1219,14 @@ fn write_map(size: DataSize, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io:
         // Size
         write_size!(size, buf)?,
         // Count
-        // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+        // We don't have to verify this value. Since at the beginning of Value::encode(), we already called ::len(), which verified the whole
         // container's size.
         write_size!(map.len() as DataSize, buf)?
     )?;
 
     // Items
     for (key, value) in map {
-        result = sum!(result, write_int_be!(i32, key, buf)?, value.write(buf)?)?;
+        result = sum!(result, write_int_be!(i32, key, buf)?, value.encode(buf)?)?;
     }
 
     Ok(result)
@@ -1242,7 +1242,7 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
         // Size
         write_size!(size, buf)?,
         // Count
-        // We don't have to verify this value. Since at the beginning of ::write(), we already called ::len(), which verified the whole
+        // We don't have to verify this value. Since at the beginning of Value::encode(), we already called ::len(), which verified the whole
         // container's size.
         write_size!(object.len() as DataSize, buf)?
     )?;
@@ -1266,202 +1266,202 @@ fn write_object(size: DataSize, object: &HashMap<String, Value>, buf: &mut Write
             )),
         }
 
-        result = sum!(result, value.write(buf)?)?;
+        result = sum!(result, value.encode(buf)?)?;
     }
 
     Ok(result)
 }
 
-/// # Reads a [`Null`] from source
+/// # Decodes a [`Null`] from source
 ///
 /// [`Null`]: enum.Value.html#variant.Null
-pub fn read_null(source: &mut Read) -> io::Result<()> {
-    match Value::read(source)? {
+pub fn decode_null(source: &mut Read) -> io::Result<()> {
+    match Value::decode(source)? {
         Value::Null => Ok(()),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_null() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_null() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a boolean value from source
-pub fn read_bool(source: &mut Read) -> io::Result<bool> {
-    match Value::read(source)? {
+/// # Decodes a boolean value from source
+pub fn decode_bool(source: &mut Read) -> io::Result<bool> {
+    match Value::decode(source)? {
         Value::True => Ok(true),
         Value::False => Ok(false),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_bool() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_bool() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a `u8` value from source
-pub fn read_u8(source: &mut Read) -> io::Result<u8> {
-    match Value::read(source)? {
+/// # Decodes a `u8` value from source
+pub fn decode_u8(source: &mut Read) -> io::Result<u8> {
+    match Value::decode(source)? {
         Value::U8(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u8() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_u8() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads an `i8` value from source
-pub fn read_i8(source: &mut Read) -> io::Result<i8> {
-    match Value::read(source)? {
+/// # Decodes an `i8` value from source
+pub fn decode_i8(source: &mut Read) -> io::Result<i8> {
+    match Value::decode(source)? {
         Value::I8(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i8() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_i8() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a `u16` value from source
-pub fn read_u16(source: &mut Read) -> io::Result<u16> {
-    match Value::read(source)? {
+/// # Decodes a `u16` value from source
+pub fn decode_u16(source: &mut Read) -> io::Result<u16> {
+    match Value::decode(source)? {
         Value::U16(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u16() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_u16() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads an `i16` value from source
-pub fn read_i16(source: &mut Read) -> io::Result<i16> {
-    match Value::read(source)? {
+/// # Decodes an `i16` value from source
+pub fn decode_i16(source: &mut Read) -> io::Result<i16> {
+    match Value::decode(source)? {
         Value::I16(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i16() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_i16() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a `u32` value from source
-pub fn read_u32(source: &mut Read) -> io::Result<u32> {
-    match Value::read(source)? {
+/// # Decodes a `u32` value from source
+pub fn decode_u32(source: &mut Read) -> io::Result<u32> {
+    match Value::decode(source)? {
         Value::U32(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u32() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_u32() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads an `i32` value from source
-pub fn read_i32(source: &mut Read) -> io::Result<i32> {
-    match Value::read(source)? {
+/// # Decodes an `i32` value from source
+pub fn decode_i32(source: &mut Read) -> io::Result<i32> {
+    match Value::decode(source)? {
         Value::I32(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i32() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_i32() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a `u64` value from source
-pub fn read_u64(source: &mut Read) -> io::Result<u64> {
-    match Value::read(source)? {
+/// # Decodes a `u64` value from source
+pub fn decode_u64(source: &mut Read) -> io::Result<u64> {
+    match Value::decode(source)? {
         Value::U64(u) => Ok(u),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_u64() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_u64() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads an `i64` value from source
-pub fn read_i64(source: &mut Read) -> io::Result<i64> {
-    match Value::read(source)? {
+/// # Decodes an `i64` value from source
+pub fn decode_i64(source: &mut Read) -> io::Result<i64> {
+    match Value::decode(source)? {
         Value::I64(i) => Ok(i),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_i64() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_i64() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Float`] value from source
+/// # Decodes a [`Float`] value from source
 ///
 /// [`Float`]: enum.Value.html#variant.Float
-pub fn read_float(source: &mut Read) -> io::Result<f32> {
-    match Value::read(source)? {
+pub fn decode_float(source: &mut Read) -> io::Result<f32> {
+    match Value::decode(source)? {
         Value::Float(f) => Ok(f),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_float() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_float() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Double`] value from source
+/// # Decodes a [`Double`] value from source
 ///
 /// [`Double`]: enum.Value.html#variant.Double
-pub fn read_double(source: &mut Read) -> io::Result<f64> {
-    match Value::read(source)? {
+pub fn decode_double(source: &mut Read) -> io::Result<f64> {
+    match Value::decode(source)? {
         Value::Double(d) => Ok(d),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_double() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_double() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Text`] from source
+/// # Decodes a [`Text`] from source
 ///
 /// [`Text`]: enum.Value.html#variant.Text
-pub fn read_text(source: &mut Read) -> io::Result<String> {
-    match Value::read(source)? {
+pub fn decode_text(source: &mut Read) -> io::Result<String> {
+    match Value::decode(source)? {
         Value::Text(t) => Ok(t),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_text() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_text() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`DateTime`] from source
+/// # Decodes a [`DateTime`] from source
 ///
 /// [`DateTime`]: enum.Value.html#variant.DateTime
-pub fn read_date_time(source: &mut Read) -> io::Result<String> {
-    match Value::read(source)? {
+pub fn decode_date_time(source: &mut Read) -> io::Result<String> {
+    match Value::decode(source)? {
         Value::DateTime(dt) => Ok(dt),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_date_time() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_date_time() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Date`] from source
+/// # Decodes a [`Date`] from source
 ///
 /// [`Date`]: enum.Value.html#variant.Date
-pub fn read_date(source: &mut Read) -> io::Result<String> {
-    match Value::read(source)? {
+pub fn decode_date(source: &mut Read) -> io::Result<String> {
+    match Value::decode(source)? {
         Value::Date(d) => Ok(d),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_date() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_date() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Time`] from source
+/// # Decodes a [`Time`] from source
 ///
 /// [`Time`]: enum.Value.html#variant.Time
-pub fn read_time(source: &mut Read) -> io::Result<String> {
-    match Value::read(source)? {
+pub fn decode_time(source: &mut Read) -> io::Result<String> {
+    match Value::decode(source)? {
         Value::Time(t) => Ok(t),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_time() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_time() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`DecimalStr`] from source
+/// # Decodes a [`DecimalStr`] from source
 ///
 /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
-pub fn read_decimal_str(source: &mut Read) -> io::Result<String> {
-    match Value::read(source)? {
+pub fn decode_decimal_str(source: &mut Read) -> io::Result<String> {
+    match Value::decode(source)? {
         Value::DecimalStr(ds) => Ok(ds),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_decimal_str() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_decimal_str() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Blob`] from source
+/// # Decodes a [`Blob`] from source
 ///
 /// [`Blob`]: enum.Value.html#variant.Blob
-pub fn read_blob(source: &mut Read) -> io::Result<Vec<u8>> {
-    match Value::read(source)? {
+pub fn decode_blob(source: &mut Read) -> io::Result<Vec<u8>> {
+    match Value::decode(source)? {
         Value::Blob(bytes) => Ok(bytes),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_blob() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_blob() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`List`] from source
+/// # Decodes a [`List`] from source
 ///
 /// [`List`]: enum.Value.html#variant.List
-pub fn read_list(source: &mut Read) -> io::Result<Vec<Value>> {
-    match Value::read(source)? {
+pub fn decode_list(source: &mut Read) -> io::Result<Vec<Value>> {
+    match Value::decode(source)? {
         Value::List(list) => Ok(list),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_list() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_list() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads a [`Map`] from source
+/// # Decodes a [`Map`] from source
 ///
 /// [`Map`]: enum.Value.html#variant.Map
-pub fn read_map(source: &mut Read) -> io::Result<BTreeMap<i32, Value>> {
-    match Value::read(source)? {
+pub fn decode_map(source: &mut Read) -> io::Result<BTreeMap<i32, Value>> {
+    match Value::decode(source)? {
         Value::Map(map) => Ok(map),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_map() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_map() -> got: {:?}", &other))),
     }
 }
 
-/// # Reads an [`Object`] from source
+/// # Decodes an [`Object`] from source
 ///
 /// [`Object`]: enum.Value.html#variant.Object
-pub fn read_object(source: &mut Read) -> io::Result<HashMap<String, Value>> {
-    match Value::read(source)? {
+pub fn decode_object(source: &mut Read) -> io::Result<HashMap<String, Value>> {
+    match Value::decode(source)? {
         Value::Object(object) => Ok(object),
-        other => Err(Error::new(ErrorKind::InvalidData, format!("value::read_object() -> got: {:?}", &other))),
+        other => Err(Error::new(ErrorKind::InvalidData, format!("value::decode_object() -> got: {:?}", &other))),
     }
 }
 
@@ -1475,7 +1475,7 @@ pub trait Encoder: Write + Sized {
     /// # Encodes a value
     fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<DataSize> {
         let value = value.as_ref();
-        value.write(self)
+        value.encode(self)
     }
 
 }
@@ -1512,136 +1512,136 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a value
     fn decode(&mut self) -> io::Result<Value> {
-        Value::read(self)
+        Value::decode(self)
     }
 
     /// # Decodes a [`Null`]
     ///
     /// [`Null`]: enum.Value.html#variant.Null
     fn decode_null(&mut self) -> io::Result<()> {
-        read_null(self)
+        decode_null(self)
     }
 
     /// # Decodes a boolean value
     fn decode_bool(&mut self) -> io::Result<bool> {
-        read_bool(self)
+        decode_bool(self)
     }
 
     /// # Decodes a `u8` value
     fn decode_u8(&mut self) -> io::Result<u8> {
-        read_u8(self)
+        decode_u8(self)
     }
 
     /// # Decodes an `i8` value
     fn decode_i8(&mut self) -> io::Result<i8> {
-        read_i8(self)
+        decode_i8(self)
     }
 
     /// # Decodes a `u16` value
     fn decode_u16(&mut self) -> io::Result<u16> {
-        read_u16(self)
+        decode_u16(self)
     }
 
     /// # Decodes an `i16` value
     fn decode_i16(&mut self) -> io::Result<i16> {
-        read_i16(self)
+        decode_i16(self)
     }
 
     /// # Decodes a `u32` value
     fn decode_u32(&mut self) -> io::Result<u32> {
-        read_u32(self)
+        decode_u32(self)
     }
 
     /// # Decodes an `i32` value
     fn decode_i32(&mut self) -> io::Result<i32> {
-        read_i32(self)
+        decode_i32(self)
     }
 
     /// # Decodes a `u64` value
     fn decode_u64(&mut self) -> io::Result<u64> {
-        read_u64(self)
+        decode_u64(self)
     }
 
     /// # Decodes an `i64` value
     fn decode_i64(&mut self) -> io::Result<i64> {
-        read_i64(self)
+        decode_i64(self)
     }
 
     /// # Decodes a [`Float`] value
     ///
     /// [`Float`]: enum.Value.html#variant.Float
     fn decode_float(&mut self) -> io::Result<f32> {
-        read_float(self)
+        decode_float(self)
     }
 
     /// # Decodes a [`Double`] value
     ///
     /// [`Double`]: enum.Value.html#variant.Double
     fn decode_double(&mut self) -> io::Result<f64> {
-        read_double(self)
+        decode_double(self)
     }
 
     /// # Decodes a [`Text`]
     ///
     /// [`Text`]: enum.Value.html#variant.Text
     fn decode_text(&mut self) -> io::Result<String> {
-        read_text(self)
+        decode_text(self)
     }
 
     /// # Decodes a [`DateTime`]
     ///
     /// [`DateTime`]: enum.Value.html#variant.DateTime
     fn decode_date_time(&mut self) -> io::Result<String> {
-        read_date_time(self)
+        decode_date_time(self)
     }
 
     /// # Decodes a [`Date`]
     ///
     /// [`Date`]: enum.Value.html#variant.Date
     fn decode_date(&mut self) -> io::Result<String> {
-        read_date(self)
+        decode_date(self)
     }
 
     /// # Decodes a [`Time`]
     ///
     /// [`Time`]: enum.Value.html#variant.Time
     fn decode_time(&mut self) -> io::Result<String> {
-        read_time(self)
+        decode_time(self)
     }
 
     /// # Decodes a [`DecimalStr`]
     ///
     /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
     fn decode_decimal_str(&mut self) -> io::Result<String> {
-        read_decimal_str(self)
+        decode_decimal_str(self)
     }
 
     /// # Decodes a [`Blob`]
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
     fn decode_blob(&mut self) -> io::Result<Vec<u8>> {
-        read_blob(self)
+        decode_blob(self)
     }
 
     /// # Decodes a [`List`]
     ///
     /// [`List`]: enum.Value.html#variant.List
     fn decode_list(&mut self) -> io::Result<Vec<Value>> {
-        read_list(self)
+        decode_list(self)
     }
 
     /// # Decodes a [`Map`]
     ///
     /// [`Map`]: enum.Value.html#variant.Map
     fn decode_map(&mut self) -> io::Result<BTreeMap<i32, Value>> {
-        read_map(self)
+        decode_map(self)
     }
 
     /// # Decodes an [`Object`]
     ///
     /// [`Object`]: enum.Value.html#variant.Object
     fn decode_object(&mut self) -> io::Result<HashMap<String, Value>> {
-        read_object(self)
+        decode_object(self)
     }
 
 }
