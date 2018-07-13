@@ -15,8 +15,15 @@
 //! - All official types are supported.
 //! - User defined types are _not_ yet supported.
 //!
+//! # Notes
+//!
+//! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
+//!
+//! _Special thanks to [Binn]'s authors for their hard work._
+//!
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
 //! [Binn]: https://github.com/liteserver/binn
+//! [crate:alloc]: https://doc.rust-lang.org/alloc/
 
 // TODO: enable this flag when `alloc` crate is stabilized
 // #![no_std]
