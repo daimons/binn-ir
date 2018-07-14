@@ -1,20 +1,13 @@
 <!-- License: see LICENSE file at root directory of `master` branch -->
 
-# `0.3.0` _(July 13th, 2018)_
+# `0.4.0` _(July 14th, 2018)_
 
 ---
 
-- `value::Value`:
-
-    + Renamed `::write()` -> `::encode()`, `::read()` -> `::decode()`.
-    + Implemented `From<_>` for some data types that its variants hold.
-
-- `value`:
-
-    + Removed helper functions `::read_*()`.
-    + Removed type `DataSize`.
-
-- `value::Encoder`: added helper functions `::encode_*()` for data types that `value::Value`'s variants hold.
+- Updated documentation and its examples.
+- Fixed minor bugs.
+- Added more tests.
+- Optimized code.
 
 ## Dependencies
 
