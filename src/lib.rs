@@ -1,6 +1,6 @@
 // License: see LICENSE file at root directory of `master` branch
 
-//! # An implementation of <https://github.com/liteserver/binn>
+//! # An implementation of Binn - <https://github.com/liteserver/binn>
 //!
 //! # Project
 //!
@@ -19,6 +19,7 @@
 //!
 //! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
 //! - `IR` stands for _implementation in Rust_.
+//! - Unless _absolutely_ required, the project will remain no-dependency policy.
 //! - Core encoder and decoder are almost done (except ones for user defined types). However API might change, as the project is still in early
 //!   development phase.
 //! - There is _absolutely_ **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
