@@ -55,11 +55,11 @@
 //! };
 //! let file_content = "is hot";
 //!
-//! // Write data (using ::clone() to use the variable later in assertions)
-//! buf.encode_object(file_header.clone());
-//! buf.encode_blob(file_content.as_bytes());
+//! // Encode data (using ::clone() to use the variable later in assertions)
+//! buf.encode_object(file_header.clone()).unwrap();
+//! buf.encode_blob(file_content.as_bytes()).unwrap();
 //!
-//! // Now read data back
+//! // Now decode data back
 //! let mut cursor = Cursor::new(&buf);
 //! assert_eq!(cursor.decode_u64().unwrap(), MAGIC_NUMBER);
 //! assert_eq!(cursor.decode_object().unwrap(), file_header);
