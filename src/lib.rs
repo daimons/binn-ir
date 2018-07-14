@@ -22,7 +22,7 @@
 //! - Unless _absolutely_ required, the project will remain no-dependency policy.
 //! - Core encoder and decoder are almost done (except ones for user defined types). However API might change, as the project is still in early
 //!   development phase.
-//! - There is _absolutely_ **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
+//! - There will be **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
 //! - However, simple API for safe encoder/decoder will be supported. For example: option to limit container size to be decoded...
 //!
 //! # Quick examples
@@ -37,6 +37,8 @@
 //! use binn_ir::value::{Value, Encoder, Decoder};
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;
+//! const KEY_NAME: i32 = 0x00;
+//! const KEY_HASH: i32 = 0x01;
 //!
 //! // Buffer
 //! let mut buf: Vec<u8> = vec![];
@@ -46,21 +48,21 @@
 //!
 //! // A single file header contains: name and hash
 //! let file_header = {
-//!     let mut map = std::collections::HashMap::new();
-//!     map.insert(String::from("name"), Value::from("sun"));
-//!     map.insert(String::from("hash"), Value::U64(0));
+//!     let mut map = std::collections::BTreeMap::new();
+//!     map.insert(KEY_NAME, Value::from("sun"));
+//!     map.insert(KEY_HASH, Value::U64(0));
 //!     map
 //! };
 //! let file_content = "is hot";
 //!
 //! // Encode data (using ::clone() to use the variable later in assertions)
-//! buf.encode_object(file_header.clone()).unwrap();
+//! buf.encode_map(file_header.clone()).unwrap();
 //! buf.encode_blob(file_content.as_bytes()).unwrap();
 //!
 //! // Now decode data back
 //! let mut cursor = std::io::Cursor::new(&buf);
 //! assert_eq!(cursor.decode_u64().unwrap(), MAGIC_NUMBER);
-//! assert_eq!(cursor.decode_object().unwrap(), file_header);
+//! assert_eq!(cursor.decode_map().unwrap(), file_header);
 //! assert_eq!(cursor.decode_blob().unwrap(), file_content.as_bytes());
 //! assert_eq!(cursor.position(), buf.len() as u64);
 //! ```
