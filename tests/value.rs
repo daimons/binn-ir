@@ -12,7 +12,7 @@ mod cmp_integers;
 use binn_ir::value::{self, Value, Encoder, Decoder};
 
 #[test]
-fn values() {
+fn constants() {
     assert_eq!(value::NULL,         0b_0000_0000 | 0x00 | 0);
     assert_eq!(value::TRUE,         0b_0000_0001 | 0x01 | 1);
     assert_eq!(value::FALSE,        0b_0000_0010 | 0x02 | 2);
@@ -90,7 +90,7 @@ fn basic_types() {
 }
 
 #[test]
-fn read_write_basic_types() {
+fn encoding_basic_types() {
     let mut buf = vec![];
     buf.encode_null().unwrap();
     buf.encode_bool(true).unwrap();
@@ -156,7 +156,7 @@ fn read_write_basic_types() {
 }
 
 #[test]
-fn read_write_lists() {
+fn lists() {
     let list = Value::List(vec![
         Value::from(123_u8), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
         Value::from(String::from("Draco Malfoy")), Value::from("Slytherin"),
@@ -193,7 +193,7 @@ fn read_write_lists() {
 }
 
 #[test]
-fn read_write_maps() {
+fn maps() {
     let map = Value::Map({
         let mut map_data = BTreeMap::new();
         map_data.insert(-1, Value::from("Mars"));
@@ -237,7 +237,7 @@ fn read_write_maps() {
 }
 
 #[test]
-fn read_write_objects() {
+fn objects() {
     // Make a sample list from specification
     let list = Value::List(vec![
         Value::from({
@@ -262,12 +262,12 @@ fn read_write_objects() {
         map
     });
 
-    // Write
+    // Encode
     let mut buf = vec![];
     buf.encode(&list).unwrap();
     buf.encode(&object).unwrap();
 
-    // Read
+    // Decode
     let mut cursor = Cursor::new(&buf);
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {

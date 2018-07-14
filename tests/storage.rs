@@ -5,7 +5,7 @@ extern crate binn_ir;
 use binn_ir::storage;
 
 #[test]
-fn storages() {
+fn constants() {
     assert_eq!(storage::NO_BYTES,   0b_000);
     assert_eq!(storage::BYTE,       0b_001);
     assert_eq!(storage::WORD,       0b_010);
