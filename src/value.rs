@@ -1523,11 +1523,13 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 ///
 /// ### Decoding any values
 ///
-/// You can use [`::decode()`] and a `match` to filter values.
+/// You can use [`::decode()`] and a `match` to filter values. This function will hand you the values after _finishing_ decoding process.
 ///
-/// ### Decoding specific values
+/// ### Decoding desired values
 ///
-/// You can use `::decode_*()`. However, please note that: if an un-expected value is detected, the whole reading operation will be **broken**.
+/// You can use `::decode_*()`. However, please note that: if an un-expected value is detected, the whole reading operation _might_ be
+/// **broken**. It's because those functions just decode the header of a value, and stop if not matched. So at that point, data stream _might_
+/// already be broken.
 ///
 /// In contrast, with [`::decode()`], when you expect an [`Object`] but get a [`List`], you can still continue decoding next values.
 ///
@@ -1545,7 +1547,6 @@ pub trait Decoder: Read + Sized {
     fn decode(&mut self) -> io::Result<Value> {
         Value::decode(self)
     }
-
 
     /// # Decodes a [`Null`]
     ///
