@@ -1036,7 +1036,7 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Value> {
         self::MAP => read_map!(source),
         self::OBJECT => read_object!(source),
         _ => Err(Error::new(
-            ErrorKind::InvalidData, format!("Value::decode() -> data type is either invalid or not supported: {}", &source_value)
+            ErrorKind::InvalidData, format!("value::decode_value() -> data type is either invalid or not supported: {}", &source_value)
         )),
     }
 }
