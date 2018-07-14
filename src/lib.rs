@@ -21,6 +21,8 @@
 //! - `IR` stands for _implementation in Rust_.
 //! - Core encoder and decoder are almost done (except ones for user defined types). However API might change, as the project is still in early
 //!   development phase.
+//! - There is _absolutely_ **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
+//! - However, simple API for safe encoder/decoder will be supported. For example: option to limit container size to be decoded...
 //!
 //! # Quick examples
 //!
@@ -52,6 +54,8 @@
 //!     map
 //! };
 //! let file_content = "is hot";
+//!
+//! // Write data (using ::clone() to use the variable later in assertions)
 //! buf.encode_object(file_header.clone());
 //! buf.encode_blob(file_content.as_bytes());
 //!
