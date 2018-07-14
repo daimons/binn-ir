@@ -1529,7 +1529,7 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 ///
 /// ### Decoding desired values
 ///
-/// You can use `::decode_*()`. However, please note that: if an un-expected value is detected, the whole reading operation _might_ be
+/// You can use `::decode_*()`. However, please note that: if an un-expected value is detected, the whole decoding operation _might_ be
 /// **broken**. It's because those functions just decode the header of a value, and stop if not matched. So at that point, data stream _might_
 /// already be broken.
 ///
