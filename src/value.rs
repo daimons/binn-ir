@@ -1519,8 +1519,25 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 
 /// # Decoder
 ///
+/// ## Usage
+///
+/// ### Decoding any values
+///
+/// You can use [`::decode()`] and a `match` to filter values.
+///
+/// ### Decoding specific values
+///
+/// You can use `::decode_*()`. However, please note that: if an un-expected value is detected, the whole reading operation will be **broken**.
+///
+/// In contrast, with [`::decode()`], when you expect an [`Object`] but get a [`List`], you can still continue decoding next values.
+///
+/// ---
+///
 /// Default implementors are copied from [`Read`]'s.
 ///
+/// [`decode()`]: trait.Decoder.html#method.decode
+/// [`Object`]: enum.Value.html#variant.Object
+/// [`List`]: enum.Value.html#variant.List
 /// [`Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
 pub trait Decoder: Read + Sized {
 
@@ -1534,14 +1551,14 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Null`]: enum.Value.html#variant.Null
     fn decode_null(&mut self) -> io::Result<()> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[NULL]), self)? {
             Value::Null => Ok(()),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_null() -> got: {:?}", &other))),
         }
     }
     /// # Decodes a boolean value
     fn decode_bool(&mut self) -> io::Result<bool> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[TRUE, FALSE]), self)? {
             Value::True => Ok(true),
             Value::False => Ok(false),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_bool() -> got: {:?}", &other))),
@@ -1550,7 +1567,7 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a `u8` value
     fn decode_u8(&mut self) -> io::Result<u8> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[U8]), self)? {
             Value::U8(u) => Ok(u),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u8() -> got: {:?}", &other))),
         }
@@ -1558,7 +1575,7 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes an `i8` value
     fn decode_i8(&mut self) -> io::Result<i8> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[I8]), self)? {
             Value::I8(i) => Ok(i),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i8() -> got: {:?}", &other))),
         }
@@ -1566,7 +1583,7 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a `u16` value
     fn decode_u16(&mut self) -> io::Result<u16> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[U16]), self)? {
             Value::U16(u) => Ok(u),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u16() -> got: {:?}", &other))),
         }
@@ -1574,7 +1591,7 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes an `i16` value
     fn decode_i16(&mut self) -> io::Result<i16> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[I16]), self)? {
             Value::I16(i) => Ok(i),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i16() -> got: {:?}", &other))),
         }
@@ -1582,14 +1599,14 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a `u32` value
     fn decode_u32(&mut self) -> io::Result<u32> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[U32]), self)? {
             Value::U32(u) => Ok(u),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u32() -> got: {:?}", &other))),
         }
     }
     /// # Decodes an `i32` value
     fn decode_i32(&mut self) -> io::Result<i32> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[I32]), self)? {
             Value::I32(i) => Ok(i),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i32() -> got: {:?}", &other))),
         }
@@ -1597,7 +1614,7 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a `u64` value
     fn decode_u64(&mut self) -> io::Result<u64> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[U64]), self)? {
             Value::U64(u) => Ok(u),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u64() -> got: {:?}", &other))),
         }
@@ -1605,7 +1622,7 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes an `i64` value
     fn decode_i64(&mut self) -> io::Result<i64> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[I64]), self)? {
             Value::I64(i) => Ok(i),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i64() -> got: {:?}", &other))),
         }
@@ -1615,7 +1632,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Float`]: enum.Value.html#variant.Float
     fn decode_float(&mut self) -> io::Result<f32> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[FLOAT]), self)? {
             Value::Float(f) => Ok(f),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_float() -> got: {:?}", &other))),
         }
@@ -1625,7 +1642,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Double`]: enum.Value.html#variant.Double
     fn decode_double(&mut self) -> io::Result<f64> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[DOUBLE]), self)? {
             Value::Double(d) => Ok(d),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_double() -> got: {:?}", &other))),
         }
@@ -1635,7 +1652,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Text`]: enum.Value.html#variant.Text
     fn decode_text(&mut self) -> io::Result<String> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[TEXT]), self)? {
             Value::Text(t) => Ok(t),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_text() -> got: {:?}", &other))),
         }
@@ -1645,7 +1662,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`DateTime`]: enum.Value.html#variant.DateTime
     fn decode_date_time(&mut self) -> io::Result<String> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[DATE_TIME]), self)? {
             Value::DateTime(dt) => Ok(dt),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date_time() -> got: {:?}", &other))),
         }
@@ -1655,7 +1672,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Date`]: enum.Value.html#variant.Date
     fn decode_date(&mut self) -> io::Result<String> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[DATE]), self)? {
             Value::Date(d) => Ok(d),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date() -> got: {:?}", &other))),
         }
@@ -1665,7 +1682,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Time`]: enum.Value.html#variant.Time
     fn decode_time(&mut self) -> io::Result<String> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[TIME]), self)? {
             Value::Time(t) => Ok(t),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_time() -> got: {:?}", &other))),
         }
@@ -1675,7 +1692,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
     fn decode_decimal_str(&mut self) -> io::Result<String> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[DECIMAL_STR]), self)? {
             Value::DecimalStr(ds) => Ok(ds),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_decimal_str() -> got: {:?}", &other))),
         }
@@ -1685,7 +1702,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
     fn decode_blob(&mut self) -> io::Result<Vec<u8>> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[BLOB]), self)? {
             Value::Blob(bytes) => Ok(bytes),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_blob() -> got: {:?}", &other))),
         }
@@ -1695,7 +1712,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`List`]: enum.Value.html#variant.List
     fn decode_list(&mut self) -> io::Result<Vec<Value>> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[LIST]), self)? {
             Value::List(list) => Ok(list),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_list() -> got: {:?}", &other))),
         }
@@ -1705,7 +1722,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Map`]: enum.Value.html#variant.Map
     fn decode_map(&mut self) -> io::Result<BTreeMap<i32, Value>> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[MAP]), self)? {
             Value::Map(map) => Ok(map),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_map() -> got: {:?}", &other))),
         }
@@ -1715,7 +1732,7 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Object`]: enum.Value.html#variant.Object
     fn decode_object(&mut self) -> io::Result<HashMap<String, Value>> {
-        match Value::decode(self)? {
+        match decode_value(Some(&[OBJECT]), self)? {
             Value::Object(object) => Ok(object),
             other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_object() -> got: {:?}", &other))),
         }
