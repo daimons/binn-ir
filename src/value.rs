@@ -999,14 +999,14 @@ impl Value {
 
 /// # Decodes a value from source
 ///
-/// If `value` is provided, the function expects source to contain that value, and returns an error if not.
+/// If `filter` is provided, the function expects source to contain one of them, and returns an error if not.
 ///
-/// If `value` is `None`, the function decodes any value from source.
-fn decode_value(value: Option<u8>, source: &mut Read) -> io::Result<Value> {
+/// If `filter` is `None`, the function decodes any value from source.
+fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Value> {
     let source_value = read_int_be!(u8, source)?;
-    if let Some(v) = value {
-        if source_value != v {
-            return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_value() -> expected: {}, got: {}", &v, &source_value)));
+    if let Some(expected_values) = filter {
+        if expected_values.contains(&source_value) == false {
+            return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_value() -> un-expected value: {}", &source_value)));
         }
     }
 
