@@ -1287,6 +1287,8 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
 
 /// # Encoder
 ///
+/// ---
+///
 /// Default implementors are copied from [`Write`]'s.
 ///
 /// [`Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
