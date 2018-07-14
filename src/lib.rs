@@ -33,9 +33,6 @@
 //! ```
 //! extern crate binn_ir;
 //!
-//! use std::collections::HashMap;
-//! use std::io::Cursor;
-//!
 //! use binn_ir::value::{Value, Encoder, Decoder};
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;
@@ -48,7 +45,7 @@
 //!
 //! // A single file header contains: name and hash
 //! let file_header = {
-//!     let mut map = HashMap::new();
+//!     let mut map = std::collections::HashMap::new();
 //!     map.insert(String::from("name"), Value::from("sun"));
 //!     map.insert(String::from("hash"), Value::U64(0));
 //!     map
@@ -60,7 +57,7 @@
 //! buf.encode_blob(file_content.as_bytes()).unwrap();
 //!
 //! // Now decode data back
-//! let mut cursor = Cursor::new(&buf);
+//! let mut cursor = std::io::Cursor::new(&buf);
 //! assert_eq!(cursor.decode_u64().unwrap(), MAGIC_NUMBER);
 //! assert_eq!(cursor.decode_object().unwrap(), file_header);
 //! assert_eq!(cursor.decode_blob().unwrap(), file_content.as_bytes());
