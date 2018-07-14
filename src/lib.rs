@@ -84,12 +84,12 @@
 //! > --------
 //! > Each value is stored with 4 possible parameters:
 //! >
-//! > <pre>
+//! > ```Text
 //! > [type][size][count][data]
-//! > </pre>
+//! > ```
 //! >
 //! > But most are optional. Only the type parameter is used in all of them. Here is a list of used parameters for basic data types:
-//! > <pre>
+//! > ```Text
 //! > boolean, null:
 //! > [type]
 //! >
@@ -101,7 +101,7 @@
 //! >
 //! > list, object, map:
 //! > [type][size][count][data]
-//! > </pre>
+//! > ```
 //! >
 //! > Each parameter can be stored with polymorphic size:
 //! >
@@ -117,12 +117,12 @@
 //! > -----
 //! > Each value is stored starting with the data type. It can use 1 or 2 bytes. The first byte is divided as follows:
 //! >
-//! > <pre>
+//! > ```Text
 //! >  +-------- Storage type
 //! >  |  +----- Sub-type size
 //! >  |  |  +-- Sub-type
 //! > 000 0 0000
-//! > </pre>
+//! > ```
 //! > #### Storage
 //! >
 //! > The 3 most significant bits are used for the **storage type**. It has information about how many bytes the data will use. The storage
@@ -155,21 +155,21 @@
 //! > The next bit informs if the type uses 1 or 2 bytes.
 //! >
 //! > If the bit is 0, the type uses only 1 byte, and the sub-type has 4 bits (0 to 15)
-//! > <pre>
+//! > ```Text
 //! >  +-------- Storage type
 //! >  |  +----- Sub-type size
 //! >  |  |  +-- Sub-type
 //! > 000 0 0000
-//! > </pre>
+//! > ```
 //! > When the bit is 1, another byte is used for the type and the sub-type has 12 bits (up to 4096)
-//! > <pre>
+//! > ```Text
 //! >  +-------- Storage type
 //! >  |  +----- Sub-type size
 //! >  |  |
 //! > 000 1 0000  0000 0000
 //! >       |  Sub-type   |
 //! >       +-------------+
-//! > </pre>
+//! > ```
 //! >
 //! > #### Sub-type
 //! >
@@ -321,7 +321,7 @@
 //! > #### A json data such as {"hello":"world"} is serialized as:
 //! >
 //! > **Binn:** (17 bytes)
-//! > <pre>
+//! > ```Text
 //! >   \xE2           // [type] object (container)
 //! >   \x11           // [size] container total size
 //! >   \x01           // [count] key/value pairs
@@ -329,7 +329,7 @@
 //! >   \xA0           // [type] = string
 //! >   \x05           // [size]
 //! >   world\x00      // [data] (null terminated)
-//! > </pre>
+//! > ```
 //! >
 //! > #### A list of 3 integers:
 //! >
@@ -337,7 +337,7 @@
 //! > >[123, -456, 789]
 //! >
 //! > **Binn:** (11 bytes)
-//! > <pre>
+//! > ```Text
 //! >   \xE0           // [type] list (container)
 //! >   \x0B           // [size] container total size
 //! >   \x03           // [count] items
@@ -347,7 +347,7 @@
 //! >   \xFE\x38       // [data] (-456)
 //! >   \x40           // [type] = uint16
 //! >   \x03\x15       // [data] (789)
-//! > </pre>
+//! > ```
 //! >
 //! > #### A list inside a map:
 //! >
@@ -355,7 +355,7 @@
 //! > >{1: "add", 2: [-12345, 6789]}
 //! >
 //! > **Binn:** (26 bytes)
-//! > <pre>
+//! > ```Text
 //! >  \xE1             // [type] map (container)
 //! >  \x1A             // [size] container total size
 //! >  \x02             // [count] key/value pairs
@@ -371,7 +371,7 @@
 //! >  \xCF\xC7         // [data] (-12345)
 //! >  \x40             // [type] = uint16
 //! >  \x1A\x85         // [data] (6789)
-//! > </pre>
+//! > ```
 //! >
 //! >
 //! > #### A list of objects:
@@ -383,7 +383,7 @@
 //! > ]
 //! >
 //! > **Binn:** (43 bytes)
-//! > <pre>
+//! > ```Text
 //! >  \xE0           // [type] list (container)
 //! >  \x2B           // [size] container total size
 //! >  \x02           // [count] items
@@ -413,7 +413,7 @@
 //! >  \xA0           // [type] = string
 //! >  \x04           // [size]
 //! >  Eric\x00       // [data] (null terminated)
-//! > </pre>
+//! > ```
 //! >
 //!
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
