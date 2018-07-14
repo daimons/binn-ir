@@ -2,12 +2,10 @@
 
 [package]
 name = "binn-ir"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Hai Bison <haibison.apps@gmail.com>"]
 description = "An implementation of Binn - https://github.com/liteserver/binn"
 repository = "https://bitbucket.org/haibison/binn-ir/"
 license-file = "LICENSE"
 keywords = ["binn", "implementation"]
 categories = ["data-structures", "encoding"]
-
-[dependencies]
