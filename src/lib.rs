@@ -19,8 +19,8 @@
 //!
 //! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
 //! - `IR` stands for _implementation in Rust_.
-//! - Core encoder and decoder are almost done (except decoder for user defined types). However API might change, as the project is still in
-//!   early development phase.
+//! - Core encoder and decoder are almost done (except ones for user defined types). However API might change, as the project is still in early
+//!   development phase.
 //!
 //! # Quick examples
 //!
