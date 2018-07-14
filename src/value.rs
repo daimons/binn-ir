@@ -1541,7 +1541,7 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 ///
 /// Default implementors are copied from [`Read`]'s.
 ///
-/// [`decode()`]: trait.Decoder.html#method.decode
+/// [`::decode()`]: trait.Decoder.html#method.decode
 /// [`Object`]: enum.Value.html#variant.Object
 /// [`List`]: enum.Value.html#variant.List
 /// [`Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
