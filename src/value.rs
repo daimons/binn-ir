@@ -992,35 +992,51 @@ impl Value {
 
     /// # Decodes a value from source
     pub fn decode(source: &mut Read) -> io::Result<Self> {
-        match read_int_be!(u8, source)? {
-            self::NULL => Ok(Value::Null),
-            self::TRUE => Ok(Value::True),
-            self::FALSE => Ok(Value::False),
-            self::U8 => Ok(Value::U8(read_int_be!(u8, source)?)),
-            self::I8 => Ok(Value::I8(read_int_be!(i8, source)?)),
-            self::U16 => Ok(Value::U16(read_int_be!(u16, source)?)),
-            self::I16 => Ok(Value::I16(read_int_be!(i16, source)?)),
-            self::U32 => Ok(Value::U32(read_int_be!(u32, source)?)),
-            self::I32 => Ok(Value::I32(read_int_be!(i32, source)?)),
-            self::FLOAT => Ok(Value::Float(f32::from_bits(read_int_be!(u32, source)?))),
-            self::U64 => Ok(Value::U64(read_int_be!(u64, source)?)),
-            self::I64 => Ok(Value::I64(read_int_be!(i64, source)?)),
-            self::DOUBLE => Ok(Value::Double(f64::from_bits(read_int_be!(u64, source)?))),
-            self::TEXT => Ok(Value::Text(read_str!(source)?)),
-            self::DATE_TIME => Ok(Value::DateTime(read_str!(source)?)),
-            self::DATE => Ok(Value::Date(read_str!(source)?)),
-            self::TIME => Ok(Value::Time(read_str!(source)?)),
-            self::DECIMAL_STR => Ok(Value::DecimalStr(read_str!(source)?)),
-            self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
-            self::LIST => read_list!(source),
-            self::MAP => read_map!(source),
-            self::OBJECT => read_object!(source),
-            other => Err(Error::new(
-                ErrorKind::InvalidData, format!("Value::decode() -> data type is either invalid or not supported: {}", &other)
-            )),
+        decode_value(None, source)
+    }
+
+}
+
+/// # Decodes a value from source
+///
+/// If `value` is provided, the function expects source to contain that value, and returns an error if not.
+///
+/// If `value` is `None`, the function decodes any value from source.
+fn decode_value(value: Option<u8>, source: &mut Read) -> io::Result<Value> {
+    let source_value = read_int_be!(u8, source)?;
+    if let Some(v) = value {
+        if source_value != v {
+            return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_value() -> expected: {}, got: {}", &v, &source_value)));
         }
     }
 
+    match source_value {
+        self::NULL => Ok(Value::Null),
+        self::TRUE => Ok(Value::True),
+        self::FALSE => Ok(Value::False),
+        self::U8 => Ok(Value::U8(read_int_be!(u8, source)?)),
+        self::I8 => Ok(Value::I8(read_int_be!(i8, source)?)),
+        self::U16 => Ok(Value::U16(read_int_be!(u16, source)?)),
+        self::I16 => Ok(Value::I16(read_int_be!(i16, source)?)),
+        self::U32 => Ok(Value::U32(read_int_be!(u32, source)?)),
+        self::I32 => Ok(Value::I32(read_int_be!(i32, source)?)),
+        self::FLOAT => Ok(Value::Float(f32::from_bits(read_int_be!(u32, source)?))),
+        self::U64 => Ok(Value::U64(read_int_be!(u64, source)?)),
+        self::I64 => Ok(Value::I64(read_int_be!(i64, source)?)),
+        self::DOUBLE => Ok(Value::Double(f64::from_bits(read_int_be!(u64, source)?))),
+        self::TEXT => Ok(Value::Text(read_str!(source)?)),
+        self::DATE_TIME => Ok(Value::DateTime(read_str!(source)?)),
+        self::DATE => Ok(Value::Date(read_str!(source)?)),
+        self::TIME => Ok(Value::Time(read_str!(source)?)),
+        self::DECIMAL_STR => Ok(Value::DecimalStr(read_str!(source)?)),
+        self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
+        self::LIST => read_list!(source),
+        self::MAP => read_map!(source),
+        self::OBJECT => read_object!(source),
+        _ => Err(Error::new(
+            ErrorKind::InvalidData, format!("Value::decode() -> data type is either invalid or not supported: {}", &source_value)
+        )),
+    }
 }
 
 /// # Calculates bytes needed for a length
