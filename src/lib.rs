@@ -37,8 +37,6 @@
 //! use binn_ir::value::{Value, Encoder, Decoder};
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;
-//! const KEY_NAME: i32 = 0x00;
-//! const KEY_HASH: i32 = 0x01;
 //!
 //! // Buffer
 //! let mut buf: Vec<u8> = vec![];
@@ -49,8 +47,8 @@
 //! // A single file header contains: name and hash
 //! let file_header = {
 //!     let mut map = std::collections::BTreeMap::new();
-//!     map.insert(KEY_NAME, Value::from("sun"));
-//!     map.insert(KEY_HASH, Value::U64(0));
+//!     map.insert(0_i32, Value::from("the-sun"));  // name
+//!     map.insert(1_i32, Value::U64(0));           // hash
 //!     map
 //! };
 //! let file_content = "is hot";
@@ -417,6 +415,7 @@
 //! >  Eric\x00       // [data] (null terminated)
 //! > </pre>
 //! >
+//!
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
 //! [Binn]: https://github.com/liteserver/binn
 //! [Binn:License]: https://github.com/liteserver/binn/blob/master/LICENSE
