@@ -859,7 +859,12 @@ macro_rules! decode_map { ($source: ident) => {{
                 )
             )),
         };
-        result.insert(key, value);
+        match result.insert(key, value) {
+            Some(old_value) => return Err(Error::new(
+                ErrorKind::InvalidData, format!("value::decode_map!() -> duplicate key '{}' of old value: {:?}", &key, &old_value)
+            )),
+            None => (),
+        };
     }
 
     Ok(Some(Value::Map(result)))
@@ -921,7 +926,12 @@ macro_rules! decode_object { ($source: ident) => {{
                 &size, &read, &value)
             )),
         };
-        result.insert(key, value);
+        match result.insert(key, value) {
+            Some(old_value) => return Err(Error::new(
+                ErrorKind::InvalidData, format!("value::decode_object!() -> duplicate key of old value: {:?}", &old_value)
+            )),
+            None => (),
+        };
     }
 
     Ok(Some(Value::Object(result)))
