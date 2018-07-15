@@ -796,15 +796,21 @@ macro_rules! read_str { ($source: ident) => {{
 
 /// # Reads a list from source
 ///
-/// Returns: `io::Result<Value>`
+/// Returns: `io::Result<Option<Value>>`
 macro_rules! read_list { ($source: ident) => {{
     let size = read_size!($source)?;
     let item_count = read_size!($source)?;
 
     let mut result = vec![];
     let mut read: u32 = 0;
-    for _ in 0..item_count {
-        let value = Value::decode($source)?;
+    for item_index in 0..item_count {
+        let value = match Value::decode($source)? {
+            Some(value) => value,
+            None => return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("value::read_list!() -> missing item #{}/{}", &item_index, &item_count)
+            )),
+        };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
@@ -820,12 +826,12 @@ macro_rules! read_list { ($source: ident) => {{
         result.push(value);
     }
 
-    Ok(Value::List(result))
+    Ok(Some(Value::List(result)))
 }};}
 
 /// # Reads a map from source
 ///
-/// Returns: `io::Result<Value>`
+/// Returns: `io::Result<Option<Value>>`
 macro_rules! read_map { ($source: ident) => {{
     let size = read_size!($source)?;
     let item_count = read_size!($source)?;
@@ -834,7 +840,10 @@ macro_rules! read_map { ($source: ident) => {{
     let mut read: u32 = 0;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
-        let value = Value::decode($source)?;
+        let value = match Value::decode($source)? {
+            Some(value) => value,
+            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::read_map!() -> missing value for key {}", &key))),
+        };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
@@ -853,12 +862,12 @@ macro_rules! read_map { ($source: ident) => {{
         result.insert(key, value);
     }
 
-    Ok(Value::Map(result))
+    Ok(Some(Value::Map(result)))
 }};}
 
 /// # Reads an object from source
 ///
-/// Returns: `io::Result<Value>`
+/// Returns: `io::Result<Option<Value>>`
 macro_rules! read_object { ($source: ident) => {{
     let size = read_size!($source)?;
     let item_count = read_size!($source)?;
@@ -895,7 +904,10 @@ macro_rules! read_object { ($source: ident) => {{
         )?;
 
         // Read value
-        let value = Value::decode($source)?;
+        let value = match Value::decode($source)? {
+            Some(value) => value,
+            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::read_object!() -> missing value for key {:?}", &key))),
+        };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
@@ -912,7 +924,7 @@ macro_rules! read_object { ($source: ident) => {{
         result.insert(key, value);
     }
 
-    Ok(Value::Object(result))
+    Ok(Some(Value::Object(result)))
 }};}
 
 impl Value {
@@ -991,7 +1003,9 @@ impl Value {
     }
 
     /// # Decodes a value from source
-    pub fn decode(source: &mut Read) -> io::Result<Self> {
+    ///
+    /// If it returns `Ok(None)`, it means there's no more data to decode.
+    pub fn decode(source: &mut Read) -> io::Result<Option<Self>> {
         decode_value(None, source)
     }
 
@@ -1002,8 +1016,15 @@ impl Value {
 /// If `filter` is provided, the function expects that next value from source is one of them, and returns an error if not.
 ///
 /// If `filter` is `None`, the function decodes any value from source.
-fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Value> {
-    let source_value = read_int_be!(u8, source)?;
+fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<Value>> {
+    let source_value = match read_int_be!(u8, source) {
+        Ok(source_value) => source_value,
+        Err(err) => return match err.kind() {
+            ErrorKind::UnexpectedEof => Ok(None),
+            _ => Err(err),
+        },
+    };
+
     if let Some(ref expected_values) = filter {
         if expected_values.contains(&source_value) == false {
             return Err(Error::new(
@@ -1013,25 +1034,25 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Value> {
     }
 
     match source_value {
-        self::NULL => Ok(Value::Null),
-        self::TRUE => Ok(Value::True),
-        self::FALSE => Ok(Value::False),
-        self::U8 => Ok(Value::U8(read_int_be!(u8, source)?)),
-        self::I8 => Ok(Value::I8(read_int_be!(i8, source)?)),
-        self::U16 => Ok(Value::U16(read_int_be!(u16, source)?)),
-        self::I16 => Ok(Value::I16(read_int_be!(i16, source)?)),
-        self::U32 => Ok(Value::U32(read_int_be!(u32, source)?)),
-        self::I32 => Ok(Value::I32(read_int_be!(i32, source)?)),
-        self::FLOAT => Ok(Value::Float(f32::from_bits(read_int_be!(u32, source)?))),
-        self::U64 => Ok(Value::U64(read_int_be!(u64, source)?)),
-        self::I64 => Ok(Value::I64(read_int_be!(i64, source)?)),
-        self::DOUBLE => Ok(Value::Double(f64::from_bits(read_int_be!(u64, source)?))),
-        self::TEXT => Ok(Value::Text(read_str!(source)?)),
-        self::DATE_TIME => Ok(Value::DateTime(read_str!(source)?)),
-        self::DATE => Ok(Value::Date(read_str!(source)?)),
-        self::TIME => Ok(Value::Time(read_str!(source)?)),
-        self::DECIMAL_STR => Ok(Value::DecimalStr(read_str!(source)?)),
-        self::BLOB => Ok(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?)),
+        self::NULL => Ok(Some(Value::Null)),
+        self::TRUE => Ok(Some(Value::True)),
+        self::FALSE => Ok(Some(Value::False)),
+        self::U8 => Ok(Some(Value::U8(read_int_be!(u8, source)?))),
+        self::I8 => Ok(Some(Value::I8(read_int_be!(i8, source)?))),
+        self::U16 => Ok(Some(Value::U16(read_int_be!(u16, source)?))),
+        self::I16 => Ok(Some(Value::I16(read_int_be!(i16, source)?))),
+        self::U32 => Ok(Some(Value::U32(read_int_be!(u32, source)?))),
+        self::I32 => Ok(Some(Value::I32(read_int_be!(i32, source)?))),
+        self::FLOAT => Ok(Some(Value::Float(f32::from_bits(read_int_be!(u32, source)?)))),
+        self::U64 => Ok(Some(Value::U64(read_int_be!(u64, source)?))),
+        self::I64 => Ok(Some(Value::I64(read_int_be!(i64, source)?))),
+        self::DOUBLE => Ok(Some(Value::Double(f64::from_bits(read_int_be!(u64, source)?)))),
+        self::TEXT => Ok(Some(Value::Text(read_str!(source)?))),
+        self::DATE_TIME => Ok(Some(Value::DateTime(read_str!(source)?))),
+        self::DATE => Ok(Some(Value::Date(read_str!(source)?))),
+        self::TIME => Ok(Some(Value::Time(read_str!(source)?))),
+        self::DECIMAL_STR => Ok(Some(Value::DecimalStr(read_str!(source)?))),
+        self::BLOB => Ok(Some(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?))),
         self::LIST => read_list!(source),
         self::MAP => read_map!(source),
         self::OBJECT => read_object!(source),
@@ -1537,6 +1558,10 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 ///
 /// In contrast, with [`::decode()`], when you expect an [`Object`] but get a [`List`], you can still continue decoding next values.
 ///
+/// ### Notes
+///
+/// If a `decode*()` function returns an `Ok(None)`, it means there's no more data to decode.
+///
 /// ---
 ///
 /// Default implementors are copied from [`Read`]'s.
@@ -1548,198 +1573,219 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 pub trait Decoder: Read + Sized {
 
     /// # Decodes a value
-    fn decode(&mut self) -> io::Result<Value> {
+    fn decode(&mut self) -> io::Result<Option<Value>> {
         Value::decode(self)
     }
 
     /// # Decodes a [`Null`]
     ///
     /// [`Null`]: enum.Value.html#variant.Null
-    fn decode_null(&mut self) -> io::Result<()> {
+    fn decode_null(&mut self) -> io::Result<Option<()>> {
         match decode_value(Some(&[NULL]), self)? {
-            Value::Null => Ok(()),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_null() -> got: {:?}", &other))),
+            Some(Value::Null) => Ok(Some(())),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_null() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
     /// # Decodes a boolean value
-    fn decode_bool(&mut self) -> io::Result<bool> {
+    fn decode_bool(&mut self) -> io::Result<Option<bool>> {
         match decode_value(Some(&[TRUE, FALSE]), self)? {
-            Value::True => Ok(true),
-            Value::False => Ok(false),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_bool() -> got: {:?}", &other))),
+            Some(Value::True) => Ok(Some(true)),
+            Some(Value::False) => Ok(Some(false)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_bool() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a `u8` value
-    fn decode_u8(&mut self) -> io::Result<u8> {
+    fn decode_u8(&mut self) -> io::Result<Option<u8>> {
         match decode_value(Some(&[U8]), self)? {
-            Value::U8(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u8() -> got: {:?}", &other))),
+            Some(Value::U8(u)) => Ok(Some(u)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u8() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes an `i8` value
-    fn decode_i8(&mut self) -> io::Result<i8> {
+    fn decode_i8(&mut self) -> io::Result<Option<i8>> {
         match decode_value(Some(&[I8]), self)? {
-            Value::I8(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i8() -> got: {:?}", &other))),
+            Some(Value::I8(i)) => Ok(Some(i)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i8() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a `u16` value
-    fn decode_u16(&mut self) -> io::Result<u16> {
+    fn decode_u16(&mut self) -> io::Result<Option<u16>> {
         match decode_value(Some(&[U16]), self)? {
-            Value::U16(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u16() -> got: {:?}", &other))),
+            Some(Value::U16(u)) => Ok(Some(u)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u16() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes an `i16` value
-    fn decode_i16(&mut self) -> io::Result<i16> {
+    fn decode_i16(&mut self) -> io::Result<Option<i16>> {
         match decode_value(Some(&[I16]), self)? {
-            Value::I16(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i16() -> got: {:?}", &other))),
+            Some(Value::I16(i)) => Ok(Some(i)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i16() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a `u32` value
-    fn decode_u32(&mut self) -> io::Result<u32> {
+    fn decode_u32(&mut self) -> io::Result<Option<u32>> {
         match decode_value(Some(&[U32]), self)? {
-            Value::U32(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u32() -> got: {:?}", &other))),
+            Some(Value::U32(u)) => Ok(Some(u)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u32() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
     /// # Decodes an `i32` value
-    fn decode_i32(&mut self) -> io::Result<i32> {
+    fn decode_i32(&mut self) -> io::Result<Option<i32>> {
         match decode_value(Some(&[I32]), self)? {
-            Value::I32(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i32() -> got: {:?}", &other))),
+            Some(Value::I32(i)) => Ok(Some(i)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i32() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a `u64` value
-    fn decode_u64(&mut self) -> io::Result<u64> {
+    fn decode_u64(&mut self) -> io::Result<Option<u64>> {
         match decode_value(Some(&[U64]), self)? {
-            Value::U64(u) => Ok(u),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u64() -> got: {:?}", &other))),
+            Some(Value::U64(u)) => Ok(Some(u)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u64() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes an `i64` value
-    fn decode_i64(&mut self) -> io::Result<i64> {
+    fn decode_i64(&mut self) -> io::Result<Option<i64>> {
         match decode_value(Some(&[I64]), self)? {
-            Value::I64(i) => Ok(i),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i64() -> got: {:?}", &other))),
+            Some(Value::I64(i)) => Ok(Some(i)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i64() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Float`] value
     ///
     /// [`Float`]: enum.Value.html#variant.Float
-    fn decode_float(&mut self) -> io::Result<f32> {
+    fn decode_float(&mut self) -> io::Result<Option<f32>> {
         match decode_value(Some(&[FLOAT]), self)? {
-            Value::Float(f) => Ok(f),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_float() -> got: {:?}", &other))),
+            Some(Value::Float(f)) => Ok(Some(f)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_float() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Double`] value
     ///
     /// [`Double`]: enum.Value.html#variant.Double
-    fn decode_double(&mut self) -> io::Result<f64> {
+    fn decode_double(&mut self) -> io::Result<Option<f64>> {
         match decode_value(Some(&[DOUBLE]), self)? {
-            Value::Double(d) => Ok(d),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_double() -> got: {:?}", &other))),
+            Some(Value::Double(d)) => Ok(Some(d)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_double() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Text`]
     ///
     /// [`Text`]: enum.Value.html#variant.Text
-    fn decode_text(&mut self) -> io::Result<String> {
+    fn decode_text(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[TEXT]), self)? {
-            Value::Text(t) => Ok(t),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_text() -> got: {:?}", &other))),
+            Some(Value::Text(t)) => Ok(Some(t)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_text() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`DateTime`]
     ///
     /// [`DateTime`]: enum.Value.html#variant.DateTime
-    fn decode_date_time(&mut self) -> io::Result<String> {
+    fn decode_date_time(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[DATE_TIME]), self)? {
-            Value::DateTime(dt) => Ok(dt),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date_time() -> got: {:?}", &other))),
+            Some(Value::DateTime(dt)) => Ok(Some(dt)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date_time() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Date`]
     ///
     /// [`Date`]: enum.Value.html#variant.Date
-    fn decode_date(&mut self) -> io::Result<String> {
+    fn decode_date(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[DATE]), self)? {
-            Value::Date(d) => Ok(d),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date() -> got: {:?}", &other))),
+            Some(Value::Date(d)) => Ok(Some(d)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Time`]
     ///
     /// [`Time`]: enum.Value.html#variant.Time
-    fn decode_time(&mut self) -> io::Result<String> {
+    fn decode_time(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[TIME]), self)? {
-            Value::Time(t) => Ok(t),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_time() -> got: {:?}", &other))),
+            Some(Value::Time(t)) => Ok(Some(t)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_time() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`DecimalStr`]
     ///
     /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
-    fn decode_decimal_str(&mut self) -> io::Result<String> {
+    fn decode_decimal_str(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[DECIMAL_STR]), self)? {
-            Value::DecimalStr(ds) => Ok(ds),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_decimal_str() -> got: {:?}", &other))),
+            Some(Value::DecimalStr(ds)) => Ok(Some(ds)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_decimal_str() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Blob`]
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
-    fn decode_blob(&mut self) -> io::Result<Vec<u8>> {
+    fn decode_blob(&mut self) -> io::Result<Option<Vec<u8>>> {
         match decode_value(Some(&[BLOB]), self)? {
-            Value::Blob(bytes) => Ok(bytes),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_blob() -> got: {:?}", &other))),
+            Some(Value::Blob(bytes)) => Ok(Some(bytes)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_blob() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`List`]
     ///
     /// [`List`]: enum.Value.html#variant.List
-    fn decode_list(&mut self) -> io::Result<Vec<Value>> {
+    fn decode_list(&mut self) -> io::Result<Option<Vec<Value>>> {
         match decode_value(Some(&[LIST]), self)? {
-            Value::List(list) => Ok(list),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_list() -> got: {:?}", &other))),
+            Some(Value::List(list)) => Ok(Some(list)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_list() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes a [`Map`]
     ///
     /// [`Map`]: enum.Value.html#variant.Map
-    fn decode_map(&mut self) -> io::Result<BTreeMap<i32, Value>> {
+    fn decode_map(&mut self) -> io::Result<Option<BTreeMap<i32, Value>>> {
         match decode_value(Some(&[MAP]), self)? {
-            Value::Map(map) => Ok(map),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_map() -> got: {:?}", &other))),
+            Some(Value::Map(map)) => Ok(Some(map)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_map() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 
     /// # Decodes an [`Object`]
     ///
     /// [`Object`]: enum.Value.html#variant.Object
-    fn decode_object(&mut self) -> io::Result<HashMap<String, Value>> {
+    fn decode_object(&mut self) -> io::Result<Option<HashMap<String, Value>>> {
         match decode_value(Some(&[OBJECT]), self)? {
-            Value::Object(object) => Ok(object),
-            other => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_object() -> got: {:?}", &other))),
+            Some(Value::Object(object)) => Ok(Some(object)),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_object() -> got: {:?}", &other))),
+            None => Ok(None),
         }
     }
 

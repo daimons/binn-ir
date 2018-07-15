@@ -125,33 +125,34 @@ fn encoding_basic_types() {
     }
 
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(cursor.decode_null().unwrap(), ());
-    assert_eq!(cursor.decode_bool().unwrap(), true);
-    assert_eq!(cursor.decode_bool().unwrap(), false);
-    assert_eq!(cursor.decode_u8().unwrap(), 123);
-    assert_eq!(cursor.decode_i8().unwrap(), -123);
-    assert_eq!(cursor.decode_u16().unwrap(), 12345);
-    assert_eq!(cursor.decode_i16().unwrap(), -12345);
-    assert_eq!(cursor.decode_u32().unwrap(), 123456789);
-    assert_eq!(cursor.decode_i32().unwrap(), -123456789);
-    assert_eq!(cursor.decode_float().unwrap(), 123.0);
-    assert_eq!(cursor.decode_float().unwrap(), -123.0);
-    assert_eq!(cursor.decode_u64().unwrap(), 98765432123);
-    assert_eq!(cursor.decode_i64().unwrap(), -98765432123);
-    assert_eq!(cursor.decode_double().unwrap(), 0xAABB_CCDD_u64 as f64);
-    assert_eq!(cursor.decode_double().unwrap(), -0xAABB_CCDD_i64 as f64);
-    assert_eq!(cursor.decode_text().unwrap(), "Mr. Reynholm");
-    assert_eq!(cursor.decode_text().unwrap(), "hello-jen");
-    assert_eq!(cursor.decode_date_time().unwrap(), "hermione");
-    assert_eq!(cursor.decode_date().unwrap(), "ron");
-    assert_eq!(cursor.decode_time().unwrap(), "harry");
-    assert_eq!(cursor.decode_decimal_str().unwrap(), "ginny\t\0\n");
+    assert_eq!(cursor.decode_null().unwrap(), Some(()));
+    assert_eq!(cursor.decode_bool().unwrap(), Some(true));
+    assert_eq!(cursor.decode_bool().unwrap(), Some(false));
+    assert_eq!(cursor.decode_u8().unwrap(), Some(123));
+    assert_eq!(cursor.decode_i8().unwrap(), Some(-123));
+    assert_eq!(cursor.decode_u16().unwrap(), Some(12345));
+    assert_eq!(cursor.decode_i16().unwrap(), Some(-12345));
+    assert_eq!(cursor.decode_u32().unwrap(), Some(123456789));
+    assert_eq!(cursor.decode_i32().unwrap(), Some(-123456789));
+    assert_eq!(cursor.decode_float().unwrap(), Some(123.0));
+    assert_eq!(cursor.decode_float().unwrap(), Some(-123.0));
+    assert_eq!(cursor.decode_u64().unwrap(), Some(98765432123));
+    assert_eq!(cursor.decode_i64().unwrap(), Some(-98765432123));
+    assert_eq!(cursor.decode_double().unwrap(), Some(0xAABB_CCDD_u64 as f64));
+    assert_eq!(cursor.decode_double().unwrap(), Some(-0xAABB_CCDD_i64 as f64));
+    assert_eq!(cursor.decode_text().unwrap().unwrap(), "Mr. Reynholm");
+    assert_eq!(cursor.decode_text().unwrap().unwrap(), "hello-jen");
+    assert_eq!(cursor.decode_date_time().unwrap().unwrap(), "hermione");
+    assert_eq!(cursor.decode_date().unwrap().unwrap(), "ron");
+    assert_eq!(cursor.decode_time().unwrap().unwrap(), "harry");
+    assert_eq!(cursor.decode_decimal_str().unwrap().unwrap(), "ginny\t\0\n");
 
     for s in blob_strings.iter() {
-        assert_eq!(cursor.decode_blob().unwrap(), s.as_bytes());
+        assert_eq!(cursor.decode_blob().unwrap().unwrap(), s.as_bytes());
     }
 
     // Verify position
+    assert_eq!(cursor.decode().unwrap(), None);
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
 
@@ -166,7 +167,8 @@ fn blobs() {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
     ];
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(cursor.decode_blob().unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
+    assert_eq!(cursor.decode_blob().unwrap().unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
+    assert_eq!(cursor.decode_null().unwrap(), None);
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 
     // Small blob with 4-byte size; but data is missing
@@ -205,10 +207,11 @@ fn lists() {
     let mut cursor = Cursor::new(&buf);
     match list {
         Value::List(list) => {
-            assert_eq!(cursor.decode_list().unwrap(), list);
+            assert_eq!(cursor.decode_list().unwrap().unwrap(), list);
             println!("Verified: {:?}", &list);
 
             // Verify position
+            assert_eq!(cursor.decode_map().unwrap(), None);
             assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
@@ -249,10 +252,11 @@ fn maps() {
     let mut cursor = Cursor::new(&buf);
     match map {
         Value::Map(map) => {
-            assert_eq!(cursor.decode_map().unwrap(), map);
+            assert_eq!(cursor.decode_map().unwrap().unwrap(), map);
             println!("Verified: {:?}", &map);
 
             // Verify position
+            assert_eq!(cursor.decode_object().unwrap(), None);
             assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
@@ -294,12 +298,13 @@ fn objects() {
     let mut cursor = Cursor::new(&buf);
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {
-            assert_eq!(cursor.decode_list().unwrap(), list);
+            assert_eq!(cursor.decode_list().unwrap().unwrap(), list);
             println!("Verified: {:?}", &list);
-            assert_eq!(cursor.decode_object().unwrap(), object);
+            assert_eq!(cursor.decode_object().unwrap().unwrap(), object);
             println!("Verified: {:?}", &object);
 
             // Verify position
+            assert_eq!(cursor.decode_null().unwrap(), None);
             assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
