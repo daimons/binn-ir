@@ -794,10 +794,10 @@ macro_rules! read_str { ($source: ident) => {{
     }
 }};}
 
-/// # Reads a list from source
+/// # Decodes a list from source
 ///
 /// Returns: `io::Result<Option<Value>>`
-macro_rules! read_list { ($source: ident) => {{
+macro_rules! decode_list { ($source: ident) => {{
     let size = read_size!($source)?;
     let item_count = read_size!($source)?;
 
@@ -808,19 +808,19 @@ macro_rules! read_list { ($source: ident) => {{
             Some(value) => value,
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::read_list!() -> missing item #{}/{}", &item_index, &item_count)
+                format!("value::decode_list!() -> missing item #{}/{}", &item_index, &item_count)
             )),
         };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
-                    ErrorKind::InvalidData, format!("value::read_list!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    ErrorKind::InvalidData, format!("value::decode_list!() -> expected to read less than {} bytes, got: {}", &size, &v)
                 )),
             },
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::read_list!() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
+                format!("value::decode_list!() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
             )),
         };
         result.push(value);
@@ -829,10 +829,10 @@ macro_rules! read_list { ($source: ident) => {{
     Ok(Some(Value::List(result)))
 }};}
 
-/// # Reads a map from source
+/// # Decodes a map from source
 ///
 /// Returns: `io::Result<Option<Value>>`
-macro_rules! read_map { ($source: ident) => {{
+macro_rules! decode_map { ($source: ident) => {{
     let size = read_size!($source)?;
     let item_count = read_size!($source)?;
 
@@ -842,19 +842,19 @@ macro_rules! read_map { ($source: ident) => {{
         let key = read_int_be!(i32, $source)?;
         let value = match Value::decode($source)? {
             Some(value) => value,
-            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::read_map!() -> missing value for key {}", &key))),
+            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_map!() -> missing value for key {}", &key))),
         };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
-                    ErrorKind::InvalidData, format!("value::read_map!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    ErrorKind::InvalidData, format!("value::decode_map!() -> expected to read less than {} bytes, got: {}", &size, &v)
                 )),
             },
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!(
-                    "value::read_map!() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}",
+                    "value::decode_map!() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}",
                     &size, &read, &key, &value,
                 )
             )),
@@ -865,10 +865,10 @@ macro_rules! read_map { ($source: ident) => {{
     Ok(Some(Value::Map(result)))
 }};}
 
-/// # Reads an object from source
+/// # Decodes an object from source
 ///
 /// Returns: `io::Result<Option<Value>>`
-macro_rules! read_object { ($source: ident) => {{
+macro_rules! decode_object { ($source: ident) => {{
     let size = read_size!($source)?;
     let item_count = read_size!($source)?;
 
@@ -880,44 +880,44 @@ macro_rules! read_object { ($source: ident) => {{
         match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::read_object!() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key_len)
+                format!("value::decode_object!() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key_len)
             )),
             _ => read = match read.checked_add(key_len) {
                 Some(v) => match cmp_integers!(size, v) {
                     Ordering::Greater => v,
                     _ => return Err(Error::new(
-                        ErrorKind::InvalidData, format!("value::read_object!() -> expected to read less than {} bytes, got: {}",
+                        ErrorKind::InvalidData, format!("value::decode_object!() -> expected to read less than {} bytes, got: {}",
                         &size, &v)
                     )),
                 },
                 None => return Err(Error::new(
                     ErrorKind::InvalidData,
                     format!(
-                        "value::read_object!() -> invalid object size -> expected: {}, current: {}, new key length: {}",
+                        "value::decode_object!() -> invalid object size -> expected: {}, current: {}, new key length: {}",
                         &size, &read, &key_len,
                     )
                 )),
             },
         };
         let key = String::from_utf8(read_into_new_vec!(key_len, $source)?).map_err(|err|
-            Error::new(ErrorKind::InvalidData, format!("value::read_object!() -> failed to decode UTF-8: {}", &err))
+            Error::new(ErrorKind::InvalidData, format!("value::decode_object!() -> failed to decode UTF-8: {}", &err))
         )?;
 
         // Read value
         let value = match Value::decode($source)? {
             Some(value) => value,
-            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::read_object!() -> missing value for key {:?}", &key))),
+            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_object!() -> missing value for key {:?}", &key))),
         };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
-                    ErrorKind::InvalidData, format!("value::read_object!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    ErrorKind::InvalidData, format!("value::decode_object!() -> expected to read less than {} bytes, got: {}", &size, &v)
                 )),
             },
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::read_object!() -> invalid object size -> expected: {}, current: {}, new value: {:?}",
+                format!("value::decode_object!() -> invalid object size -> expected: {}, current: {}, new value: {:?}",
                 &size, &read, &value)
             )),
         };
@@ -1053,9 +1053,9 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
         self::TIME => Ok(Some(Value::Time(read_str!(source)?))),
         self::DECIMAL_STR => Ok(Some(Value::DecimalStr(read_str!(source)?))),
         self::BLOB => Ok(Some(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?))),
-        self::LIST => read_list!(source),
-        self::MAP => read_map!(source),
-        self::OBJECT => read_object!(source),
+        self::LIST => decode_list!(source),
+        self::MAP => decode_map!(source),
+        self::OBJECT => decode_object!(source),
         _ => Err(Error::new(
             ErrorKind::InvalidData, format!("value::decode_value() -> data type is either invalid or not supported: {}", &source_value)
         )),
