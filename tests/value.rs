@@ -156,6 +156,21 @@ fn encoding_basic_types() {
 }
 
 #[test]
+fn blobs() {
+    // Small blob with 4-byte size
+    let buf = vec![
+        value::BLOB,
+        // Size: 10 bytes
+        0x80, 0x00, 0x00, 0x0A,
+        // Data
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+    ];
+    let mut cursor = Cursor::new(&buf);
+    assert_eq!(cursor.decode_blob().unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
+    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+}
+
+#[test]
 fn lists() {
     let list = Value::List(vec![
         Value::from(123_u8), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
