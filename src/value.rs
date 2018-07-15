@@ -768,9 +768,9 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
     // - `len` was verified via above call to `new_vec_with_capacity!()`, that it must be <= `MAX_DATA_SIZE`
     // - `MAX_DATA_SIZE` should be **tested** to be < `std::u64::MAX`
     match $source.take(len as u64).read_to_end(&mut result) {
-        Ok(read) => match read == result.len() {
-            true => Ok(result),
-            false => Err(Error::new(
+        Ok(read) => match cmp_integers!(read, len) {
+            Ordering::Equal => Ok(result),
+            _ => Err(Error::new(
                 ErrorKind::WriteZero, format!("value::read_into_new_vec!() -> expected to read {} bytes, but: {}", &len, &read)
             )),
         },
