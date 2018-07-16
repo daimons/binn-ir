@@ -159,12 +159,19 @@ fn basic_types() {
 /// # Decodes from invalid source and asserts
 ///
 /// If error kind is not provided, `ErrorKind::UnexpectedEof` will be used.
+macro_rules! decode_from_invalid_source { ($bytes: expr) => {{
+    Cursor::new($bytes).decode().unwrap_err()
+}};}
+
+/// # Decodes from invalid source and asserts
+///
+/// If error kind is not provided, `ErrorKind::UnexpectedEof` will be used.
 macro_rules! decode_from_invalid_source_and_assert {
+    ($bytes: expr, $error_kind: expr) => {{
+        assert_eq!(decode_from_invalid_source!($bytes).kind(), $error_kind);
+    }};
     ($bytes: expr) => {{
         decode_from_invalid_source_and_assert!($bytes, ErrorKind::UnexpectedEof);
-    }};
-    ($bytes: expr, $error_kind: expr) => {{
-        assert_eq!(Cursor::new($bytes).decode().unwrap_err().kind(), $error_kind);
     }};
 }
 
@@ -342,11 +349,15 @@ fn objects() {
 }
 
 #[test]
-fn decode_containers_from_invalid_sources() {
+fn decode_lists_from_invalid_sources() {
     // Missing size
     decode_from_invalid_source_and_assert!(vec![value::LIST]);
     // Invalid size
     decode_from_invalid_source_and_assert!(vec![value::LIST, 2], ErrorKind::InvalidData);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x02], ErrorKind::InvalidData);
     // Missing item count
-    decode_from_invalid_source_and_assert!(vec![value::LIST, 3]);
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x03]);
+    // Missing items
+    decode_from_invalid_source!(vec![value::LIST, 3, 1]);
 }
