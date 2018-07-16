@@ -315,6 +315,26 @@ fn maps() {
 }
 
 #[test]
+fn decode_maps_from_invalid_sources() {
+    // Missing size
+    decode_from_invalid_source_and_assert!(vec![value::MAP]);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::MAP, 2], ErrorKind::InvalidData);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::MAP, 0x80, 0x00, 0x00, 0x02], ErrorKind::InvalidData);
+    // Missing item count
+    decode_from_invalid_source_and_assert!(vec![value::MAP, 0x80, 0x00, 0x00, 0x03]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::MAP, 3, 1]);
+    // Invalid size + missing items
+    decode_from_invalid_source_and_assert!(vec![value::MAP, 3, 0x80, 0x00, 0x00, 0x01]);
+    // Invalid size + missing items
+    decode_from_invalid_source_and_assert!(vec![value::MAP, 0x80, 0x00, 0x00, 0x03, 1]);
+    // Invalid size + missing items
+    decode_from_invalid_source_and_assert!(vec![value::MAP, 0x80, 0x00, 0x00, 0x03, 0x80, 0x00, 0x00, 0x01]);
+}
+
+#[test]
 fn objects() {
     // Make a sample list from specification
     let list = Value::List(vec![
