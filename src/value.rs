@@ -1643,11 +1643,8 @@ impl<'a> Encoder for &'a ::std::os::unix::net::UnixStream {}
 ///
 /// ### Notes
 ///
-/// If a `decode*()` function returns an `Ok(None)`, it means there's no more data to decode.
-///
-/// ---
-///
-/// Default implementors are copied from [`Read`]'s.
+/// - If a `::decode*()` function returns an `Ok(None)`, it means there's no more data to decode.
+/// - Default implementors are copied from [`Read`]'s.
 ///
 /// [`::decode()`]: trait.Decoder.html#method.decode
 /// [`Object`]: enum.Value.html#variant.Object
