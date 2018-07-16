@@ -17,13 +17,11 @@
 //!
 //! # Notes
 //!
+//! - Unless _absolutely necessary_, the project will **not** use any dependency.
 //! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
 //! - `IR` stands for _implementation in Rust_.
-//! - Unless _absolutely necessary_, the project will **not** use any dependency.
-//! - Core encoder and decoder are almost done (except ones for user defined types). However API might change, as the project is still in early
-//!   development phase.
 //! - There will be **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
-//! - However, simple API for safe encoder/decoder will be supported. For example: option to limit container size to be decoded...
+//!   However, simple API for safe encoder/decoder will be supported. For example: option to limit container size to be decoded...
 //!
 //! # Quick examples
 //!
