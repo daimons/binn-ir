@@ -156,9 +156,7 @@ fn basic_types() {
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
 
-/// # Decodes from invalid source and asserts
-///
-/// If error kind is not provided, `ErrorKind::UnexpectedEof` will be used.
+/// # Tries to decode from an invalid source, then unwraps an error
 macro_rules! decode_from_invalid_source { ($bytes: expr) => {{
     Cursor::new($bytes).decode().unwrap_err()
 }};}
