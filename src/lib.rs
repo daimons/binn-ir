@@ -49,17 +49,17 @@
 //!     map.insert(1_i32, Value::U64(0));           // hash
 //!     map
 //! };
-//! let file_content = "is hot";
+//! let file_content = b"is hot".to_vec();
 //!
-//! // Encode data (using ::clone() to use the variable later in assertions)
+//! // Encode data (using ::clone() to use the variables later in assertions)
 //! buf.encode_map(file_header.clone()).unwrap();
-//! buf.encode_blob(file_content.as_bytes()).unwrap();
+//! buf.encode_blob(file_content.clone()).unwrap();
 //!
 //! // Now decode data back
 //! let mut cursor = std::io::Cursor::new(&buf);
 //! assert_eq!(cursor.decode_u64().unwrap(), Some(MAGIC_NUMBER));
 //! assert_eq!(cursor.decode_map().unwrap(), Some(file_header));
-//! assert_eq!(cursor.decode_blob().unwrap().unwrap(), file_content.as_bytes());
+//! assert_eq!(cursor.decode_blob().unwrap(), Some(file_content));
 //! assert_eq!(cursor.decode().unwrap(), None);
 //! assert_eq!(cursor.position(), buf.len() as u64);
 //! ```
