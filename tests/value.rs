@@ -180,7 +180,7 @@ fn blobs() {
         .decode_blob().unwrap_err().into_inner()
     {
         Some(err) => assert_eq!(err.description().starts_with(binn_ir::TAG), true),
-        None => panic!("value::Decoder::decode_blob() -> input was invalid; expected an error, got: None"),
+        None => panic!("value::Decoder::decode_blob() -> input was invalid; expected an inner error, got: None"),
     };
 }
 
