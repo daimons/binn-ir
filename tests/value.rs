@@ -4,7 +4,7 @@ extern crate binn_ir;
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
-use std::io::Cursor;
+use std::io::{Cursor, ErrorKind};
 
 #[macro_use]
 mod cmp_integers;
@@ -47,7 +47,7 @@ fn constants() {
 }
 
 #[test]
-fn basic_types() {
+fn basic_type_lengths() {
     // Lengths
     assert_eq!(Value::Null.len().unwrap(), 1);
     assert_eq!(Value::True.len().unwrap(), 1);
@@ -90,7 +90,7 @@ fn basic_types() {
 }
 
 #[test]
-fn encoding_basic_types() {
+fn basic_types() {
     let mut buf = vec![];
     buf.encode_null().unwrap();
     buf.encode_bool(true).unwrap();
@@ -154,6 +154,24 @@ fn encoding_basic_types() {
     // Verify position
     assert_eq!(cursor.decode().unwrap(), None);
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+}
+
+#[test]
+fn decode_basic_types_from_invalid_sources() {
+    macro_rules! decode_and_assert { ($bytes: expr) => {{
+        assert_eq!(Cursor::new($bytes).decode().unwrap_err().kind(), ErrorKind::UnexpectedEof);
+    }};}
+
+    decode_and_assert!(vec![value::U8]);
+    decode_and_assert!(vec![value::I8]);
+    decode_and_assert!(vec![value::U16, 0]);
+    decode_and_assert!(vec![value::I16, 0]);
+    decode_and_assert!(vec![value::U32, 0, 1]);
+    decode_and_assert!(vec![value::I32, 0, 1, 2]);
+    decode_and_assert!(vec![value::U64, 0, 1, 2, 3, 4]);
+    decode_and_assert!(vec![value::I64, 0, 1, 2, 3, 4, 5]);
+    decode_and_assert!(vec![value::FLOAT, 0, 1]);
+    decode_and_assert!(vec![value::DOUBLE, 0, 1, 2, 3, 4, 5, 6]);
 }
 
 #[test]
