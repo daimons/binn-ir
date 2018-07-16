@@ -387,3 +387,23 @@ fn objects() {
         _ => unreachable!(),
     };
 }
+
+#[test]
+fn decode_objects_from_invalid_sources() {
+    // Missing size
+    decode_from_invalid_source_and_assert!(vec![value::OBJECT]);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::OBJECT, 2], ErrorKind::InvalidData);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::OBJECT, 0x80, 0x00, 0x00, 0x02], ErrorKind::InvalidData);
+    // Missing item count
+    decode_from_invalid_source_and_assert!(vec![value::OBJECT, 0x80, 0x00, 0x00, 0x03]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::OBJECT, 3, 1]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::OBJECT, 0x80, 0x00, 0x00, 0x03, 1]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::OBJECT, 3, 0x80, 0x00, 0x00, 0x01]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::OBJECT, 0x80, 0x00, 0x00, 0x03, 0x80, 0x00, 0x00, 0x01]);
+}

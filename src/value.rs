@@ -930,6 +930,11 @@ macro_rules! decode_map { ($source: ident) => {{
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_object { ($source: ident) => {{
     let (size, bytes_of_size) = read_size!($source)?;
+    // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
+    if size < 3 {
+        return Err(Error::new(ErrorKind::InvalidData, format!("{}::value::decode_object!() -> invalid declared size: {}", ::TAG, &size)));
+    }
+
     let (item_count, bytes_of_item_count) = read_size!($source)?;
 
     let mut result = HashMap::new();
