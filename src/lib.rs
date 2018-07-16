@@ -450,7 +450,7 @@ pub const CRATE_RELEASE_DATE: (u16, u8, u8) = (2018, 7, 16);
 pub const UUID: &'static str = "acea8479-f233-4686-af1c-fe198f506ddb";
 
 /// # Tag, which can be used for logging...
-pub const TAG: &'static str = concat!(crate_code_name!(), "_149dc8a5_", crate_version!());
+pub const TAG: &'static str = concat!(crate_code_name!(), "::149dc8a5::", crate_version!());
 
 // ╔════════════════════╗
 // ║   IMPLEMENTATION   ║
