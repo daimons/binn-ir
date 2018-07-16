@@ -265,8 +265,14 @@ fn decode_lists_from_invalid_sources() {
     decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x02], ErrorKind::InvalidData);
     // Missing item count
     decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x03]);
-    // Missing items
+    // Invalid size + missing items
     decode_from_invalid_source!(vec![value::LIST, 3, 1]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::LIST, 0x80, 0x00, 0x00, 0x03, 1]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::LIST, 3, 0x80, 0x00, 0x00, 0x01]);
+    // Invalid size + missing items
+    decode_from_invalid_source!(vec![value::LIST, 0x80, 0x00, 0x00, 0x03, 0x80, 0x00, 0x00, 0x01]);
 }
 
 #[test]
