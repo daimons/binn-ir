@@ -669,7 +669,10 @@ macro_rules! write_size { ($size: expr, $buf: ident) => {{
 
 /// # Reads size from std::io::Read
 ///
-/// Result: `io::Result<u32>`.
+/// Result: `io::Result<(u32, u32)>`:
+///
+/// - First value is size.
+/// - Second value is total bytes read.
 macro_rules! read_size { ($source: ident) => {{
     let first_byte = read_int_be!(u8, $source)?;
     match first_byte & 0b_1000_0000 {
@@ -682,13 +685,13 @@ macro_rules! read_size { ($source: ident) => {{
                         Ordering::Greater => Err(Error::new(
                             ErrorKind::InvalidData, format!("{}::value::read_size!() -> too large: {}", ::TAG, &result)
                         )),
-                        _ => Ok(result),
+                        _ => Ok((result, mem::size_of::<u32>() as u32)),
                     }
                 },
                 Err(err) => Err(err),
             }
         },
-        _ => Ok(first_byte as u32),
+        _ => Ok((first_byte as u32, mem::size_of::<u8>() as u32)),
     }
 }};}
 
@@ -789,7 +792,7 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
 /// Returns: `io::Result<String>`
 macro_rules! read_str { ($source: ident) => {{
     // Note that null terminator does NOT count
-    let buf = read_into_new_vec!(read_size!($source)?, $source)?;
+    let buf = read_into_new_vec!(read_size!($source)?.0, $source)?;
     match read_int_be!(u8, $source)? {
         0 => String::from_utf8(buf).map_err(|err|
             Error::new(ErrorKind::InvalidData, format!("{}::value::read_str!() -> failed to decode UTF-8: {}", ::TAG, &err))
@@ -820,16 +823,16 @@ macro_rules! bytes_for_len { ($len: expr) => {{
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_list { ($source: ident) => {{
-    let size = read_size!($source)?;
+    let (size, bytes_of_size) = read_size!($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
     if size < 3 {
         return Err(Error::new(ErrorKind::InvalidData, format!("{}::value::decode_list!() -> invalid declared size: {}", ::TAG, &size)));
     }
 
-    let item_count = read_size!($source)?;
+    let (item_count, bytes_of_item_count) = read_size!($source)?;
 
     let mut result = vec![];
-    let mut read: u32 = sum!(bytes_for_len!(size)?, bytes_for_len!(item_count)?)?;
+    let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
     for item_index in 0..item_count {
         let value = match Value::decode($source)? {
             Some(value) => value,
@@ -861,7 +864,7 @@ macro_rules! decode_list { ($source: ident) => {{
         Some(v) if v == size => Ok(Some(Value::List(result))),
         _ => Err(Error::new(
             ErrorKind::InvalidData,
-            format!("{}::value::decode_list!() -> size is declared (with header): {}; but decoded (without header): {}", ::TAG, &size, &read)
+            format!("{}::value::decode_list!() -> size is declared: {}; but decoded (with or without header): {}", ::TAG, &size, &read)
         )),
     }
 }};}
@@ -870,11 +873,11 @@ macro_rules! decode_list { ($source: ident) => {{
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_map { ($source: ident) => {{
-    let size = read_size!($source)?;
-    let item_count = read_size!($source)?;
+    let (size, bytes_of_size) = read_size!($source)?;
+    let (item_count, bytes_of_item_count) = read_size!($source)?;
 
     let mut result = BTreeMap::new();
-    let mut read: u32 = 0;
+    let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
         let value = match Value::decode($source)? {
@@ -883,7 +886,7 @@ macro_rules! decode_map { ($source: ident) => {{
                 ErrorKind::InvalidData, format!("{}::value::decode_map!() -> missing value for key {}", ::TAG, &key)
             )),
         };
-        read = match read.checked_add(value.len()?) {
+        read = match read.checked_add(sum!(mem::size_of_val(&key) as u32, value.len()?)?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
@@ -907,27 +910,34 @@ macro_rules! decode_map { ($source: ident) => {{
         };
     }
 
-    Ok(Some(Value::Map(result)))
+    // Verify total read (1 byte for header)
+    match read.checked_add(1) {
+        Some(v) if v == size => Ok(Some(Value::Map(result))),
+        _ => Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("{}::value::decode_map!() -> size is declared: {}; but decoded (with or without header): {}", ::TAG, &size, &read)
+        )),
+    }
 }};}
 
 /// # Decodes an object from source
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_object { ($source: ident) => {{
-    let size = read_size!($source)?;
-    let item_count = read_size!($source)?;
+    let (size, bytes_of_size) = read_size!($source)?;
+    let (item_count, bytes_of_item_count) = read_size!($source)?;
 
     let mut result = HashMap::new();
-    let mut read: u32 = 0;
+    let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         // Read key (note that there's NO null terminator)
-        let key_len = read_size!($source)?;
+        let (key_len, bytes_of_key_len) = read_size!($source)?;
         match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!("{}::value::decode_object!() -> key length is limited to {} bytes, got: {}", ::TAG, OBJECT_KEY_MAX_LEN, key_len)
             )),
-            _ => read = match read.checked_add(key_len) {
+            _ => read = match read.checked_add(sum!(bytes_of_key_len, key_len)?) {
                 Some(v) => match cmp_integers!(size, v) {
                     Ordering::Greater => v,
                     _ => return Err(Error::new(
@@ -938,8 +948,8 @@ macro_rules! decode_object { ($source: ident) => {{
                 None => return Err(Error::new(
                     ErrorKind::InvalidData,
                     format!(
-                        "{}::value::decode_object!() -> invalid object size -> expected: {}, current: {}, new key length: {}",
-                        ::TAG, &size, &read, &key_len,
+                        "{}::value::decode_object!() -> invalid object size -> expected: {}, current: {}, new key length: {} + {}",
+                        ::TAG, &size, &read, &bytes_of_key_len, &key_len,
                     )
                 )),
             },
@@ -979,7 +989,14 @@ macro_rules! decode_object { ($source: ident) => {{
         };
     }
 
-    Ok(Some(Value::Object(result)))
+    // Verify total read (1 byte for header)
+    match read.checked_add(1) {
+        Some(v) if v == size => Ok(Some(Value::Object(result))),
+        _ => Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("{}::value::decode_object!() -> size is declared: {}; but decoded (with or without header): {}", ::TAG, &size, &read)
+        )),
+    }
 }};}
 
 impl Value {
@@ -1109,7 +1126,7 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
         self::DATE => Ok(Some(Value::Date(read_str!(source)?))),
         self::TIME => Ok(Some(Value::Time(read_str!(source)?))),
         self::DECIMAL_STR => Ok(Some(Value::DecimalStr(read_str!(source)?))),
-        self::BLOB => Ok(Some(Value::Blob(read_into_new_vec!(read_size!(source)?, source)?))),
+        self::BLOB => Ok(Some(Value::Blob(read_into_new_vec!(read_size!(source)?.0, source)?))),
         self::LIST => decode_list!(source),
         self::MAP => decode_map!(source),
         self::OBJECT => decode_object!(source),
