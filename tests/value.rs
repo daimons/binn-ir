@@ -172,12 +172,16 @@ fn blobs() {
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 
     // Small blob with 4-byte size; but data is missing
-    Cursor::new(vec![
+    match Cursor::new(vec![
         value::BLOB,
         // Size: 15 bytes
         0x80, 0x00, 0x00, 0x0F,
     ])
-        .decode_blob().unwrap_err();
+        .decode_blob().unwrap_err().into_inner()
+    {
+        Some(err) => assert_eq!(err.description().starts_with(binn_ir::TAG), true),
+        None => panic!("value::Decoder::decode_blob() -> input was invalid; expected an error, got: None"),
+    };
 }
 
 #[test]

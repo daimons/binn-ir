@@ -638,7 +638,7 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
         Ok(count) => match count == bytes.len() {
             true => Ok(count as u32),
             false => Err(Error::new(
-                ErrorKind::Other, format!("value::write_int_be!() -> expected to write {} byte(s); result: {}", bytes.len(), count)
+                ErrorKind::Other, format!("{}::value::write_int_be!() -> expected to write {} byte(s); result: {}", ::TAG, bytes.len(), count)
             )),
         },
         Err(err) => Err(err),
@@ -679,7 +679,9 @@ macro_rules! read_size { ($source: ident) => {{
                 Ok(()) => {
                     let result = u32::from_be(unsafe { mem::transmute(buf) }) & !(SIZE_MASK);
                     match cmp_integers!(result, MAX_DATA_SIZE) {
-                        Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::read_size!() -> too large: {}", &result))),
+                        Ordering::Greater => Err(Error::new(
+                            ErrorKind::InvalidData, format!("{}::value::read_size!() -> too large: {}", ::TAG, &result)
+                        )),
                         _ => Ok(result),
                     }
                 },
@@ -708,17 +710,19 @@ macro_rules! sum {
                     match cmp_integers!(b, MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
                             ErrorKind::InvalidData,
-                            format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
+                            format!("{}::value::sum!() -> too large for: {} + {} (max allowed: {})", ::TAG, &current, &b, MAX_DATA_SIZE)
                         )),
                         _ => match current.checked_add(b as u32) {
                             Some(new) => match cmp_integers!(new, MAX_DATA_SIZE) {
                                 Ordering::Greater => Err(Error::new(
                                     ErrorKind::InvalidData,
-                                    format!("sum!() -> too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
+                                    format!("{}::value::sum!() -> too large for: {} + {} (max allowed: {})", ::TAG, &current, &b, MAX_DATA_SIZE)
                                 )),
                                 _ => Ok(new),
                             },
-                            None => Err(Error::new(ErrorKind::InvalidData, format!("sum!() -> can't add {} into {}", &b, &current))),
+                            None => Err(Error::new(
+                                ErrorKind::InvalidData, format!("{}::value::sum!() -> can't add {} into {}", ::TAG, &b, &current)
+                            )),
                         },
                     }
                 },
@@ -739,16 +743,16 @@ macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
         Ordering::Greater => Err(Error::new(
             ErrorKind::WriteZero,
             format!(
-                "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
-                &capacity, MAX_DATA_SIZE
+                "{}::value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
+                ::TAG, &capacity, MAX_DATA_SIZE
             )
         )),
         _ => match cmp_integers!(capacity, ::std::usize::MAX) {
             Ordering::Greater => Err(Error::new(
                 ErrorKind::WriteZero,
                 format!(
-                    "value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
-                    &capacity, ::std::usize::MAX
+                    "{}::value::new_vec_with_capacity!() -> cannot allocate a vector with capacity: {} (max allowed: {})",
+                    ::TAG, &capacity, ::std::usize::MAX
                 )
             )),
             _ => Ok(Vec::with_capacity(capacity as usize)),
@@ -771,10 +775,12 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
         Ok(read) => match cmp_integers!(read, len) {
             Ordering::Equal => Ok(result),
             _ => Err(Error::new(
-                ErrorKind::WriteZero, format!("value::read_into_new_vec!() -> expected to read {} bytes, but: {}", &len, &read)
+                ErrorKind::WriteZero, format!("{}::value::read_into_new_vec!() -> expected to read {} bytes, but: {}", ::TAG, &len, &read)
             )),
         },
-        Err(err) => Err(Error::new(ErrorKind::WriteZero, format!("value::read_into_new_vec!() -> failed to read {} bytes: {}", &len, &err))),
+        Err(err) => Err(Error::new(
+            ErrorKind::WriteZero, format!("{}::value::read_into_new_vec!() -> failed to read {} bytes: {}", ::TAG, &len, &err)
+        )),
     }
 }};}
 
@@ -786,10 +792,10 @@ macro_rules! read_str { ($source: ident) => {{
     let buf = read_into_new_vec!(read_size!($source)?, $source)?;
     match read_int_be!(u8, $source)? {
         0 => String::from_utf8(buf).map_err(|err|
-            Error::new(ErrorKind::InvalidData, format!("value::read_str!() -> failed to decode UTF-8: {}", &err))
+            Error::new(ErrorKind::InvalidData, format!("{}::value::read_str!() -> failed to decode UTF-8: {}", ::TAG, &err))
         ),
         other => Err(Error::new(
-            ErrorKind::InvalidData, format!("value::read_str!() -> expected to read a null terminator ('\\0'), got: {}", &other)
+            ErrorKind::InvalidData, format!("{}::value::read_str!() -> expected to read a null terminator ('\\0'), got: {}", ::TAG, &other)
         )),
     }
 }};}
@@ -808,19 +814,22 @@ macro_rules! decode_list { ($source: ident) => {{
             Some(value) => value,
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::decode_list!() -> missing item #{}/{}", &item_index, &item_count)
+                format!("{}::value::decode_list!() -> missing item #{}/{}", ::TAG, &item_index, &item_count)
             )),
         };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
-                    ErrorKind::InvalidData, format!("value::decode_list!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    ErrorKind::InvalidData,
+                    format!("{}::value::decode_list!() -> expected to read less than {} bytes, got: {}", ::TAG, &size, &v)
                 )),
             },
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::decode_list!() -> invalid list size -> expected: {}, current: {}, new item: {:?}", &size, &read, &value)
+                format!(
+                    "{}::value::decode_list!() -> invalid list size -> expected: {}, current: {}, new item: {:?}", ::TAG, &size, &read, &value,
+                )
             )),
         };
         result.push(value);
@@ -842,26 +851,29 @@ macro_rules! decode_map { ($source: ident) => {{
         let key = read_int_be!(i32, $source)?;
         let value = match Value::decode($source)? {
             Some(value) => value,
-            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_map!() -> missing value for key {}", &key))),
+            None => return Err(Error::new(
+                ErrorKind::InvalidData, format!("{}::value::decode_map!() -> missing value for key {}", ::TAG, &key)
+            )),
         };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
-                    ErrorKind::InvalidData, format!("value::decode_map!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    ErrorKind::InvalidData,
+                    format!("{}::value::decode_map!() -> expected to read less than {} bytes, got: {}", ::TAG, &size, &v)
                 )),
             },
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!(
-                    "value::decode_map!() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}",
-                    &size, &read, &key, &value,
+                    "{}::value::decode_map!() -> invalid map size -> expected: {}, current: {}, new item: {} -> {:?}",
+                    ::TAG, &size, &read, &key, &value,
                 )
             )),
         };
         match result.insert(key, value) {
             Some(old_value) => return Err(Error::new(
-                ErrorKind::InvalidData, format!("value::decode_map!() -> duplicate key '{}' of old value: {:?}", &key, &old_value)
+                ErrorKind::InvalidData, format!("{}::value::decode_map!() -> duplicate key '{}' of old value: {:?}", ::TAG, &key, &old_value)
             )),
             None => (),
         };
@@ -885,50 +897,55 @@ macro_rules! decode_object { ($source: ident) => {{
         match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::decode_object!() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, key_len)
+                format!("{}::value::decode_object!() -> key length is limited to {} bytes, got: {}", ::TAG, OBJECT_KEY_MAX_LEN, key_len)
             )),
             _ => read = match read.checked_add(key_len) {
                 Some(v) => match cmp_integers!(size, v) {
                     Ordering::Greater => v,
                     _ => return Err(Error::new(
-                        ErrorKind::InvalidData, format!("value::decode_object!() -> expected to read less than {} bytes, got: {}",
-                        &size, &v)
+                        ErrorKind::InvalidData,
+                        format!("{}::value::decode_object!() -> expected to read less than {} bytes, got: {}", ::TAG, &size, &v)
                     )),
                 },
                 None => return Err(Error::new(
                     ErrorKind::InvalidData,
                     format!(
-                        "value::decode_object!() -> invalid object size -> expected: {}, current: {}, new key length: {}",
-                        &size, &read, &key_len,
+                        "{}::value::decode_object!() -> invalid object size -> expected: {}, current: {}, new key length: {}",
+                        ::TAG, &size, &read, &key_len,
                     )
                 )),
             },
         };
         let key = String::from_utf8(read_into_new_vec!(key_len, $source)?).map_err(|err|
-            Error::new(ErrorKind::InvalidData, format!("value::decode_object!() -> failed to decode UTF-8: {}", &err))
+            Error::new(ErrorKind::InvalidData, format!("{}::value::decode_object!() -> failed to decode UTF-8: {}", ::TAG, &err))
         )?;
 
         // Read value
         let value = match Value::decode($source)? {
             Some(value) => value,
-            None => return Err(Error::new(ErrorKind::InvalidData, format!("value::decode_object!() -> missing value for key {:?}", &key))),
+            None => return Err(Error::new(
+                ErrorKind::InvalidData, format!("{}::value::decode_object!() -> missing value for key {:?}", ::TAG, &key)
+            )),
         };
         read = match read.checked_add(value.len()?) {
             Some(v) => match cmp_integers!(size, v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
-                    ErrorKind::InvalidData, format!("value::decode_object!() -> expected to read less than {} bytes, got: {}", &size, &v)
+                    ErrorKind::InvalidData,
+                    format!("{}::value::decode_object!() -> expected to read less than {} bytes, got: {}", ::TAG, &size, &v)
                 )),
             },
             None => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::decode_object!() -> invalid object size -> expected: {}, current: {}, new value: {:?}",
-                &size, &read, &value)
+                format!(
+                    "{}::value::decode_object!() -> invalid object size -> expected: {}, current: {}, new value: {:?}",
+                    ::TAG, &size, &read, &value,
+                )
             )),
         };
         match result.insert(key, value) {
             Some(old_value) => return Err(Error::new(
-                ErrorKind::InvalidData, format!("value::decode_object!() -> duplicate key of old value: {:?}", &old_value)
+                ErrorKind::InvalidData, format!("{}::value::decode_object!() -> duplicate key of old value: {:?}", ::TAG, &old_value)
             )),
             None => (),
         };
@@ -1007,7 +1024,8 @@ impl Value {
         match result == expected_result {
             true => Ok(result),
             false => Err(Error::new(
-                ErrorKind::Other, format!("Value::encode() -> expected to write {} bytes, result: {}", expected_result, result)
+                ErrorKind::Other,
+                format!("{}::value::Value::encode() -> expected to write {} bytes, result: {}", ::TAG, expected_result, result)
             )),
         }
     }
@@ -1038,7 +1056,8 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
     if let Some(ref expected_values) = filter {
         if expected_values.contains(&source_value) == false {
             return Err(Error::new(
-                ErrorKind::InvalidData, format!("value::decode_value() -> expected one of: {:?}, got: {}", &expected_values, &source_value)
+                ErrorKind::InvalidData,
+                format!("{}::value::decode_value() -> expected one of: {:?}, got: {}", ::TAG, &expected_values, &source_value)
             ));
         }
     }
@@ -1067,7 +1086,8 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
         self::MAP => decode_map!(source),
         self::OBJECT => decode_object!(source),
         _ => Err(Error::new(
-            ErrorKind::InvalidData, format!("value::decode_value() -> data type is either invalid or not supported: {}", &source_value)
+            ErrorKind::InvalidData,
+            format!("{}::value::decode_value() -> data type is either invalid or not supported: {}", ::TAG, &source_value)
         )),
     }
 }
@@ -1076,7 +1096,9 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
 fn bytes_for_len(len: usize) -> io::Result<u32> {
     match cmp_integers!(len, ::std::i8::MAX) {
         Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
-            Ordering::Greater => Err(Error::new(ErrorKind::InvalidData, format!("value::bytes_for_len() -> too large: {} bytes", len))),
+            Ordering::Greater => Err(Error::new(
+                ErrorKind::InvalidData, format!("{}::value::bytes_for_len() -> too large: {} bytes", ::TAG, len)
+            )),
             _ => Ok(4),
         },
         _ => Ok(1),
@@ -1101,7 +1123,7 @@ fn list_len(list: &Vec<Value>) -> io::Result<u32> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::new(ErrorKind::InvalidData, format!("value::list_len() -> data too large: {} bytes", result))),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::list_len() -> data too large: {} bytes", ::TAG, result))),
     }
 }
 
@@ -1123,7 +1145,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<u32> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::new(ErrorKind::InvalidData, format!("value::map_len() -> data too large: {} bytes", result))),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::map_len() -> data too large: {} bytes", ::TAG, result))),
     }
 }
 
@@ -1138,7 +1160,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
         if key_len > OBJECT_KEY_MAX_LEN {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::object_len() -> key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)
+                format!("{}::value::object_len() -> key size is limited to {} bytes; got: {}", ::TAG, OBJECT_KEY_MAX_LEN, &key_len)
             ));
         }
         result = sum!(result, key_len, value.len()?, 1)?;
@@ -1153,7 +1175,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::new(ErrorKind::InvalidData, format!("len() -> data too large: {} bytes", result))),
+        false => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::object_len() -> data too large: {} bytes", ::TAG, result))),
     }
 }
 
@@ -1164,7 +1186,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
         let tmp = bytes.len();
         match cmp_integers!(tmp, MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
-                ErrorKind::Other, format!("value::write_str() -> string too large ({} bytes)", &tmp)
+                ErrorKind::Other, format!("{}::value::write_str() -> string too large ({} bytes)", ::TAG, &tmp)
             )),
             _ => tmp as u32,
         }
@@ -1179,7 +1201,9 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     // Type
     match buf.write(&[ty])? {
         1 => (),
-        other => return Err(Error::new(ErrorKind::Other, format!("value::write_str() -> expected to write 1 byte; result: {}", &other))),
+        other => return Err(Error::new(
+            ErrorKind::Other, format!("{}::value::write_str() -> expected to write 1 byte; result: {}", ::TAG, &other)
+        )),
     };
 
     // Size
@@ -1191,14 +1215,16 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     match cmp_integers!(written, str_len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
-            ErrorKind::Other, format!("value::write_str() -> expected to write {} byte(s); result: {}", str_len, written)
+            ErrorKind::Other, format!("{}::value::write_str() -> expected to write {} byte(s); result: {}", ::TAG, str_len, written)
         )),
     };
 
     // Null terminator
     match buf.write(&[0])? {
         1 => (),
-        other => return Err(Error::new(ErrorKind::Other, format!("value::write_str() -> expected to write 1 byte; result: {}", &other))),
+        other => return Err(Error::new(
+            ErrorKind::Other, format!("{}::value::write_str() -> expected to write 1 byte; result: {}", ::TAG, &other)
+        )),
     };
 
     Ok(total_size)
@@ -1209,7 +1235,9 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     let len = {
         let tmp = bytes.len();
         match cmp_integers!(tmp, MAX_DATA_SIZE) {
-            Ordering::Greater => return Err(Error::new(ErrorKind::Other, format!("value::write_blob() -> too large: {} byte(s)", tmp))),
+            Ordering::Greater => return Err(Error::new(
+                ErrorKind::Other, format!("{}::value::write_blob() -> too large: {} byte(s)", ::TAG, tmp)
+            )),
             _ => tmp as u32,
         }
     };
@@ -1217,7 +1245,9 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     // Type
     let mut bytes_written = match buf.write(&[BLOB])? {
         1 => 1 as u32,
-        other => return Err(Error::new(ErrorKind::Other, format!("value::write_blob() -> expected to write 1 byte; result: {}", &other))),
+        other => return Err(Error::new(
+            ErrorKind::Other, format!("{}::value::write_blob() -> expected to write 1 byte; result: {}", ::TAG, &other)
+        )),
     };
 
     // Size
@@ -1228,7 +1258,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     match cmp_integers!(written, len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
-            ErrorKind::Other, format!("value::write_blob() -> expected to write {} byte(s); result: {}", &len, &written)
+            ErrorKind::Other, format!("{}::value::write_blob() -> expected to write {} byte(s); result: {}", ::TAG, &len, &written)
         )),
     };
     bytes_written = sum!(bytes_written, written)?;
@@ -1300,7 +1330,7 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
             true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
             false => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("value::write_object() -> key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
+                format!("{}::value::write_object() -> key length is limited to {} bytes, got: {}", ::TAG, OBJECT_KEY_MAX_LEN, &key_len)
             )),
         };
 
@@ -1308,7 +1338,8 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
         match cmp_integers!(written, key_len) {
             Ordering::Equal => result = sum!(result, written)?,
             _ => return Err(Error::new(
-                ErrorKind::Other, format!("value::write_object() -> expected to write {} byte(s) of key; result: {}", &key_len, &written)
+                ErrorKind::Other,
+                format!("{}::value::write_object() -> expected to write {} byte(s) of key; result: {}", ::TAG, &key_len, &written)
             )),
         }
 
@@ -1593,7 +1624,7 @@ pub trait Decoder: Read + Sized {
     fn decode_null(&mut self) -> io::Result<Option<()>> {
         match decode_value(Some(&[NULL]), self)? {
             Some(Value::Null) => Ok(Some(())),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_null() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_null() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1602,7 +1633,7 @@ pub trait Decoder: Read + Sized {
         match decode_value(Some(&[TRUE, FALSE]), self)? {
             Some(Value::True) => Ok(Some(true)),
             Some(Value::False) => Ok(Some(false)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_bool() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_bool() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1611,7 +1642,7 @@ pub trait Decoder: Read + Sized {
     fn decode_u8(&mut self) -> io::Result<Option<u8>> {
         match decode_value(Some(&[U8]), self)? {
             Some(Value::U8(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u8() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u8() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1620,7 +1651,7 @@ pub trait Decoder: Read + Sized {
     fn decode_i8(&mut self) -> io::Result<Option<i8>> {
         match decode_value(Some(&[I8]), self)? {
             Some(Value::I8(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i8() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i8() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1629,7 +1660,7 @@ pub trait Decoder: Read + Sized {
     fn decode_u16(&mut self) -> io::Result<Option<u16>> {
         match decode_value(Some(&[U16]), self)? {
             Some(Value::U16(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u16() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u16() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1638,7 +1669,7 @@ pub trait Decoder: Read + Sized {
     fn decode_i16(&mut self) -> io::Result<Option<i16>> {
         match decode_value(Some(&[I16]), self)? {
             Some(Value::I16(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i16() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i16() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1647,7 +1678,7 @@ pub trait Decoder: Read + Sized {
     fn decode_u32(&mut self) -> io::Result<Option<u32>> {
         match decode_value(Some(&[U32]), self)? {
             Some(Value::U32(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u32() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u32() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1655,7 +1686,7 @@ pub trait Decoder: Read + Sized {
     fn decode_i32(&mut self) -> io::Result<Option<i32>> {
         match decode_value(Some(&[I32]), self)? {
             Some(Value::I32(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i32() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i32() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1664,7 +1695,7 @@ pub trait Decoder: Read + Sized {
     fn decode_u64(&mut self) -> io::Result<Option<u64>> {
         match decode_value(Some(&[U64]), self)? {
             Some(Value::U64(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_u64() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u64() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1673,7 +1704,7 @@ pub trait Decoder: Read + Sized {
     fn decode_i64(&mut self) -> io::Result<Option<i64>> {
         match decode_value(Some(&[I64]), self)? {
             Some(Value::I64(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_i64() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i64() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1684,7 +1715,7 @@ pub trait Decoder: Read + Sized {
     fn decode_float(&mut self) -> io::Result<Option<f32>> {
         match decode_value(Some(&[FLOAT]), self)? {
             Some(Value::Float(f)) => Ok(Some(f)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_float() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_float() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1695,7 +1726,7 @@ pub trait Decoder: Read + Sized {
     fn decode_double(&mut self) -> io::Result<Option<f64>> {
         match decode_value(Some(&[DOUBLE]), self)? {
             Some(Value::Double(d)) => Ok(Some(d)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_double() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_double() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1706,7 +1737,7 @@ pub trait Decoder: Read + Sized {
     fn decode_text(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[TEXT]), self)? {
             Some(Value::Text(t)) => Ok(Some(t)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_text() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_text() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1717,7 +1748,9 @@ pub trait Decoder: Read + Sized {
     fn decode_date_time(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[DATE_TIME]), self)? {
             Some(Value::DateTime(dt)) => Ok(Some(dt)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date_time() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(
+                ErrorKind::InvalidData, format!("{}::value::Decoder::decode_date_time() -> got: {:?}", ::TAG, &other)
+            )),
             None => Ok(None),
         }
     }
@@ -1728,7 +1761,7 @@ pub trait Decoder: Read + Sized {
     fn decode_date(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[DATE]), self)? {
             Some(Value::Date(d)) => Ok(Some(d)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_date() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_date() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1739,7 +1772,7 @@ pub trait Decoder: Read + Sized {
     fn decode_time(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[TIME]), self)? {
             Some(Value::Time(t)) => Ok(Some(t)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_time() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_time() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1750,7 +1783,9 @@ pub trait Decoder: Read + Sized {
     fn decode_decimal_str(&mut self) -> io::Result<Option<String>> {
         match decode_value(Some(&[DECIMAL_STR]), self)? {
             Some(Value::DecimalStr(ds)) => Ok(Some(ds)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_decimal_str() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(
+                ErrorKind::InvalidData, format!("{}::value::Decoder::decode_decimal_str() -> got: {:?}", ::TAG, &other)
+            )),
             None => Ok(None),
         }
     }
@@ -1761,7 +1796,7 @@ pub trait Decoder: Read + Sized {
     fn decode_blob(&mut self) -> io::Result<Option<Vec<u8>>> {
         match decode_value(Some(&[BLOB]), self)? {
             Some(Value::Blob(bytes)) => Ok(Some(bytes)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_blob() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_blob() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1772,7 +1807,7 @@ pub trait Decoder: Read + Sized {
     fn decode_list(&mut self) -> io::Result<Option<Vec<Value>>> {
         match decode_value(Some(&[LIST]), self)? {
             Some(Value::List(list)) => Ok(Some(list)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_list() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_list() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1783,7 +1818,7 @@ pub trait Decoder: Read + Sized {
     fn decode_map(&mut self) -> io::Result<Option<BTreeMap<i32, Value>>> {
         match decode_value(Some(&[MAP]), self)? {
             Some(Value::Map(map)) => Ok(Some(map)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_map() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_map() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
@@ -1794,7 +1829,7 @@ pub trait Decoder: Read + Sized {
     fn decode_object(&mut self) -> io::Result<Option<HashMap<String, Value>>> {
         match decode_value(Some(&[OBJECT]), self)? {
             Some(Value::Object(object)) => Ok(Some(object)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("Decoder::decode_object() -> got: {:?}", &other))),
+            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_object() -> got: {:?}", ::TAG, &other))),
             None => Ok(None),
         }
     }
