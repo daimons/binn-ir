@@ -256,6 +256,20 @@ fn lists() {
 }
 
 #[test]
+fn decode_lists_from_invalid_sources() {
+    // Missing size
+    decode_from_invalid_source_and_assert!(vec![value::LIST]);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 2], ErrorKind::InvalidData);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x02], ErrorKind::InvalidData);
+    // Missing item count
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x03]);
+    // Missing items
+    decode_from_invalid_source!(vec![value::LIST, 3, 1]);
+}
+
+#[test]
 fn maps() {
     let map = Value::Map({
         let mut map_data = BTreeMap::new();
@@ -346,18 +360,4 @@ fn objects() {
         },
         _ => unreachable!(),
     };
-}
-
-#[test]
-fn decode_lists_from_invalid_sources() {
-    // Missing size
-    decode_from_invalid_source_and_assert!(vec![value::LIST]);
-    // Invalid size
-    decode_from_invalid_source_and_assert!(vec![value::LIST, 2], ErrorKind::InvalidData);
-    // Invalid size
-    decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x02], ErrorKind::InvalidData);
-    // Missing item count
-    decode_from_invalid_source_and_assert!(vec![value::LIST, 0x80, 0x00, 0x00, 0x03]);
-    // Missing items
-    decode_from_invalid_source!(vec![value::LIST, 3, 1]);
 }
