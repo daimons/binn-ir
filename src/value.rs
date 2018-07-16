@@ -800,15 +800,36 @@ macro_rules! read_str { ($source: ident) => {{
     }
 }};}
 
+/// # Calculates bytes needed for a length
+///
+/// Result: `io::Result<u32>`
+macro_rules! bytes_for_len { ($len: expr) => {{
+    let len = $len;
+    match cmp_integers!(len, ::std::i8::MAX) {
+        Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
+            Ordering::Greater => Err(Error::new(
+                ErrorKind::InvalidData, format!("{}::value::bytes_for_len!() -> too large: {} bytes", ::TAG, &len)
+            )),
+            _ => Ok(4_u32),
+        },
+        _ => Ok(1_u32),
+    }
+}};}
+
 /// # Decodes a list from source
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_list { ($source: ident) => {{
     let size = read_size!($source)?;
+    // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
+    if size < 3 {
+        return Err(Error::new(ErrorKind::InvalidData, format!("{}::value::decode_list!() -> invalid declared size: {}", ::TAG, &size)));
+    }
+
     let item_count = read_size!($source)?;
 
     let mut result = vec![];
-    let mut read: u32 = 0;
+    let mut read: u32 = sum!(bytes_for_len!(size)?, bytes_for_len!(item_count)?)?;
     for item_index in 0..item_count {
         let value = match Value::decode($source)? {
             Some(value) => value,
@@ -835,7 +856,14 @@ macro_rules! decode_list { ($source: ident) => {{
         result.push(value);
     }
 
-    Ok(Some(Value::List(result)))
+    // Verify total read (1 byte for header)
+    match read.checked_add(1) {
+        Some(v) if v == size => Ok(Some(Value::List(result))),
+        _ => Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("{}::value::decode_list!() -> size is declared (with header): {}; but decoded (without header): {}", ::TAG, &size, &read)
+        )),
+    }
 }};}
 
 /// # Decodes a map from source
@@ -973,17 +1001,17 @@ impl Value {
             Value::I64(_) => Ok(9),
             Value::Double(_) => Ok(9),
             // 1 byte for type, 1 byte for null terminator
-            Value::Text(ref t) => sum!(bytes_for_len(t.len())?, 2, t.len()),
+            Value::Text(ref t) => sum!(bytes_for_len!(t.len())?, 2, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DateTime(ref dt) => sum!(bytes_for_len(dt.len())?, 2, dt.len()),
+            Value::DateTime(ref dt) => sum!(bytes_for_len!(dt.len())?, 2, dt.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Date(ref d) => sum!(bytes_for_len(d.len())?, 2, d.len()),
+            Value::Date(ref d) => sum!(bytes_for_len!(d.len())?, 2, d.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::Time(ref t) => sum!(bytes_for_len(t.len())?, 2, t.len()),
+            Value::Time(ref t) => sum!(bytes_for_len!(t.len())?, 2, t.len()),
             // 1 byte for type, 1 byte for null terminator
-            Value::DecimalStr(ref ds) => sum!(bytes_for_len(ds.len())?, 2, ds.len()),
+            Value::DecimalStr(ref ds) => sum!(bytes_for_len!(ds.len())?, 2, ds.len()),
             // 1 byte for type
-            Value::Blob(ref bytes) => sum!(bytes_for_len(bytes.len())?, 1, bytes.len()),
+            Value::Blob(ref bytes) => sum!(bytes_for_len!(bytes.len())?, 1, bytes.len()),
             Value::List(ref list) => list_len(list),
             Value::Map(ref map) => map_len(map),
             Value::Object(ref object) => object_len(object),
@@ -1092,23 +1120,10 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
     }
 }
 
-/// # Calculates bytes needed for a length
-fn bytes_for_len(len: usize) -> io::Result<u32> {
-    match cmp_integers!(len, ::std::i8::MAX) {
-        Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
-            Ordering::Greater => Err(Error::new(
-                ErrorKind::InvalidData, format!("{}::value::bytes_for_len() -> too large: {} bytes", ::TAG, len)
-            )),
-            _ => Ok(4),
-        },
-        _ => Ok(1),
-    }
-}
-
 /// # Calculates list length
 fn list_len(list: &Vec<Value>) -> io::Result<u32> {
     // Type + count
-    let mut result: u32 = sum!(bytes_for_len(list.len())?, 1)?;
+    let mut result: u32 = sum!(bytes_for_len!(list.len())?, 1)?;
     // Items
     for v in list {
         result = sum!(result, v.len()?)?;
@@ -1130,7 +1145,7 @@ fn list_len(list: &Vec<Value>) -> io::Result<u32> {
 /// # Calculates map length
 fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<u32> {
     // Type + count
-    let mut result = sum!(bytes_for_len(map.len())?, 1)?;
+    let mut result = sum!(bytes_for_len!(map.len())?, 1)?;
     // Items
     for v in map.values() {
         result = sum!(result, mem::size_of::<i32>(), v.len()?)?;
@@ -1152,7 +1167,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<u32> {
 /// # Calculates object length
 fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
     // Type + count
-    let mut result = sum!(bytes_for_len(object.len())?, 1)?;
+    let mut result = sum!(bytes_for_len!(object.len())?, 1)?;
     // Items
     for (key, value) in object {
         // Key has NO null terminator

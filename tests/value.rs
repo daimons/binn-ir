@@ -156,22 +156,30 @@ fn basic_types() {
     assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
 }
 
+/// # Decodes from invalid source and asserts
+///
+/// If error kind is not provided, `ErrorKind::UnexpectedEof` will be used.
+macro_rules! decode_from_invalid_source_and_assert {
+    ($bytes: expr) => {{
+        decode_from_invalid_source_and_assert!($bytes, ErrorKind::UnexpectedEof);
+    }};
+    ($bytes: expr, $error_kind: expr) => {{
+        assert_eq!(Cursor::new($bytes).decode().unwrap_err().kind(), $error_kind);
+    }};
+}
+
 #[test]
 fn decode_basic_types_from_invalid_sources() {
-    macro_rules! decode_and_assert { ($bytes: expr) => {{
-        assert_eq!(Cursor::new($bytes).decode().unwrap_err().kind(), ErrorKind::UnexpectedEof);
-    }};}
-
-    decode_and_assert!(vec![value::U8]);
-    decode_and_assert!(vec![value::I8]);
-    decode_and_assert!(vec![value::U16, 0]);
-    decode_and_assert!(vec![value::I16, 0]);
-    decode_and_assert!(vec![value::U32, 0, 1]);
-    decode_and_assert!(vec![value::I32, 0, 1, 2]);
-    decode_and_assert!(vec![value::U64, 0, 1, 2, 3, 4]);
-    decode_and_assert!(vec![value::I64, 0, 1, 2, 3, 4, 5]);
-    decode_and_assert!(vec![value::FLOAT, 0, 1]);
-    decode_and_assert!(vec![value::DOUBLE, 0, 1, 2, 3, 4, 5, 6]);
+    decode_from_invalid_source_and_assert!(vec![value::U8]);
+    decode_from_invalid_source_and_assert!(vec![value::I8]);
+    decode_from_invalid_source_and_assert!(vec![value::U16, 0]);
+    decode_from_invalid_source_and_assert!(vec![value::I16, 0]);
+    decode_from_invalid_source_and_assert!(vec![value::U32, 0, 1]);
+    decode_from_invalid_source_and_assert!(vec![value::I32, 0, 1, 2]);
+    decode_from_invalid_source_and_assert!(vec![value::U64, 0, 1, 2, 3, 4]);
+    decode_from_invalid_source_and_assert!(vec![value::I64, 0, 1, 2, 3, 4, 5]);
+    decode_from_invalid_source_and_assert!(vec![value::FLOAT, 0, 1]);
+    decode_from_invalid_source_and_assert!(vec![value::DOUBLE, 0, 1, 2, 3, 4, 5, 6]);
 }
 
 #[test]
@@ -331,4 +339,14 @@ fn objects() {
         },
         _ => unreachable!(),
     };
+}
+
+#[test]
+fn decode_containers_from_invalid_sources() {
+    // Missing size
+    decode_from_invalid_source_and_assert!(vec![value::LIST]);
+    // Invalid size
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 2], ErrorKind::InvalidData);
+    // Missing item count
+    decode_from_invalid_source_and_assert!(vec![value::LIST, 3]);
 }
