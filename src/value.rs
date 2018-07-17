@@ -667,8 +667,8 @@ macro_rules! write_size { ($size: expr, $buf: ident) => {{
 /// Result:
 ///
 /// - First value is size.
-/// - Second value is total bytes read.
-fn read_size(source: &mut Read) -> io::Result<(u32, u32)> {
+/// - Second value is total bytes read (the 'length' of first value).
+fn read_size_and_its_length(source: &mut Read) -> io::Result<(u32, u32)> {
     let first_byte = read_int_be!(u8, source)?;
     match first_byte & 0b_1000_0000 {
         0b_1000_0000 => {
@@ -681,21 +681,26 @@ fn read_size(source: &mut Read) -> io::Result<(u32, u32)> {
     }
 }
 
+/// # Reads size from source
+fn read_size(source: &mut Read) -> io::Result<u32> {
+    read_size_and_its_length(source).and_then(|(size, _)| Ok(size))
+}
+
 #[test]
-fn test_read_size() {
+fn test_read_size_and_its_length() {
     use ::std::io::Cursor;
 
     const U32_SIZE: u32 = mem::size_of::<u32>() as u32;
     const MAX_U8: u8 = ::std::u8::MAX;
 
-    assert_eq!(read_size(&mut Cursor::new(vec![MAX_U8, MAX_U8, MAX_U8, MAX_U8])).unwrap(), (MAX_DATA_SIZE, U32_SIZE));
+    assert_eq!(read_size_and_its_length(&mut Cursor::new(vec![MAX_U8, MAX_U8, MAX_U8, MAX_U8])).unwrap(), (MAX_DATA_SIZE, U32_SIZE));
 
     for bytes in vec![
         [0xF0, MAX_U8, MAX_U8, MAX_U8],
         [0x80, MAX_U8, MAX_U8, MAX_U8],
         [MAX_U8, MAX_U8, MAX_U8, 0xF0],
     ] {
-        let (size, bytes_of_size) = read_size(&mut Cursor::new(bytes)).unwrap();
+        let (size, bytes_of_size) = read_size_and_its_length(&mut Cursor::new(bytes)).unwrap();
         assert!(size < MAX_DATA_SIZE);
         assert_ne!(size, U32_SIZE);
         assert_eq!(bytes_of_size, U32_SIZE);
@@ -799,7 +804,7 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
 /// Returns: `io::Result<String>`
 macro_rules! read_str { ($source: ident) => {{
     // Note that null terminator does NOT count
-    let buf = read_into_new_vec!(read_size($source)?.0, $source)?;
+    let buf = read_into_new_vec!(read_size_and_its_length($source)?.0, $source)?;
     match read_int_be!(u8, $source)? {
         0 => String::from_utf8(buf).map_err(|err|
             Error::new(ErrorKind::InvalidData, format!("{}::value::read_str!() -> failed to decode UTF-8: {}", ::TAG, &err))
@@ -830,13 +835,13 @@ macro_rules! bytes_for_len { ($len: expr) => {{
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_list { ($source: ident) => {{
-    let (size, bytes_of_size) = read_size($source)?;
+    let (size, bytes_of_size) = read_size_and_its_length($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
     if size < 3 {
         return Err(Error::new(ErrorKind::InvalidData, format!("{}::value::decode_list!() -> invalid declared size: {}", ::TAG, &size)));
     }
 
-    let (item_count, bytes_of_item_count) = read_size($source)?;
+    let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
     let mut result = vec![];
     let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
@@ -880,13 +885,13 @@ macro_rules! decode_list { ($source: ident) => {{
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_map { ($source: ident) => {{
-    let (size, bytes_of_size) = read_size($source)?;
+    let (size, bytes_of_size) = read_size_and_its_length($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
     if size < 3 {
         return Err(Error::new(ErrorKind::InvalidData, format!("{}::value::decode_map!() -> invalid declared size: {}", ::TAG, &size)));
     }
 
-    let (item_count, bytes_of_item_count) = read_size($source)?;
+    let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
     let mut result = BTreeMap::new();
     let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
@@ -936,19 +941,19 @@ macro_rules! decode_map { ($source: ident) => {{
 ///
 /// Returns: `io::Result<Option<Value>>`
 macro_rules! decode_object { ($source: ident) => {{
-    let (size, bytes_of_size) = read_size($source)?;
+    let (size, bytes_of_size) = read_size_and_its_length($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
     if size < 3 {
         return Err(Error::new(ErrorKind::InvalidData, format!("{}::value::decode_object!() -> invalid declared size: {}", ::TAG, &size)));
     }
 
-    let (item_count, bytes_of_item_count) = read_size($source)?;
+    let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
     let mut result = HashMap::new();
     let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         // Read key (note that there's NO null terminator)
-        let (key_len, bytes_of_key_len) = read_size($source)?;
+        let (key_len, bytes_of_key_len) = read_size_and_its_length($source)?;
         match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::InvalidData,
@@ -1143,7 +1148,7 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
         self::DATE => Ok(Some(Value::Date(read_str!(source)?))),
         self::TIME => Ok(Some(Value::Time(read_str!(source)?))),
         self::DECIMAL_STR => Ok(Some(Value::DecimalStr(read_str!(source)?))),
-        self::BLOB => Ok(Some(Value::Blob(read_into_new_vec!(read_size(source)?.0, source)?))),
+        self::BLOB => Ok(Some(Value::Blob(read_into_new_vec!(read_size(source)?, source)?))),
         self::LIST => decode_list!(source),
         self::MAP => decode_map!(source),
         self::OBJECT => decode_object!(source),
