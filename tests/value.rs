@@ -91,6 +91,7 @@ fn basic_type_lengths() {
 
 #[test]
 fn basic_types() {
+    // Encode
     let mut buf = vec![];
     buf.encode_null().unwrap();
     buf.encode_bool(true).unwrap();
@@ -124,6 +125,7 @@ fn basic_types() {
         buf.encode_blob(s.as_bytes()).unwrap();
     }
 
+    // Decode
     let mut cursor = Cursor::new(&buf);
     assert_eq!(cursor.decode_null().unwrap(), Some(()));
     assert_eq!(cursor.decode_bool().unwrap(), Some(true));

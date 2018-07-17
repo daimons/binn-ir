@@ -1667,6 +1667,7 @@ pub trait Decoder: Read + Sized {
             None => Ok(None),
         }
     }
+
     /// # Decodes a boolean value
     fn decode_bool(&mut self) -> io::Result<Option<bool>> {
         match decode_value(Some(&[TRUE, FALSE]), self)? {
