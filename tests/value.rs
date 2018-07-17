@@ -6,10 +6,10 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::io::{Cursor, ErrorKind};
 
-#[macro_use]
-mod cmp_integers;
-
 use binn_ir::value::{self, Value, Encoder, Decoder};
+
+mod int_ordering;
+use int_ordering::IntOrdering;
 
 #[test]
 fn constants() {
@@ -43,11 +43,11 @@ fn constants() {
     assert_eq!(value::MAP,          0b_1110_0001 | 0xE1 | 225);
     assert_eq!(value::OBJECT,       0b_1110_0010 | 0xE2 | 226);
 
-    assert_eq!(cmp_integers!(value::MAX_DATA_SIZE, std::i32::MAX), Ordering::Equal);
+    assert_eq!(value::MAX_DATA_SIZE.cmp_int(&std::i32::MAX), Ordering::Equal);
     // There are some castings from data's length to u64, so run this test
-    assert_ne!(cmp_integers!(value::MAX_DATA_SIZE, std::u64::MAX), Ordering::Greater);
+    assert_ne!(value::MAX_DATA_SIZE.cmp_int(&std::u64::MAX), Ordering::Greater);
 
-    assert_eq!(cmp_integers!(value::OBJECT_KEY_MAX_LEN, std::u8::MAX), Ordering::Equal);
+    assert_eq!(value::OBJECT_KEY_MAX_LEN.cmp_int(&std::u8::MAX), Ordering::Equal);
 }
 
 #[test]
@@ -125,7 +125,7 @@ fn basic_types() {
         "richmond is a ghost".repeat(40),
     ];
     for s in blob_strings.iter() {
-        assert_eq!(cmp_integers!(s.len(), std::i8::MAX), Ordering::Greater);
+        assert_eq!(s.len().cmp_int(&std::i8::MAX), Ordering::Greater);
         buf.encode_blob(s.as_bytes()).unwrap();
     }
 
@@ -159,7 +159,7 @@ fn basic_types() {
 
     // Verify position
     assert_eq!(cursor.decode().unwrap(), None);
-    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+    assert_eq!(cursor.position().cmp_int(&buf.len()), Ordering::Equal);
 }
 
 /// # Tries to decode from an invalid source, then unwraps an error
@@ -206,7 +206,7 @@ fn blobs() {
     let mut cursor = Cursor::new(&buf);
     assert_eq!(cursor.decode_blob().unwrap().unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
     assert_eq!(cursor.decode_null().unwrap(), None);
-    assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+    assert_eq!(cursor.position().cmp_int(&buf.len()), Ordering::Equal);
 
     // Small blob with 4-byte size; but data is missing
     match Cursor::new(vec![
@@ -239,11 +239,11 @@ fn lists() {
         }),
     ]);
     let list_len = list.len().unwrap();
-    assert_eq!(cmp_integers!(list_len, std::i8::MAX), Ordering::Greater);
+    assert_eq!(list_len.cmp_int(&std::i8::MAX), Ordering::Greater);
 
     let mut buf = vec![];
     buf.encode(&list).unwrap();
-    assert_eq!(cmp_integers!(list_len, buf.len()), Ordering::Equal);
+    assert_eq!(list_len.cmp_int(&buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
     match list {
@@ -253,7 +253,7 @@ fn lists() {
 
             // Verify position
             assert_eq!(cursor.decode_map().unwrap(), None);
-            assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+            assert_eq!(cursor.position().cmp_int(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };
@@ -308,7 +308,7 @@ fn maps() {
     let mut buf = vec![];
     buf.encode(&map).unwrap();
 
-    assert_eq!(cmp_integers!(map.len().unwrap(), buf.len()), Ordering::Equal);
+    assert_eq!(map.len().unwrap().cmp_int(&buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
     match map {
@@ -318,7 +318,7 @@ fn maps() {
 
             // Verify position
             assert_eq!(cursor.decode_object().unwrap(), None);
-            assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+            assert_eq!(cursor.position().cmp_int(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };
@@ -386,7 +386,7 @@ fn objects() {
 
             // Verify position
             assert_eq!(cursor.decode_null().unwrap(), None);
-            assert_eq!(cmp_integers!(cursor.position(), buf.len()), Ordering::Equal);
+            assert_eq!(cursor.position().cmp_int(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };

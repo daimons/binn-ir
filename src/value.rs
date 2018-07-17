@@ -8,6 +8,8 @@ use std::fmt;
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::mem;
 
+use ::int_ordering::IntOrdering;
+
 /// # Null
 pub const NULL: u8 = 0b_0000_0000;
 
@@ -656,7 +658,7 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
 /// Result: number of bytes written - `io::Result<u32>`.
 macro_rules! write_size { ($size: expr, $buf: ident) => {{
     let size = $size;
-    match cmp_integers!(size, ::std::i8::MAX) {
+    match size.cmp_int(&::std::i8::MAX) {
         Ordering::Greater => write_int_be!(u32, size | SIZE_MASK, $buf),
         _ => write_int_be!(u8, size as u8, $buf),
     }
@@ -722,13 +724,13 @@ macro_rules! sum {
             match result {
                 Ok(current) => result = {
                     let b = $b;
-                    match cmp_integers!(b, MAX_DATA_SIZE) {
+                    match b.cmp_int(&MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
                             ErrorKind::InvalidData,
                             format!("{}::value::sum!() -> too large for: {} + {} (max allowed: {})", ::TAG, &current, &b, MAX_DATA_SIZE)
                         )),
                         _ => match current.checked_add(b as u32) {
-                            Some(new) => match cmp_integers!(new, MAX_DATA_SIZE) {
+                            Some(new) => match new.cmp_int(&MAX_DATA_SIZE) {
                                 Ordering::Greater => Err(Error::new(
                                     ErrorKind::InvalidData,
                                     format!("{}::value::sum!() -> too large for: {} + {} (max allowed: {})", ::TAG, &current, &b, MAX_DATA_SIZE)
@@ -754,7 +756,7 @@ macro_rules! sum {
 /// Returns: `io::Result<Vec<_>>`
 macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
     let capacity = $capacity;
-    match cmp_integers!(capacity, MAX_DATA_SIZE) {
+    match capacity.cmp_int(&MAX_DATA_SIZE) {
         Ordering::Greater => Err(Error::new(
             ErrorKind::WriteZero,
             format!(
@@ -762,7 +764,7 @@ macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
                 ::TAG, &capacity, MAX_DATA_SIZE
             )
         )),
-        _ => match cmp_integers!(capacity, ::std::usize::MAX) {
+        _ => match capacity.cmp_int(&::std::usize::MAX) {
             Ordering::Greater => Err(Error::new(
                 ErrorKind::WriteZero,
                 format!(
@@ -783,11 +785,10 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
     let mut result = new_vec_with_capacity!(len)?;
 
     // Notes:
-    //
     // - `len` was verified via above call to `new_vec_with_capacity!()`, that it must be <= `MAX_DATA_SIZE`
     // - `MAX_DATA_SIZE` should be **tested** to be < `std::u64::MAX`
     match $source.take(len as u64).read_to_end(&mut result) {
-        Ok(read) => match cmp_integers!(read, len) {
+        Ok(read) => match read.cmp_int(&len) {
             Ordering::Equal => Ok(result),
             _ => Err(Error::new(
                 ErrorKind::WriteZero, format!("{}::value::read_into_new_vec!() -> expected to read {} bytes, but: {}", ::TAG, &len, &read)
@@ -820,8 +821,8 @@ macro_rules! read_str { ($source: ident) => {{
 /// Result: `io::Result<u32>`
 macro_rules! bytes_for_len { ($len: expr) => {{
     let len = $len;
-    match cmp_integers!(len, ::std::i8::MAX) {
-        Ordering::Greater => match cmp_integers!(len, MAX_DATA_SIZE) {
+    match len.cmp_int(&::std::i8::MAX) {
+        Ordering::Greater => match len.cmp_int(&MAX_DATA_SIZE) {
             Ordering::Greater => Err(Error::new(
                 ErrorKind::InvalidData, format!("{}::value::bytes_for_len!() -> too large: {} bytes", ::TAG, &len)
             )),
@@ -854,7 +855,7 @@ macro_rules! decode_list { ($source: ident) => {{
             )),
         };
         read = match read.checked_add(value.len()?) {
-            Some(v) => match cmp_integers!(size, v) {
+            Some(v) => match size.cmp_int(&v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
                     ErrorKind::InvalidData,
@@ -904,7 +905,7 @@ macro_rules! decode_map { ($source: ident) => {{
             )),
         };
         read = match read.checked_add(sum!(mem::size_of_val(&key) as u32, value.len()?)?) {
-            Some(v) => match cmp_integers!(size, v) {
+            Some(v) => match size.cmp_int(&v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
                     ErrorKind::InvalidData,
@@ -954,13 +955,13 @@ macro_rules! decode_object { ($source: ident) => {{
     for _ in 0..item_count {
         // Read key (note that there's NO null terminator)
         let (key_len, bytes_of_key_len) = read_size_and_its_length($source)?;
-        match cmp_integers!(key_len, OBJECT_KEY_MAX_LEN) {
+        match key_len.cmp_int(&OBJECT_KEY_MAX_LEN) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!("{}::value::decode_object!() -> key length is limited to {} bytes, got: {}", ::TAG, OBJECT_KEY_MAX_LEN, key_len)
             )),
             _ => read = match read.checked_add(sum!(bytes_of_key_len, key_len)?) {
-                Some(v) => match cmp_integers!(size, v) {
+                Some(v) => match size.cmp_int(&v) {
                     Ordering::Greater => v,
                     _ => return Err(Error::new(
                         ErrorKind::InvalidData,
@@ -988,7 +989,7 @@ macro_rules! decode_object { ($source: ident) => {{
             )),
         };
         read = match read.checked_add(value.len()?) {
-            Some(v) => match cmp_integers!(size, v) {
+            Some(v) => match size.cmp_int(&v) {
                 Ordering::Greater => v,
                 _ => return Err(Error::new(
                     ErrorKind::InvalidData,
@@ -1170,7 +1171,7 @@ fn list_len(list: &Vec<Value>) -> io::Result<u32> {
     // The len value itself:
     // First, assume that it needs just 1 byte
     result = sum!(result, 1)?;
-    match cmp_integers!(result, ::std::i8::MAX) {
+    match result.cmp_int(&::std::i8::MAX) {
         // Now we need 3 more bytes
         Ordering::Greater => result = sum!(result, 3)?,
         _ => (),
@@ -1192,7 +1193,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> io::Result<u32> {
     // The len value itself:
     // First, assume that it needs just 1 byte
     result = sum!(result, 1)?;
-    match cmp_integers!(result, ::std::i8::MAX) {
+    match result.cmp_int(&::std::i8::MAX) {
         // Now we need 3 more bytes
         Ordering::Greater => result = sum!(result, 3)?,
         _ => (),
@@ -1222,7 +1223,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
     // The len value itself:
     // First, assume that it needs just 1 byte
     result = sum!(result, 1)?;
-    match cmp_integers!(result, ::std::i8::MAX) {
+    match result.cmp_int(&::std::i8::MAX) {
         // Now we need 3 more bytes
         Ordering::Greater => result = sum!(result, 3)?,
         _ => (),
@@ -1238,7 +1239,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
-        match cmp_integers!(tmp, MAX_DATA_SIZE) {
+        match tmp.cmp_int(&MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::Other, format!("{}::value::write_str() -> string too large ({} bytes)", ::TAG, &tmp)
             )),
@@ -1249,7 +1250,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     let total_size = sum!(
         str_len,
         // 1 for type, 1 for null terminator
-        2 + if cmp_integers!(str_len, ::std::i8::MAX) == Ordering::Greater { 4 } else { 1 }
+        2 + if str_len.cmp_int(&::std::i8::MAX) == Ordering::Greater { 4 } else { 1 }
     )?;
 
     // Type
@@ -1266,7 +1267,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
 
     // Data
     let written = buf.write(bytes)?;
-    match cmp_integers!(written, str_len) {
+    match written.cmp_int(&str_len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
             ErrorKind::Other, format!("{}::value::write_str() -> expected to write {} byte(s); result: {}", ::TAG, str_len, written)
@@ -1288,7 +1289,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
 fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     let len = {
         let tmp = bytes.len();
-        match cmp_integers!(tmp, MAX_DATA_SIZE) {
+        match tmp.cmp_int(&MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
                 ErrorKind::Other, format!("{}::value::write_blob() -> too large: {} byte(s)", ::TAG, tmp)
             )),
@@ -1309,7 +1310,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
 
     // Data
     let written = buf.write(bytes)?;
-    match cmp_integers!(written, len) {
+    match written.cmp_int(&len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
             ErrorKind::Other, format!("{}::value::write_blob() -> expected to write {} byte(s); result: {}", ::TAG, &len, &written)
@@ -1389,7 +1390,7 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
         };
 
         let written = buf.write(key.as_bytes())?;
-        match cmp_integers!(written, key_len) {
+        match written.cmp_int(&key_len) {
             Ordering::Equal => result = sum!(result, written)?,
             _ => return Err(Error::new(
                 ErrorKind::Other,

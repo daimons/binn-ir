@@ -461,8 +461,7 @@ fn test_crate_version() {
     assert_eq!(CRATE_VERSION, env!("CARGO_PKG_VERSION"));
 }
 
-#[macro_use]
-mod cmp_integers;
+mod int_ordering;
 
 pub mod storage;
 pub mod value;
