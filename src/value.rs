@@ -80,11 +80,6 @@ const SIZE_MASK: u32 = 0x_8000_0000_u32;
 /// # Object key's max length
 pub const OBJECT_KEY_MAX_LEN: usize = 255;
 
-#[test]
-fn test_object_key_max_len() {
-    assert_eq!(cmp_integers!(OBJECT_KEY_MAX_LEN, ::std::u8::MAX), Ordering::Equal);
-}
-
 /// # Max data size, in bytes
 pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 

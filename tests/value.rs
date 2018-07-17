@@ -43,7 +43,11 @@ fn constants() {
     assert_eq!(value::MAP,          0b_1110_0001 | 0xE1 | 225);
     assert_eq!(value::OBJECT,       0b_1110_0010 | 0xE2 | 226);
 
-    assert_eq!(cmp_integers!(value::MAX_DATA_SIZE, std::u64::MAX), Ordering::Less);
+    assert_eq!(cmp_integers!(value::MAX_DATA_SIZE, std::i32::MAX), Ordering::Equal);
+    // There are some castings from data's length to u64, so run this test
+    assert_ne!(cmp_integers!(value::MAX_DATA_SIZE, std::u64::MAX), Ordering::Greater);
+
+    assert_eq!(cmp_integers!(value::OBJECT_KEY_MAX_LEN, std::u8::MAX), Ordering::Equal);
 }
 
 #[test]
