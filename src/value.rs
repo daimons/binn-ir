@@ -687,14 +687,15 @@ fn test_macro_read_size() {
         use ::std::io::Cursor;
 
         const U32_SIZE: u32 = mem::size_of::<u32>() as u32;
+        const MAX_U8: u8 = ::std::u8::MAX;
 
-        let mut cursor = Cursor::new(vec![0xFF, 0xFF, 0xFF, 0xFF]);
+        let mut cursor = Cursor::new(vec![MAX_U8, MAX_U8, MAX_U8, MAX_U8]);
         assert_eq!(read_size!(cursor)?, (MAX_DATA_SIZE, U32_SIZE));
 
         for bytes in vec![
-            [0xF0_u8, 0xFF, 0xFF, 0xFF],
-            [0x80, 0xFF, 0xFF, 0xFF],
-            [0xFF, 0xFF, 0xFF, 0xF0],
+            [0xF0, MAX_U8, MAX_U8, MAX_U8],
+            [0x80, MAX_U8, MAX_U8, MAX_U8],
+            [MAX_U8, MAX_U8, MAX_U8, 0xF0],
         ] {
             let mut cursor = Cursor::new(bytes);
             let (size, bytes_of_size) = read_size!(cursor)?;
