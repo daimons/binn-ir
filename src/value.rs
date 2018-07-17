@@ -673,22 +673,36 @@ macro_rules! read_size { ($source: ident) => {{
     match first_byte & 0b_1000_0000 {
         0b_1000_0000 => {
             let mut buf = [first_byte, 0, 0, 0];
-            match $source.read_exact(&mut buf[1..]) {
-                Ok(()) => {
-                    let result = u32::from_be(unsafe { mem::transmute(buf) }) & !(SIZE_MASK);
-                    match cmp_integers!(result, MAX_DATA_SIZE) {
-                        Ordering::Greater => Err(Error::new(
-                            ErrorKind::InvalidData, format!("{}::value::read_size!() -> too large: {}", ::TAG, &result)
-                        )),
-                        _ => Ok((result, mem::size_of::<u32>() as u32)),
-                    }
-                },
-                Err(err) => Err(err),
-            }
+            $source.read_exact(&mut buf[1..]).and_then(|()|
+                Ok((u32::from_be(unsafe { mem::transmute(buf) }) & !(SIZE_MASK), mem::size_of::<u32>() as u32))
+            )
         },
         _ => Ok((first_byte as u32, mem::size_of::<u8>() as u32)),
     }
 }};}
+
+#[test]
+fn test_macro_read_size() {
+    fn run() -> io::Result<()> {
+        use ::std::io::Cursor;
+
+        let mut cursor = Cursor::new(vec![0xFF, 0xFF, 0xFF, 0xFF]);
+        assert_eq!(read_size!(cursor).unwrap(), (MAX_DATA_SIZE, mem::size_of::<u32>() as u32));
+
+        for bytes in vec![
+            [0xF0_u8, 0xFF, 0xFF, 0xFF],
+            [0x80, 0xFF, 0xFF, 0xFF],
+            [0xFF, 0xFF, 0xFF, 0xF0],
+        ] {
+            let mut cursor = Cursor::new(bytes);
+            assert!(read_size!(cursor).unwrap().0 < MAX_DATA_SIZE);
+        }
+
+        Ok(())
+    }
+
+    run().unwrap();
+}
 
 /// # Calculates sum of first value (`u32`) with integer(s)
 ///
