@@ -8,7 +8,7 @@ pub const UUID: &'static str = "d895be5b-7831-4a1e-9ea3-53d1c315ab82";
 
 /// # Version
 #[allow(dead_code)]
-pub const VERSION: &'static str = "0.0.3";
+pub const VERSION: &'static str = "0.0.4";
 
 /// # Release date (year/month/day)
 #[allow(dead_code)]
@@ -390,6 +390,13 @@ fn test_ordering_greater() {
             assert_eq!(Ordering::Greater, v.cmp_int(&0_u64));
             assert_eq!(Ordering::Greater, v.cmp_int(&0_u128));
             assert_eq!(Ordering::Greater, v.cmp_int(&0_usize));
+
+            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i8::MIN));
+            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i16::MIN));
+            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i32::MIN));
+            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i64::MIN));
+            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i128::MIN));
+            assert_eq!(Ordering::Greater, v.cmp_int(&::std::isize::MIN));
         )+
     }};}
 
@@ -480,6 +487,20 @@ fn test_ordering_less() {
             assert_eq!(Ordering::Less, v.cmp_int(&0_u64));
             assert_eq!(Ordering::Less, v.cmp_int(&0_u128));
             assert_eq!(Ordering::Less, v.cmp_int(&0_usize));
+
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::i8::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::i16::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::i32::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::i64::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::i128::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::isize::MAX));
+
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::u8::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::u16::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::u32::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::u64::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::u128::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&::std::usize::MAX));
         )+
     }};}
 
