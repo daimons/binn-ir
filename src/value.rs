@@ -1065,10 +1065,10 @@ impl Value {
         let expected_result = self.len()?;
 
         let result = match *self {
-            Value::Null => write_int_be!(u8, NULL, buf)?,
-            Value::True => write_int_be!(u8, TRUE, buf)?,
-            Value::False => write_int_be!(u8, FALSE, buf)?,
-            Value::U8(u) => sum!(write_int_be!(u8, U8, buf)?, write_int_be!(u8, u, buf)?)?,
+            Value::Null => buf.write_all(&[NULL]).and(Ok(1))?,
+            Value::True => buf.write_all(&[TRUE]).and(Ok(1))?,
+            Value::False => buf.write_all(&[FALSE]).and(Ok(1))?,
+            Value::U8(u) => buf.write_all(&[U8, u]).and(Ok(2))?,
             Value::I8(i) => sum!(write_int_be!(u8, I8, buf)?, write_int_be!(i8, i, buf)?)?,
             Value::U16(u) => sum!(write_int_be!(u8, U16, buf)?, write_int_be!(u16, u, buf)?)?,
             Value::I16(i) => sum!(write_int_be!(u8, I16, buf)?, write_int_be!(i16, i, buf)?)?,
