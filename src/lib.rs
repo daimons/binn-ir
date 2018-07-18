@@ -429,28 +429,28 @@
 // ║   IDENTIFIERS   ║
 // ╚═════════════════╝
 
-macro_rules! crate_code_name    { () => { "binn-ir" }}
-macro_rules! crate_version      { () => { "0.6.0" }}
+macro_rules! code_name  { () => { "binn-ir" }}
+macro_rules! version    { () => { "0.6.0" }}
 
 /// # Crate name
 ///
 /// IR stands for _implementation in Rust_.
-pub const CRATE_NAME: &'static str = "Binn-IR";
+pub const NAME: &'static str = "Binn-IR";
 
 /// # Crate code name
-pub const CRATE_CODE_NAME: &'static str = crate_code_name!();
+pub const CODE_NAME: &'static str = code_name!();
 
 /// # Crate version
-pub const CRATE_VERSION: &'static str = crate_version!();
+pub const VERSION: &'static str = version!();
 
 /// # Crate release date (year/month/day)
-pub const CRATE_RELEASE_DATE: (u16, u8, u8) = (2018, 7, 16);
+pub const RELEASE_DATE: (u16, u8, u8) = (2018, 7, 16);
 
 /// # Unique universally identifier of this crate. Its CRC-32 is `149dc8a5`.
 pub const UUID: &'static str = "acea8479-f233-4686-af1c-fe198f506ddb";
 
 /// # Tag, which can be used for logging...
-pub const TAG: &'static str = concat!(crate_code_name!(), "::149dc8a5::", crate_version!());
+pub const TAG: &'static str = concat!(code_name!(), "::149dc8a5::", version!());
 
 // ╔════════════════════╗
 // ║   IMPLEMENTATION   ║
@@ -458,7 +458,7 @@ pub const TAG: &'static str = concat!(crate_code_name!(), "::149dc8a5::", crate_
 
 #[test]
 fn test_crate_version() {
-    assert_eq!(CRATE_VERSION, env!("CARGO_PKG_VERSION"));
+    assert_eq!(VERSION, env!("CARGO_PKG_VERSION"));
 }
 
 mod int_ordering;
