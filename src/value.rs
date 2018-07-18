@@ -11,69 +11,157 @@ use std::mem;
 use ::int_ordering::IntOrdering;
 
 /// # Null
+///
+/// Storage: [`NO_BYTES`][storage::NO_BYTES]
+///
+/// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
 pub const NULL: u8 = 0b_0000_0000;
 
 /// # True
+///
+/// Storage: [`NO_BYTES`][storage::NO_BYTES]
+///
+/// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
 pub const TRUE: u8 = 0b_0000_0001;
 
 /// # False
+///
+/// Storage: [`NO_BYTES`][storage::NO_BYTES]
+///
+/// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
 pub const FALSE: u8 = 0b_0000_0010;
 
 /// # 8-bit unsigned integer
+///
+/// Storage: [`BYTE`][storage::BYTE]
+///
+/// [storage::BYTE]: ../storage/constant.BYTE.html
 pub const U8: u8 = 0b_0010_0000;
 
 /// # 8-bit signed integer
+///
+/// Storage: [`BYTE`][storage::BYTE]
+///
+/// [storage::BYTE]: ../storage/constant.BYTE.html
 pub const I8: u8 = 0b_0010_0001;
 
 /// # 16-bit unsigned integer
+///
+/// Storage: [`WORD`][storage::WORD]
+///
+/// [storage::WORD]: ../storage/constant.WORD.html
 pub const U16: u8 = 0b_0100_0000;
 
 /// # 16-bit signed integer
+///
+/// Storage: [`WORD`][storage::WORD]
+///
+/// [storage::WORD]: ../storage/constant.WORD.html
 pub const I16: u8 = 0b_0100_0001;
 
 /// # 32-bit unsigned integer
+///
+/// Storage: [`DWORD`][storage::DWORD]
+///
+/// [storage::DWORD]: ../storage/constant.DWORD.html
 pub const U32: u8 = 0b_0110_0000;
 
 /// # 32-bit signed integer
+///
+/// Storage: [`DWORD`][storage::DWORD]
+///
+/// [storage::DWORD]: ../storage/constant.DWORD.html
 pub const I32: u8 = 0b_0110_0001;
 
 /// # Float
+///
+/// Storage: [`DWORD`][storage::DWORD]
+///
+/// [storage::DWORD]: ../storage/constant.DWORD.html
 pub const FLOAT: u8 = 0b_0110_0010;
 
 /// # 64-bit unsigned integer
+///
+/// Storage: [`QWORD`][storage::QWORD]
+///
+/// [storage::QWORD]: ../storage/constant.QWORD.html
 pub const U64: u8 = 0b_1000_0000;
 
 /// # 64-bit signed integer
+///
+/// Storage: [`QWORD`][storage::QWORD]
+///
+/// [storage::QWORD]: ../storage/constant.QWORD.html
 pub const I64: u8 = 0b_1000_0001;
 
 /// # Double
+///
+/// Storage: [`QWORD`][storage::QWORD]
+///
+/// [storage::QWORD]: ../storage/constant.QWORD.html
 pub const DOUBLE: u8 = 0b_1000_0010;
 
 /// # Text
+///
+/// Storage: [`STRING`][storage::STRING]
+///
+/// [storage::STRING]: ../storage/constant.STRING.html
 pub const TEXT: u8 = 0b_1010_0000;
 
 /// # Date time
+///
+/// Storage: [`STRING`][storage::STRING]
+///
+/// [storage::STRING]: ../storage/constant.STRING.html
 pub const DATE_TIME: u8 = 0b_1010_0001;
 
 /// # Date
+///
+/// Storage: [`STRING`][storage::STRING]
+///
+/// [storage::STRING]: ../storage/constant.STRING.html
 pub const DATE: u8 = 0b_1010_0010;
 
 /// # Time
+///
+/// Storage: [`STRING`][storage::STRING]
+///
+/// [storage::STRING]: ../storage/constant.STRING.html
 pub const TIME: u8 = 0b_1010_0011;
 
 /// # Decimal string
+///
+/// Storage: [`STRING`][storage::STRING]
+///
+/// [storage::STRING]: ../storage/constant.STRING.html
 pub const DECIMAL_STR: u8 = 0b_1010_0100;
 
 /// # Blob
+///
+/// Storage: [`BLOB`][storage::BLOB]
+///
+/// [storage::BLOB]: ../storage/constant.BLOB.html
 pub const BLOB: u8 = 0b_1100_0000;
 
 /// # List
+///
+/// Storage: [`CONTAINER`][storage::CONTAINER]
+///
+/// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
 pub const LIST: u8 = 0b_1110_0000;
 
 /// # Map
+///
+/// Storage: [`CONTAINER`][storage::CONTAINER]
+///
+/// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
 pub const MAP: u8 = 0b_1110_0001;
 
 /// # Object
+///
+/// Storage: [`CONTAINER`][storage::CONTAINER]
+///
+/// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
 pub const OBJECT: u8 = 0b_1110_0010;
 
 /// # Size mask
@@ -90,69 +178,201 @@ pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 pub enum Value {
 
     /// # Null
+    ///
+    /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
+    /// - Type: [`NULL`][value::NULL]
+    ///
+    /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
+    /// [value::NULL]: constant.NULL.html
     Null,
 
     /// # True
+    ///
+    /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
+    /// - Type: [`TRUE`][value::TRUE]
+    ///
+    /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
+    /// [value::TRUE]: constant.TRUE.html
     True,
 
     /// # False
+    ///
+    /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
+    /// - Type: [`FALSE`][value::FALSE]
+    ///
+    /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
+    /// [value::FALSE]: constant.FALSE.html
     False,
 
     /// # 8-bit unsigned integer
+    ///
+    /// - Storage: [`BYTE`][storage::BYTE]
+    /// - Type: [`U8`][value::U8]
+    ///
+    /// [storage::BYTE]: ../storage/constant.BYTE.html
+    /// [value::U8]: constant.U8.html
     U8(u8),
 
     /// # 8-bit signed integer
+    ///
+    /// - Storage: [`BYTE`][storage::BYTE]
+    /// - Type: [`I8`][value::I8]
+    ///
+    /// [storage::BYTE]: ../storage/constant.BYTE.html
+    /// [value::I8]: constant.I8.html
     I8(i8),
 
     /// # 16-bit unsigned integer
+    ///
+    /// - Storage: [`WORD`][storage::WORD]
+    /// - Type: [`U16`][value::U16]
+    ///
+    /// [storage::WORD]: ../storage/constant.WORD.html
+    /// [value::U16]: constant.U16.html
     U16(u16),
 
     /// # 16-bit signed integer
+    ///
+    /// - Storage: [`WORD`][storage::WORD]
+    /// - Type: [`I16`][value::I16]
+    ///
+    /// [storage::WORD]: ../storage/constant.WORD.html
+    /// [value::I16]: constant.I16.html
     I16(i16),
 
     /// # 32-bit unsigned integer
+    ///
+    /// - Storage: [`DWORD`][storage::DWORD]
+    /// - Type: [`U32`][value::U32]
+    ///
+    /// [storage::DWORD]: ../storage/constant.DWORD.html
+    /// [value::U32]: constant.U32.html
     U32(u32),
 
     /// # 32-bit signed integer
+    ///
+    /// - Storage: [`DWORD`][storage::DWORD]
+    /// - Type: [`I32`][value::I32]
+    ///
+    /// [storage::DWORD]: ../storage/constant.DWORD.html
+    /// [value::I32]: constant.I32.html
     I32(i32),
 
     /// # Float
+    ///
+    /// - Storage: [`DWORD`][storage::DWORD]
+    /// - Type: [`FLOAT`][value::FLOAT]
+    ///
+    /// [storage::DWORD]: ../storage/constant.DWORD.html
+    /// [value::FLOAT]: constant.FLOAT.html
     Float(f32),
 
     /// # 64-bit unsigned integer
+    ///
+    /// - Storage: [`QWORD`][storage::QWORD]
+    /// - Type: [`U64`][value::U64]
+    ///
+    /// [storage::QWORD]: ../storage/constant.QWORD.html
+    /// [value::U64]: constant.U64.html
     U64(u64),
 
     /// # 64-bit signed integer
+    ///
+    /// - Storage: [`QWORD`][storage::QWORD]
+    /// - Type: [`I64`][value::I64]
+    ///
+    /// [storage::QWORD]: ../storage/constant.QWORD.html
+    /// [value::I64]: constant.I64.html
     I64(i64),
 
     /// # Double
+    ///
+    /// - Storage: [`QWORD`][storage::QWORD]
+    /// - Type: [`DOUBLE`][value::DOUBLE]
+    ///
+    /// [storage::QWORD]: ../storage/constant.QWORD.html
+    /// [value::DOUBLE]: constant.DOUBLE.html
     Double(f64),
 
     /// # Text
+    ///
+    /// - Storage: [`STRING`][storage::STRING]
+    /// - Type: [`TEXT`][value::TEXT]
+    ///
+    /// [storage::STRING]: ../storage/constant.STRING.html
+    /// [value::TEXT]: constant.TEXT.html
     Text(String),
 
     /// # Date time
+    ///
+    /// - Storage: [`STRING`][storage::STRING]
+    /// - Type: [`DATE_TIME`][value::DATE_TIME]
+    ///
+    /// [storage::STRING]: ../storage/constant.STRING.html
+    /// [value::DATE_TIME]: constant.DATE_TIME.html
     DateTime(String),
 
     /// # Date
+    ///
+    /// - Storage: [`STRING`][storage::STRING]
+    /// - Type: [`DATE`][value::DATE]
+    ///
+    /// [storage::STRING]: ../storage/constant.STRING.html
+    /// [value::DATE]: constant.DATE.html
     Date(String),
 
     /// # Time
+    ///
+    /// - Storage: [`STRING`][storage::STRING]
+    /// - Type: [`TIME`][value::TIME]
+    ///
+    /// [storage::STRING]: ../storage/constant.STRING.html
+    /// [value::TIME]: constant.TIME.html
     Time(String),
 
     /// # Decimal string
+    ///
+    /// - Storage: [`STRING`][storage::STRING]
+    /// - Type: [`DECIMAL_STR`][value::DECIMAL_STR]
+    ///
+    /// [storage::STRING]: ../storage/constant.STRING.html
+    /// [value::DECIMAL_STR]: constant.DECIMAL_STR.html
     DecimalStr(String),
 
     /// # Blob
+    ///
+    /// - Storage: [`BLOB`][storage::BLOB]
+    /// - Type: [`BLOB`][value::BLOB]
+    ///
+    /// [storage::BLOB]: ../storage/constant.BLOB.html
+    /// [value::BLOB]: constant.BLOB.html
     Blob(Vec<u8>),
 
     /// # List
+    ///
+    /// - Storage: [`CONTAINER`][storage::CONTAINER]
+    /// - Type: [`LIST`][value::LIST]
+    ///
+    /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
+    /// [value::LIST]: constant.LIST.html
     List(Vec<Value>),
 
     /// # Map
+    ///
+    /// - Storage: [`CONTAINER`][storage::CONTAINER]
+    /// - Type: [`MAP`][value::MAP]
+    ///
+    /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
+    /// [value::MAP]: constant.MAP.html
     Map(BTreeMap<i32, Value>),
 
     /// # Object
+    ///
+    /// - Storage: [`CONTAINER`][storage::CONTAINER]
+    /// - Type: [`OBJECT`][value::OBJECT]
+    ///
+    /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
+    /// [value::OBJECT]: constant.OBJECT.html
     Object(HashMap<String, Value>),
 
 }
