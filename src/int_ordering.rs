@@ -8,7 +8,7 @@ pub const UUID: &'static str = "d895be5b-7831-4a1e-9ea3-53d1c315ab82";
 
 /// # Version
 #[allow(dead_code)]
-pub const VERSION: &'static str = "0.0.4";
+pub const VERSION: &'static str = "0.2.0";
 
 /// # Release date (year/month/day)
 #[allow(dead_code)]
@@ -34,6 +34,15 @@ macro_rules! impl_signed_unsigned {
             impl IntOrdering<$signed> for $unsigned {
 
                 fn cmp_int(&self, other: &$signed) -> Ordering {
+                    if cfg!(test) {
+                        assert!(<$signed>::min_value() < 0);
+                        assert_eq!(<$unsigned>::min_value(), 0);
+                        assert_eq!(
+                            ::std::mem::size_of::<$signed>().max(::std::mem::size_of::<$unsigned>()),
+                            ::std::mem::size_of::<$as_unsigned>()
+                        );
+                    }
+
                     match *other >= 0 {
                         true => (*self as $as_unsigned).cmp(&(*other as $as_unsigned)),
                         false => Ordering::Greater,
@@ -185,16 +194,16 @@ impl_signed_unsigned! {
 }
 
 // ╔═══════════════╗
-// ║   SAME SIGN   ║
+// ║   SAME TYPE   ║
 // ╚═══════════════╝
 
-macro_rules! impl_same_sign {
-    ($($a: ty, $b: ty, $as: ty,)+) => {
+macro_rules! impl_same_type {
+    ($($ty: ty,)+) => {
         $(
-            impl IntOrdering<$b> for $a {
+            impl IntOrdering<$ty> for $ty {
 
-                fn cmp_int(&self, other: &$b) -> Ordering {
-                    (*self as $as).cmp(&(*other as $as))
+                fn cmp_int(&self, other: &$ty) -> Ordering {
+                    self.cmp(other)
                 }
 
             }
@@ -202,20 +211,42 @@ macro_rules! impl_same_sign {
     }
 }
 
-macro_rules! impl_same_sign_both {
-    ($($a: ty, $b: ty, $as: ty,)+) => {
-        $(
-            impl IntOrdering<$b> for $a {
+impl_same_type! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
-                fn cmp_int(&self, other: &$b) -> Ordering {
-                    (*self as $as).cmp(&(*other as $as))
+// ╔═══════════════╗
+// ║   SAME SIGN   ║
+// ╚═══════════════╝
+
+macro_rules! impl_same_sign {
+    ($($first: ty, $second: ty, $target: ty,)+) => {
+        $(
+            impl IntOrdering<$second> for $first {
+
+                #[allow(unused_comparisons)]
+                fn cmp_int(&self, other: &$second) -> Ordering {
+                    if cfg!(test) {
+                        assert!(
+                            (<$first>::min_value() < 0 && <$second>::min_value() < 0 && <$target>::min_value() < 0)
+                            ||
+                            (<$first>::min_value() == 0 && <$second>::min_value() == 0 && <$target>::min_value() == 0)
+                        );
+                        assert_eq!(
+                            ::std::mem::size_of::<$first>().max(::std::mem::size_of::<$second>()),
+                            ::std::mem::size_of::<$target>()
+                        );
+                    }
+
+                    (*self as $target).cmp(&(*other as $target))
                 }
 
             }
-            impl IntOrdering<$a> for $b {
+            impl IntOrdering<$first> for $second {
 
-                fn cmp_int(&self, other: &$a) -> Ordering {
-                    (*self as $as).cmp(&(*other as $as))
+                fn cmp_int(&self, other: &$first) -> Ordering {
+                    (*self as $target).cmp(&(*other as $target))
                 }
 
             }
@@ -224,22 +255,6 @@ macro_rules! impl_same_sign_both {
 }
 
 impl_same_sign! {
-    i8, i8, i8,
-    i16, i16, i16,
-    i32, i32, i32,
-    i64, i64, i64,
-    i128, i128, i128,
-    isize, isize, isize,
-
-    u8, u8, u8,
-    u16, u16, u16,
-    u32, u32, u32,
-    u64, u64, u64,
-    u128, u128, u128,
-    usize, usize, usize,
-}
-
-impl_same_sign_both! {
     i8, i16, i16,
     i8, i32, i32,
     i8, i64, i64,
@@ -255,7 +270,7 @@ impl_same_sign_both! {
     i64, i128, i128,
 }
 
-impl_same_sign_both! {
+impl_same_sign! {
     u8, u16, u16,
     u8, u32, u32,
     u8, u64, u64,
@@ -272,7 +287,7 @@ impl_same_sign_both! {
 }
 
 #[cfg(target_pointer_width = "8")]
-impl_same_sign_both! {
+impl_same_sign! {
     isize, i8, i8,
     isize, i16, i16,
     isize, i32, i32,
@@ -287,7 +302,7 @@ impl_same_sign_both! {
 }
 
 #[cfg(target_pointer_width = "16")]
-impl_same_sign_both! {
+impl_same_sign! {
     isize, i8, i16,
     isize, i16, i16,
     isize, i32, i32,
@@ -302,7 +317,7 @@ impl_same_sign_both! {
 }
 
 #[cfg(target_pointer_width = "32")]
-impl_same_sign_both! {
+impl_same_sign! {
     isize, i8, i32,
     isize, i16, i32,
     isize, i32, i32,
@@ -317,7 +332,7 @@ impl_same_sign_both! {
 }
 
 #[cfg(target_pointer_width = "64")]
-impl_same_sign_both! {
+impl_same_sign! {
     isize, i8, i64,
     isize, i16, i64,
     isize, i32, i64,
@@ -332,7 +347,7 @@ impl_same_sign_both! {
 }
 
 #[cfg(target_pointer_width = "128")]
-impl_same_sign_both! {
+impl_same_sign! {
     isize, i8, i128,
     isize, i16, i128,
     isize, i32, i128,
@@ -350,7 +365,7 @@ impl_same_sign_both! {
     target_pointer_width = "8", target_pointer_width = "16", target_pointer_width = "32", target_pointer_width = "64",
     target_pointer_width = "128",
 )))]
-impl_same_sign_both! {
+impl_same_sign! {
     isize, i8, isize,
     isize, i16, isize,
     isize, i32, isize,
@@ -391,12 +406,12 @@ fn test_ordering_greater() {
             assert_eq!(Ordering::Greater, v.cmp_int(&0_u128));
             assert_eq!(Ordering::Greater, v.cmp_int(&0_usize));
 
-            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i8::MIN));
-            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i16::MIN));
-            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i32::MIN));
-            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i64::MIN));
-            assert_eq!(Ordering::Greater, v.cmp_int(&::std::i128::MIN));
-            assert_eq!(Ordering::Greater, v.cmp_int(&::std::isize::MIN));
+            assert_eq!(Ordering::Greater, v.cmp_int(&i8::min_value()));
+            assert_eq!(Ordering::Greater, v.cmp_int(&i16::min_value()));
+            assert_eq!(Ordering::Greater, v.cmp_int(&i32::min_value()));
+            assert_eq!(Ordering::Greater, v.cmp_int(&i64::min_value()));
+            assert_eq!(Ordering::Greater, v.cmp_int(&i128::min_value()));
+            assert_eq!(Ordering::Greater, v.cmp_int(&isize::min_value()));
         )+
     }};}
 
@@ -488,19 +503,19 @@ fn test_ordering_less() {
             assert_eq!(Ordering::Less, v.cmp_int(&0_u128));
             assert_eq!(Ordering::Less, v.cmp_int(&0_usize));
 
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::i8::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::i16::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::i32::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::i64::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::i128::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::isize::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&i8::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&i16::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&i32::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&i64::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&i128::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&isize::max_value()));
 
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::u8::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::u16::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::u32::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::u64::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::u128::MAX));
-            assert_eq!(Ordering::Less, v.cmp_int(&::std::usize::MAX));
+            assert_eq!(Ordering::Less, v.cmp_int(&u8::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&u16::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&u32::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&u64::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&u128::max_value()));
+            assert_eq!(Ordering::Less, v.cmp_int(&usize::max_value()));
         )+
     }};}
 
