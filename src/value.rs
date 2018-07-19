@@ -1306,7 +1306,7 @@ impl Value {
             Value::Blob(ref bytes) => encode_blob(bytes.as_slice(), buf)?,
             Value::List(ref list) => encode_list(expected_result, list, buf)?,
             Value::Map(ref map) => encode_map(expected_result, map, buf)?,
-            Value::Object(ref object) => write_object(expected_result, object, buf)?,
+            Value::Object(ref object) => encode_object(expected_result, object, buf)?,
         };
 
         match result == expected_result {
@@ -1583,10 +1583,12 @@ fn encode_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Res
     Ok(result)
 }
 
-/// # Writes an object into the buffer
+/// # Encodes an object into the buffer
 ///
-/// [`len()`]: enum.Value.html#method.len
-fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<u32> {
+/// ## Parameters
+///
+/// - `size`: should be calculated by `Value::len()`.
+fn encode_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, OBJECT, buf)?,
@@ -1605,7 +1607,7 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
             true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
             false => return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("{}::value::write_object() -> key length is limited to {} bytes, got: {}", ::TAG, OBJECT_KEY_MAX_LEN, &key_len)
+                format!("{}::value::encode_object() -> key length is limited to {} bytes, got: {}", ::TAG, OBJECT_KEY_MAX_LEN, &key_len)
             )),
         };
 
@@ -1614,7 +1616,7 @@ fn write_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> 
             Ordering::Equal => result = sum!(result, written)?,
             _ => return Err(Error::new(
                 ErrorKind::Other,
-                format!("{}::value::write_object() -> expected to write {} byte(s) of key; result: {}", ::TAG, &key_len, &written)
+                format!("{}::value::encode_object() -> expected to write {} byte(s) of key; result: {}", ::TAG, &key_len, &written)
             )),
         }
 
