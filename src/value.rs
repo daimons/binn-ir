@@ -1303,7 +1303,7 @@ impl Value {
             Value::Date(ref d) => encode_str(DATE, d.as_str(), buf)?,
             Value::Time(ref t) => encode_str(TIME, t.as_str(), buf)?,
             Value::DecimalStr(ref ds) => encode_str(DECIMAL_STR, ds.as_str(), buf)?,
-            Value::Blob(ref bytes) => write_blob(bytes.as_slice(), buf)?,
+            Value::Blob(ref bytes) => encode_blob(bytes.as_slice(), buf)?,
             Value::List(ref list) => write_list(expected_result, list, buf)?,
             Value::Map(ref map) => write_map(expected_result, map, buf)?,
             Value::Object(ref object) => write_object(expected_result, object, buf)?,
@@ -1505,13 +1505,13 @@ fn encode_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     Ok(total_size)
 }
 
-/// # Writes blob into the buffer
-fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
+/// # Encodes blob into the buffer
+fn encode_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     let len = {
         let tmp = bytes.len();
         match tmp.cmp_int(&MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
-                ErrorKind::Other, format!("{}::value::write_blob() -> too large: {} byte(s)", ::TAG, tmp)
+                ErrorKind::Other, format!("{}::value::encode_blob() -> too large: {} byte(s)", ::TAG, tmp)
             )),
             _ => tmp as u32,
         }
@@ -1521,7 +1521,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     let mut bytes_written = match buf.write(&[BLOB])? {
         1 => 1 as u32,
         other => return Err(Error::new(
-            ErrorKind::Other, format!("{}::value::write_blob() -> expected to write 1 byte; result: {}", ::TAG, &other)
+            ErrorKind::Other, format!("{}::value::encode_blob() -> expected to write 1 byte; result: {}", ::TAG, &other)
         )),
     };
 
@@ -1533,7 +1533,7 @@ fn write_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     match written.cmp_int(&len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
-            ErrorKind::Other, format!("{}::value::write_blob() -> expected to write {} byte(s); result: {}", ::TAG, &len, &written)
+            ErrorKind::Other, format!("{}::value::encode_blob() -> expected to write {} byte(s); result: {}", ::TAG, &len, &written)
         )),
     };
     bytes_written = sum!(bytes_written, written)?;
