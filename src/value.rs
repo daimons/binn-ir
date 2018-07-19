@@ -1298,11 +1298,11 @@ impl Value {
             Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
             Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
             Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
-            Value::Text(ref t) => write_str(TEXT, t.as_str(), buf)?,
-            Value::DateTime(ref dt) => write_str(DATE_TIME, dt.as_str(), buf)?,
-            Value::Date(ref d) => write_str(DATE, d.as_str(), buf)?,
-            Value::Time(ref t) => write_str(TIME, t.as_str(), buf)?,
-            Value::DecimalStr(ref ds) => write_str(DECIMAL_STR, ds.as_str(), buf)?,
+            Value::Text(ref t) => encode_str(TEXT, t.as_str(), buf)?,
+            Value::DateTime(ref dt) => encode_str(DATE_TIME, dt.as_str(), buf)?,
+            Value::Date(ref d) => encode_str(DATE, d.as_str(), buf)?,
+            Value::Time(ref t) => encode_str(TIME, t.as_str(), buf)?,
+            Value::DecimalStr(ref ds) => encode_str(DECIMAL_STR, ds.as_str(), buf)?,
             Value::Blob(ref bytes) => write_blob(bytes.as_slice(), buf)?,
             Value::List(ref list) => write_list(expected_result, list, buf)?,
             Value::Map(ref map) => write_map(expected_result, map, buf)?,
@@ -1454,14 +1454,14 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
     }
 }
 
-/// # Writes a string into the buffer
-fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
+/// # Encodes a string into the buffer
+fn encode_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
         match tmp.cmp_int(&MAX_DATA_SIZE) {
             Ordering::Greater => return Err(Error::new(
-                ErrorKind::Other, format!("{}::value::write_str() -> string too large ({} bytes)", ::TAG, &tmp)
+                ErrorKind::Other, format!("{}::value::encode_str() -> string too large ({} bytes)", ::TAG, &tmp)
             )),
             _ => tmp as u32,
         }
@@ -1477,7 +1477,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     match buf.write(&[ty])? {
         1 => (),
         other => return Err(Error::new(
-            ErrorKind::Other, format!("{}::value::write_str() -> expected to write 1 byte; result: {}", ::TAG, &other)
+            ErrorKind::Other, format!("{}::value::encode_str() -> expected to write 1 byte; result: {}", ::TAG, &other)
         )),
     };
 
@@ -1490,7 +1490,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     match written.cmp_int(&str_len) {
         Ordering::Equal => (),
         _ => return Err(Error::new(
-            ErrorKind::Other, format!("{}::value::write_str() -> expected to write {} byte(s); result: {}", ::TAG, str_len, written)
+            ErrorKind::Other, format!("{}::value::encode_str() -> expected to write {} byte(s); result: {}", ::TAG, str_len, written)
         )),
     };
 
@@ -1498,7 +1498,7 @@ fn write_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
     match buf.write(&[0])? {
         1 => (),
         other => return Err(Error::new(
-            ErrorKind::Other, format!("{}::value::write_str() -> expected to write 1 byte; result: {}", ::TAG, &other)
+            ErrorKind::Other, format!("{}::value::encode_str() -> expected to write 1 byte; result: {}", ::TAG, &other)
         )),
     };
 
