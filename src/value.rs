@@ -371,8 +371,13 @@ pub enum Value {
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
     /// - Type: [`OBJECT`][value::OBJECT]
     ///
+    /// ## Notes
+    ///
+    /// - Key lengths must be `<=` [`OBJECT_KEY_MAX_LEN`][value::OBJECT_KEY_MAX_LEN].
+    ///
     /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
     /// [value::OBJECT]: constant.OBJECT.html
+    /// [value::OBJECT_KEY_MAX_LEN]: constant.OBJECT_KEY_MAX_LEN.html
     Object(HashMap<String, Value>),
 
 }
