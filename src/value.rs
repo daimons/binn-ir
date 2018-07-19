@@ -1304,7 +1304,7 @@ impl Value {
             Value::Time(ref t) => encode_str(TIME, t.as_str(), buf)?,
             Value::DecimalStr(ref ds) => encode_str(DECIMAL_STR, ds.as_str(), buf)?,
             Value::Blob(ref bytes) => encode_blob(bytes.as_slice(), buf)?,
-            Value::List(ref list) => write_list(expected_result, list, buf)?,
+            Value::List(ref list) => encode_list(expected_result, list, buf)?,
             Value::Map(ref map) => write_map(expected_result, map, buf)?,
             Value::Object(ref object) => write_object(expected_result, object, buf)?,
         };
@@ -1541,8 +1541,8 @@ fn encode_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
     Ok(bytes_written)
 }
 
-/// # Writes a list into the buffer
-fn write_list(size: u32, list: &Vec<Value>, buf: &mut Write) -> io::Result<u32> {
+/// # Encodes a list into the buffer
+fn encode_list(size: u32, list: &Vec<Value>, buf: &mut Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, LIST, buf)?,
