@@ -2118,217 +2118,128 @@ pub trait Decoder: Read + Sized {
     ///
     /// [`Null`]: enum.Value.html#variant.Null
     fn decode_null(&mut self) -> io::Result<Option<()>> {
-        match decode_value(Some(&[NULL]), self)? {
-            Some(Value::Null) => Ok(Some(())),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_null() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_null(self)
     }
 
     /// # Decodes a boolean value
     fn decode_bool(&mut self) -> io::Result<Option<bool>> {
-        match decode_value(Some(&[TRUE, FALSE]), self)? {
-            Some(Value::True) => Ok(Some(true)),
-            Some(Value::False) => Ok(Some(false)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_bool() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_bool(self)
     }
 
     /// # Decodes a `u8` value
     fn decode_u8(&mut self) -> io::Result<Option<u8>> {
-        match decode_value(Some(&[U8]), self)? {
-            Some(Value::U8(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u8() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_u8(self)
     }
 
     /// # Decodes an `i8` value
     fn decode_i8(&mut self) -> io::Result<Option<i8>> {
-        match decode_value(Some(&[I8]), self)? {
-            Some(Value::I8(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i8() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_i8(self)
     }
 
     /// # Decodes a `u16` value
     fn decode_u16(&mut self) -> io::Result<Option<u16>> {
-        match decode_value(Some(&[U16]), self)? {
-            Some(Value::U16(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u16() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_u16(self)
     }
 
     /// # Decodes an `i16` value
     fn decode_i16(&mut self) -> io::Result<Option<i16>> {
-        match decode_value(Some(&[I16]), self)? {
-            Some(Value::I16(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i16() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_i16(self)
     }
 
     /// # Decodes a `u32` value
     fn decode_u32(&mut self) -> io::Result<Option<u32>> {
-        match decode_value(Some(&[U32]), self)? {
-            Some(Value::U32(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u32() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_u32(self)
     }
     /// # Decodes an `i32` value
     fn decode_i32(&mut self) -> io::Result<Option<i32>> {
-        match decode_value(Some(&[I32]), self)? {
-            Some(Value::I32(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i32() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_i32(self)
     }
 
     /// # Decodes a `u64` value
     fn decode_u64(&mut self) -> io::Result<Option<u64>> {
-        match decode_value(Some(&[U64]), self)? {
-            Some(Value::U64(u)) => Ok(Some(u)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_u64() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_u64(self)
     }
 
     /// # Decodes an `i64` value
     fn decode_i64(&mut self) -> io::Result<Option<i64>> {
-        match decode_value(Some(&[I64]), self)? {
-            Some(Value::I64(i)) => Ok(Some(i)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_i64() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_i64(self)
     }
 
     /// # Decodes a [`Float`] value
     ///
     /// [`Float`]: enum.Value.html#variant.Float
     fn decode_float(&mut self) -> io::Result<Option<f32>> {
-        match decode_value(Some(&[FLOAT]), self)? {
-            Some(Value::Float(f)) => Ok(Some(f)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_float() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_float(self)
     }
 
     /// # Decodes a [`Double`] value
     ///
     /// [`Double`]: enum.Value.html#variant.Double
     fn decode_double(&mut self) -> io::Result<Option<f64>> {
-        match decode_value(Some(&[DOUBLE]), self)? {
-            Some(Value::Double(d)) => Ok(Some(d)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_double() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_double(self)
     }
 
     /// # Decodes a [`Text`]
     ///
     /// [`Text`]: enum.Value.html#variant.Text
     fn decode_text(&mut self) -> io::Result<Option<String>> {
-        match decode_value(Some(&[TEXT]), self)? {
-            Some(Value::Text(t)) => Ok(Some(t)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_text() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_text(self)
     }
 
     /// # Decodes a [`DateTime`]
     ///
     /// [`DateTime`]: enum.Value.html#variant.DateTime
     fn decode_date_time(&mut self) -> io::Result<Option<String>> {
-        match decode_value(Some(&[DATE_TIME]), self)? {
-            Some(Value::DateTime(dt)) => Ok(Some(dt)),
-            Some(other) => Err(Error::new(
-                ErrorKind::InvalidData, format!("{}::value::Decoder::decode_date_time() -> got: {:?}", ::TAG, &other)
-            )),
-            None => Ok(None),
-        }
+        decode_date_time(self)
     }
 
     /// # Decodes a [`Date`]
     ///
     /// [`Date`]: enum.Value.html#variant.Date
     fn decode_date(&mut self) -> io::Result<Option<String>> {
-        match decode_value(Some(&[DATE]), self)? {
-            Some(Value::Date(d)) => Ok(Some(d)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_date() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_date(self)
     }
 
     /// # Decodes a [`Time`]
     ///
     /// [`Time`]: enum.Value.html#variant.Time
     fn decode_time(&mut self) -> io::Result<Option<String>> {
-        match decode_value(Some(&[TIME]), self)? {
-            Some(Value::Time(t)) => Ok(Some(t)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_time() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_time(self)
     }
 
     /// # Decodes a [`DecimalStr`]
     ///
     /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
     fn decode_decimal_str(&mut self) -> io::Result<Option<String>> {
-        match decode_value(Some(&[DECIMAL_STR]), self)? {
-            Some(Value::DecimalStr(ds)) => Ok(Some(ds)),
-            Some(other) => Err(Error::new(
-                ErrorKind::InvalidData, format!("{}::value::Decoder::decode_decimal_str() -> got: {:?}", ::TAG, &other)
-            )),
-            None => Ok(None),
-        }
+        decode_decimal_str(self)
     }
 
     /// # Decodes a [`Blob`]
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
     fn decode_blob(&mut self) -> io::Result<Option<Vec<u8>>> {
-        match decode_value(Some(&[BLOB]), self)? {
-            Some(Value::Blob(bytes)) => Ok(Some(bytes)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_blob() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_blob(self)
     }
 
     /// # Decodes a [`List`]
     ///
     /// [`List`]: enum.Value.html#variant.List
     fn decode_list(&mut self) -> io::Result<Option<Vec<Value>>> {
-        match decode_value(Some(&[LIST]), self)? {
-            Some(Value::List(list)) => Ok(Some(list)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_list() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_list(self)
     }
 
     /// # Decodes a [`Map`]
     ///
     /// [`Map`]: enum.Value.html#variant.Map
     fn decode_map(&mut self) -> io::Result<Option<BTreeMap<i32, Value>>> {
-        match decode_value(Some(&[MAP]), self)? {
-            Some(Value::Map(map)) => Ok(Some(map)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_map() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_map(self)
     }
 
     /// # Decodes an [`Object`]
     ///
     /// [`Object`]: enum.Value.html#variant.Object
     fn decode_object(&mut self) -> io::Result<Option<HashMap<String, Value>>> {
-        match decode_value(Some(&[OBJECT]), self)? {
-            Some(Value::Object(object)) => Ok(Some(object)),
-            Some(other) => Err(Error::new(ErrorKind::InvalidData, format!("{}::value::Decoder::decode_object() -> got: {:?}", ::TAG, &other))),
-            None => Ok(None),
-        }
+        decode_object(self)
     }
 
 }
