@@ -2,7 +2,7 @@
 
 [package]
 name = "binn-ir"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Hai Bison <haibison.apps@gmail.com>"]
 description = "An implementation of Binn - https://github.com/liteserver/binn"
 repository = "https://bitbucket.org/haibison/binn-ir/"

@@ -430,7 +430,7 @@
 // ╚═════════════════╝
 
 macro_rules! code_name  { () => { "binn-ir" }}
-macro_rules! version    { () => { "0.8.0" }}
+macro_rules! version    { () => { "0.9.0" }}
 
 /// # Crate name
 ///
