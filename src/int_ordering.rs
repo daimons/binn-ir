@@ -8,11 +8,11 @@ pub const UUID: &'static str = "d895be5b-7831-4a1e-9ea3-53d1c315ab82";
 
 /// # Version
 #[allow(dead_code)]
-pub const VERSION: &'static str = "0.2.0";
+pub const VERSION: &'static str = "0.4.0";
 
 /// # Release date (year/month/day)
 #[allow(dead_code)]
-pub const RELEASE_DATE: (u16, u8, u8) = (2018, 7, 18);
+pub const RELEASE_DATE: (u16, u8, u8) = (2018, 7, 24);
 
 /// # This trait helps compare 2 instances of `Ord`
 ///
@@ -100,98 +100,49 @@ impl_signed_unsigned! {
     isize, usize, usize,
 }
 
-#[cfg(target_pointer_width = "8")]
-impl_signed_unsigned! {
-    isize, u8, u8,
-    isize, u16, u16,
-    isize, u32, u32,
-    isize, u64, u64,
-    isize, u128, u128,
+macro_rules! impl_signed_unsigned_for_isize_usize {
+    // This is setup match, it will call the next match
+    () => {
+        #[cfg(target_pointer_width = "8")]
+        impl_signed_unsigned_for_isize_usize!(u8, u16, u32, u64, u128);
 
-    i8, usize, u8,
-    i16, usize, u16,
-    i32, usize, u32,
-    i64, usize, u64,
-    i128, usize, u128,
+        #[cfg(target_pointer_width = "16")]
+        impl_signed_unsigned_for_isize_usize!(u16, u16, u32, u64, u128);
+
+        #[cfg(target_pointer_width = "32")]
+        impl_signed_unsigned_for_isize_usize!(u32, u32, u32, u64, u128);
+
+        #[cfg(target_pointer_width = "64")]
+        impl_signed_unsigned_for_isize_usize!(u64, u64, u64, u64, u128);
+
+        #[cfg(target_pointer_width = "128")]
+        impl_signed_unsigned_for_isize_usize!(u128, u128, u128, u128, u128);
+
+        #[cfg(not(any(
+            target_pointer_width = "8", target_pointer_width = "16", target_pointer_width = "32", target_pointer_width = "64",
+            target_pointer_width = "128",
+        )))]
+        impl_signed_unsigned_for_isize_usize!(usize, usize, usize, usize, usize);
+    };
+    ($as_unsigned_8: ty, $as_unsigned_16: ty, $as_unsigned_32: ty, $as_unsigned_64: ty, $as_unsigned_128: ty) => {
+        impl_signed_unsigned! {
+            isize, u8, $as_unsigned_8,
+            isize, u16, $as_unsigned_16,
+            isize, u32, $as_unsigned_32,
+            isize, u64, $as_unsigned_64,
+            isize, u128, $as_unsigned_128,
+
+            i8, usize, $as_unsigned_8,
+            i16, usize, $as_unsigned_16,
+            i32, usize, $as_unsigned_32,
+            i64, usize, $as_unsigned_64,
+            i128, usize, $as_unsigned_128,
+        }
+    };
 }
 
-#[cfg(target_pointer_width = "16")]
-impl_signed_unsigned! {
-    isize, u8, u16,
-    isize, u16, u16,
-    isize, u32, u32,
-    isize, u64, u64,
-    isize, u128, u128,
-
-    i8, usize, u16,
-    i16, usize, u16,
-    i32, usize, u32,
-    i64, usize, u64,
-    i128, usize, u128,
-}
-
-#[cfg(target_pointer_width = "32")]
-impl_signed_unsigned! {
-    isize, u8, u32,
-    isize, u16, u32,
-    isize, u32, u32,
-    isize, u64, u64,
-    isize, u128, u128,
-
-    i8, usize, u32,
-    i16, usize, u32,
-    i32, usize, u32,
-    i64, usize, u64,
-    i128, usize, u128,
-}
-
-#[cfg(target_pointer_width = "64")]
-impl_signed_unsigned! {
-    isize, u8, u64,
-    isize, u16, u64,
-    isize, u32, u64,
-    isize, u64, u64,
-    isize, u128, u128,
-
-    i8, usize, u64,
-    i16, usize, u64,
-    i32, usize, u64,
-    i64, usize, u64,
-    i128, usize, u128,
-}
-
-#[cfg(target_pointer_width = "128")]
-impl_signed_unsigned! {
-    isize, u8, u128,
-    isize, u16, u128,
-    isize, u32, u128,
-    isize, u64, u128,
-    isize, u128, u128,
-
-    i8, usize, u128,
-    i16, usize, u128,
-    i32, usize, u128,
-    i64, usize, u128,
-    i128, usize, u128,
-}
-
-#[cfg(not(any(
-    target_pointer_width = "8", target_pointer_width = "16", target_pointer_width = "32", target_pointer_width = "64",
-    target_pointer_width = "128",
-)))]
-impl_signed_unsigned! {
-    isize, u8, usize,
-    isize, u16, usize,
-    isize, u32, usize,
-    isize, u64, usize,
-    isize, u128, usize,
-
-    i8, usize, usize,
-    i16, usize, usize,
-    i32, usize, usize,
-    i64, usize, usize,
-    i128, usize, usize,
-}
+// Call the setup match
+impl_signed_unsigned_for_isize_usize! {}
 
 // ╔═══════════════╗
 // ║   SAME TYPE   ║
@@ -286,98 +237,52 @@ impl_same_sign! {
     u64, u128, u128,
 }
 
-#[cfg(target_pointer_width = "8")]
-impl_same_sign! {
-    isize, i8, i8,
-    isize, i16, i16,
-    isize, i32, i32,
-    isize, i64, i64,
-    isize, i128, i128,
+macro_rules! impl_same_sign_for_isize_usize {
+    // This is setup match, it will call the next match
+    () => {
+        #[cfg(target_pointer_width = "8")]
+        impl_same_sign_for_isize_usize!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
-    usize, u8, u8,
-    usize, u16, u16,
-    usize, u32, u32,
-    usize, u64, u64,
-    usize, u128, u128,
+        #[cfg(target_pointer_width = "16")]
+        impl_same_sign_for_isize_usize!(i16, i16, i32, i64, i128, u16, u16, u32, u64, u128);
+
+        #[cfg(target_pointer_width = "32")]
+        impl_same_sign_for_isize_usize!(i32, i32, i32, i64, i128, u32, u32, u32, u64, u128);
+
+        #[cfg(target_pointer_width = "64")]
+        impl_same_sign_for_isize_usize!(i64, i64, i64, i64, i128, u64, u64, u64, u64, u128);
+
+        #[cfg(target_pointer_width = "128")]
+        impl_same_sign_for_isize_usize!(i128, i128, i128, i128, i128, u128, u128, u128, u128, u128);
+
+        #[cfg(not(any(
+            target_pointer_width = "8", target_pointer_width = "16", target_pointer_width = "32", target_pointer_width = "64",
+            target_pointer_width = "128",
+        )))]
+        impl_same_sign_for_isize_usize!(isize, isize, isize, isize, isize, usize, usize, usize, usize, usize);
+    };
+    (
+        $signed_8: ty, $signed_16: ty, $signed_32: ty, $signed_64: ty, $signed_128: ty,
+        $unsigned_8: ty, $unsigned_16: ty, $unsigned_32: ty, $unsigned_64: ty, $unsigned_128: ty
+    ) => {
+        impl_same_sign! {
+            isize, i8, $signed_8,
+            isize, i16, $signed_16,
+            isize, i32, $signed_32,
+            isize, i64, $signed_64,
+            isize, i128, $signed_128,
+
+            usize, u8, $unsigned_8,
+            usize, u16, $unsigned_16,
+            usize, u32, $unsigned_32,
+            usize, u64, $unsigned_64,
+            usize, u128, $unsigned_128,
+        }
+    };
 }
 
-#[cfg(target_pointer_width = "16")]
-impl_same_sign! {
-    isize, i8, i16,
-    isize, i16, i16,
-    isize, i32, i32,
-    isize, i64, i64,
-    isize, i128, i128,
-
-    usize, u8, u16,
-    usize, u16, u16,
-    usize, u32, u32,
-    usize, u64, u64,
-    usize, u128, u128,
-}
-
-#[cfg(target_pointer_width = "32")]
-impl_same_sign! {
-    isize, i8, i32,
-    isize, i16, i32,
-    isize, i32, i32,
-    isize, i64, i64,
-    isize, i128, i128,
-
-    usize, u8, u32,
-    usize, u16, u32,
-    usize, u32, u32,
-    usize, u64, u64,
-    usize, u128, u128,
-}
-
-#[cfg(target_pointer_width = "64")]
-impl_same_sign! {
-    isize, i8, i64,
-    isize, i16, i64,
-    isize, i32, i64,
-    isize, i64, i64,
-    isize, i128, i128,
-
-    usize, u8, u64,
-    usize, u16, u64,
-    usize, u32, u64,
-    usize, u64, u64,
-    usize, u128, u128,
-}
-
-#[cfg(target_pointer_width = "128")]
-impl_same_sign! {
-    isize, i8, i128,
-    isize, i16, i128,
-    isize, i32, i128,
-    isize, i64, i128,
-    isize, i128, i128,
-
-    usize, u8, u128,
-    usize, u16, u128,
-    usize, u32, u128,
-    usize, u64, u128,
-    usize, u128, u128,
-}
-
-#[cfg(not(any(
-    target_pointer_width = "8", target_pointer_width = "16", target_pointer_width = "32", target_pointer_width = "64",
-    target_pointer_width = "128",
-)))]
-impl_same_sign! {
-    isize, i8, isize,
-    isize, i16, isize,
-    isize, i32, isize,
-    isize, i64, isize,
-    isize, i128, isize,
-
-    usize, u8, usize,
-    usize, u16, usize,
-    usize, u32, usize,
-    usize, u64, usize,
-    usize, u128, usize,
-}
+// Call the setup match
+impl_same_sign_for_isize_usize! {}
 
 #[test]
 fn test_ordering_greater() {
