@@ -860,7 +860,7 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
         Ok(count) => match count == bytes.len() {
             true => Ok(count as u32),
             false => Err(Error::new(
-                ErrorKind::Other, format!("{}::value::write_int_be!() -> expected to write {} byte(s); result: {}", ::TAG, bytes.len(), count)
+                ErrorKind::Other, __!("write_int_be!() -> expected to write {} byte(s); result: {}", bytes.len(), count)
             )),
         },
         Err(err) => Err(err),
