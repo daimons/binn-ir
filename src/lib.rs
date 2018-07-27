@@ -461,10 +461,9 @@ fn test_crate_version() {
     assert_eq!(VERSION, env!("CARGO_PKG_VERSION"));
 }
 
-/// # Wrapper for format!(), which prefixes your message with: ::TAG, file!(), line!()
-macro_rules! __ { ($($arg: tt)+) => {
-    format!("[{}::{}::{}] {}", ::TAG, file!(), line!(), format!($($arg)+))
-};}
+#[macro_use]
+#[allow(unused_macros)]
+mod __;
 
 mod int_ordering;
 
