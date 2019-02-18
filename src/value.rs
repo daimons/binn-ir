@@ -849,7 +849,7 @@ fn read_size_and_its_length(source: &mut Read) -> io::Result<(u32, u32)> {
         0b_1000_0000 => {
             let mut buf = [first_byte, 0, 0, 0];
             source.read_exact(&mut buf[1..]).and_then(|()|
-                Ok((u32::from_be(unsafe { mem::transmute(buf) }) & !(SIZE_MASK), mem::size_of::<u32>() as u32))
+                Ok((u32::from_be_bytes(buf) & !(SIZE_MASK), mem::size_of::<u32>() as u32))
             )
         },
         _ => Ok((first_byte as u32, mem::size_of::<u8>() as u32)),
