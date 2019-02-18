@@ -810,59 +810,12 @@ impl<'a> From<&'a HashMap<String, Value>> for Value {
 
 }
 
-/// # Converts a value to its underlying byte slice
-///
-/// ## Notes
-///
-/// - This macro is dangerous: <https://doc.rust-lang.org/std/mem/fn.transmute.html>
-/// - Again, this macro is dangerous: <https://doc.rust-lang.org/nomicon/transmutes.html>
-/// - TODO: when `::to_bytes()` is stable, switch to it.
-macro_rules! as_bytes { ($ty: ty, $v: expr) => {{
-    unsafe { mem::transmute::<$ty, [u8; mem::size_of::<$ty>()]>($v) }
-}};}
-
-#[test]
-fn test_macro_as_bytes() {
-    assert!(as_bytes!(u8, 1) == [0x01]);
-    assert!(as_bytes!(i8, -0x01) == [0xFF]);
-    assert!(as_bytes!(i8, -99) == [0x9D]);
-    assert!(as_bytes!(u8, 100) == [0x64]);
-    assert!(as_bytes!(i8, -0x64) == [0x9C]);
-
-    assert_eq!(as_bytes!(u16, 0x_03E8_u16.to_be()), [0x03, 0xE8]);
-    assert_eq!(as_bytes!(u16, 0x_270F_u16.to_be()), [0x27, 0x0F]);
-
-    assert_eq!(as_bytes!(i16, (-9999 as i16).to_be()), [0xD8, 0xF1]);
-    assert_eq!(as_bytes!(i16, (-2000 as i16).to_be()), [0xF8, 0x30]);
-    assert_eq!(as_bytes!(i16, (-1234 as i16).to_be()), [0xFB, 0x2E]);
-
-    assert_eq!(as_bytes!(u32, 0x_075B_CD15_u32.to_be()), [0x07, 0x5B, 0xCD, 0x15]);
-    assert_eq!(as_bytes!(u32, 0x_3ADE_68B1_u32.to_be()), [0x3A, 0xDE, 0x68, 0xB1]);
-    assert_eq!(as_bytes!(u32, 0x_AABB_FFEE_u32.to_be()), [0xAA, 0xBB, 0xFF, 0xEE]);
-
-    assert_eq!(as_bytes!(u64, 0x_8000_0000_0000_0000_u64.to_be()), [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    assert_eq!(as_bytes!(u64, 0x_FFFF_FFFF_0000_0000_u64.to_be()), [0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00]);
-
-    assert_eq!(as_bytes!(i64, (-3372036854775808 as i64).to_be()), [0xFF, 0xF4, 0x05, 0x26, 0x7D, 0x1A, 0x00, 0x00]);
-
-    assert_eq!(
-        as_bytes!(u128, 0x_AAFF_0000_CCDD_8899_1234_8678_BCCB_0000_u128.to_be()),
-        [0xAA, 0xFF, 0x00, 0x00, 0xCC, 0xDD, 0x88, 0x99, 0x12, 0x34, 0x86, 0x78, 0xBC, 0xCB, 0x00, 0x00]
-    );
-}
-
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
 /// Returns: number of bytes written, as `io::Result<u32>`.
 macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
-    let bytes = as_bytes!($ty, $v.to_be());
-    match $buf.write(&bytes) {
-        Ok(count) => match count == bytes.len() {
-            true => Ok(count as u32),
-            false => Err(Error::new(ErrorKind::Other, __!("expected to write {} byte(s); result: {}", bytes.len(), count))),
-        },
-        Err(err) => Err(err),
-    }
+    let bytes = $v.to_be_bytes();
+    $buf.write_all(&bytes).map(|()| bytes.len() as u32)
 }};}
 
 /// # Reads an integer value in big-endian format from std::io::Read
