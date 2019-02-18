@@ -823,10 +823,7 @@ macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
 /// Result: `io::Result<$ty>`.
 macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
     let mut buf = [0_u8; mem::size_of::<$ty>()];
-    match $source.read_exact(&mut buf) {
-        Ok(()) => Ok(<$ty>::from_be(unsafe { mem::transmute(buf) })),
-        Err(err) => Err(err),
-    }
+    $source.read_exact(&mut buf).map(|()| <$ty>::from_be_bytes(buf))
 }};}
 
 /// # Writes size (u32) into the buffer
