@@ -5,7 +5,7 @@
 //! # Project
 //!
 //! - Repository: <https://bitbucket.org/haibison/binn-ir>
-//! - License: [Free Public License 1.0.0](https://opensource.org/licenses/FPL-1.0.0)
+//! - License: Nice License 1.0.0 (see LICENSE file at root directory of `master` branch)
 //! - _This project follows [Semantic Versioning 2.0.0]_
 //!
 //! ---

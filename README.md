@@ -2,7 +2,7 @@
 
 - Version: [`0.10.0`](version-info.md) _(February 18th, 2019)_
     + _This project follows [Semantic Versioning 2.0.0]_
-- License: [Free Public License 1.0.0](LICENSE)
+- License: [Nice License 1.0.0](LICENSE)
 
 ---
 
