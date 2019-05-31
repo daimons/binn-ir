@@ -12,15 +12,15 @@ pub const UUID: &'static str = "3ec2df31-b5fb-49a9-b91f-de63ec69a058";
 
 /// # Version
 #[allow(dead_code)]
-pub const VERSION: &'static str = "0.3.0";
+pub const VERSION: &'static str = "0.4.0";
 
 /// # Release date (year/month/day)
 #[allow(dead_code)]
-pub const RELEASE_DATE: (u16, u8, u8) = (2018, 12, 24);
+pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 1);
 
-/// # Wrapper for format!(), which prefixes your message with: ::TAG, file!(), line!()
+/// # Wrapper for format!(), which prefixes your message with: ::TAG, module_path!(), line!()
 macro_rules! __ { ($($arg: tt)+) => {
-    format!("[{}][{}-{}] {}", crate::TAG, file!(), line!(), format!($($arg)+))
+    format!("[{}][{}-{}] {}", crate::TAG, module_path!(), line!(), format!($($arg)+))
 };}
 
 /// # Wrapper for format!(), which wraps your message inside 'bold' tag
