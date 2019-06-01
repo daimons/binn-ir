@@ -30,8 +30,6 @@
 //! This example demonstrates a simple file container:
 //!
 //! ```
-//! extern crate binn_ir;
-//!
 //! use binn_ir::value::{Value, Encoder, Decoder};
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;

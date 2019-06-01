@@ -176,7 +176,7 @@ pub const OBJECT_KEY_MAX_LEN: usize = 255;
 pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
 
 /// # Values
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Value {
 
     /// # Null
@@ -531,40 +531,6 @@ impl fmt::Display for Value {
             Value::List(ref list) => display_list!(formatter, self, list),
             Value::Map(ref map) => display_map!(formatter, self, map),
             Value::Object(ref object) => display_object!(formatter, self, object),
-        }
-    }
-
-}
-
-impl Eq for Value {}
-
-impl PartialEq for Value {
-
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Value::Null, Value::Null) => true,
-            (Value::True, Value::True) => true,
-            (Value::False, Value::False) => true,
-            (Value::U8(a), Value::U8(b)) => a == b,
-            (Value::I8(a), Value::I8(b)) => a == b,
-            (Value::U16(a), Value::U16(b)) => a == b,
-            (Value::I16(a), Value::I16(b)) => a == b,
-            (Value::U32(a), Value::U32(b)) => a == b,
-            (Value::I32(a), Value::I32(b)) => a == b,
-            (Value::Float(a), Value::Float(b)) => a.to_bits() == b.to_bits(),
-            (Value::U64(a), Value::U64(b)) => a == b,
-            (Value::I64(a), Value::I64(b)) => a == b,
-            (Value::Double(a), Value::Double(b)) => a.to_bits() == b.to_bits(),
-            (Value::Text(a), Value::Text(b)) => a == b,
-            (Value::DateTime(a), Value::DateTime(b)) => a == b,
-            (Value::Date(a), Value::Date(b)) => a == b,
-            (Value::Time(a), Value::Time(b)) => a == b,
-            (Value::DecimalStr(a), Value::DecimalStr(b)) => a == b,
-            (Value::Blob(a), Value::Blob(b)) => a == b,
-            (Value::List(a), Value::List(b)) => a == b,
-            (Value::Map(a), Value::Map(b)) => a == b,
-            (Value::Object(a), Value::Object(b)) => a == b,
-            _ => false,
         }
     }
 
