@@ -1,11 +1,11 @@
 // License: see LICENSE file at root directory of `master` branch
 
-//! # `0.11.0` _(March 28th, 2019)_
+//! # `0.12.0` _(June 2nd, 2019)_
 //!
 //! ## Changes
 //!
-//! - Switch to Nice License 1.0.0 (see LICENSE file at root directory of `master` branch).
-//! - Added new module `version_info` (this one), which replaced `version-info.md` file at root directory.
+//! - The project now requires Rust 2018 edition to build.
+//! - We made some small optimizations to speed up build time.
 //!
 //! ## Dependencies
 //!
