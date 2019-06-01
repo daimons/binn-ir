@@ -1,6 +1,7 @@
 # License: see LICENSE file at root directory of `master` branch
 
 [package]
+edition = '2018'
 name = 'binn-ir'
 version = '0.11.0'
 authors = ['Hai Bison <haibison.apps@gmail.com>']

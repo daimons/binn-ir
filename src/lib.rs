@@ -456,11 +456,6 @@ pub const TAG: &'static str = concat!(code_name!(), "::149dc8a5::", version!());
 // ║   IMPLEMENTATION   ║
 // ╚════════════════════╝
 
-#[test]
-fn test_crate_version() {
-    assert_eq!(VERSION, env!("CARGO_PKG_VERSION"));
-}
-
 #[macro_use]
 #[allow(unused_macros)]
 mod __;
@@ -470,3 +465,8 @@ mod int_ordering;
 pub mod storage;
 pub mod value;
 pub mod version_info;
+
+#[test]
+fn test_crate_version() {
+    assert_eq!(VERSION, env!("CARGO_PKG_VERSION"));
+}
