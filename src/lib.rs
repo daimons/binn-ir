@@ -457,8 +457,7 @@ pub const TAG: &'static str = concat!(code_name!(), "::149dc8a5::", version!());
 #[macro_use]
 #[allow(unused_macros)]
 mod __;
-
-mod int_ordering;
+mod cmp;
 
 pub mod storage;
 pub mod value;
