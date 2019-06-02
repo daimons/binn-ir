@@ -8,15 +8,15 @@
 
 /// # Unique universally identifier of this kit
 #[allow(dead_code)]
-pub const UUID: &'static str = "3ec2df31-b5fb-49a9-b91f-de63ec69a058";
+pub const UUID: &str = "3ec2df31-b5fb-49a9-b91f-de63ec69a058";
 
 /// # Version
 #[allow(dead_code)]
-pub const VERSION: &'static str = "0.4.0";
+pub const VERSION: &str = "0.4.1";
 
 /// # Release date (year/month/day)
 #[allow(dead_code)]
-pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 1);
+pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 2);
 
 /// # Wrapper for format!(), which prefixes your message with: ::TAG, module_path!(), line!()
 macro_rules! __ { ($($arg: tt)+) => {
