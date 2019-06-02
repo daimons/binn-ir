@@ -423,6 +423,10 @@
 // TODO: enable this flag when `alloc` crate is stabilized
 // #![no_std]
 
+#![allow(clippy::bool_comparison)]
+#![allow(clippy::cognitive_complexity)]
+#![allow(clippy::match_bool)]
+
 // ╔═════════════════╗
 // ║   IDENTIFIERS   ║
 // ╚═════════════════╝
@@ -433,22 +437,22 @@ macro_rules! version    { () => { "0.12.0" }}
 /// # Crate name
 ///
 /// IR stands for _implementation in Rust_.
-pub const NAME: &'static str = "Binn-IR";
+pub const NAME: &str = "Binn-IR";
 
 /// # Crate code name
-pub const CODE_NAME: &'static str = code_name!();
+pub const CODE_NAME: &str = code_name!();
 
 /// # Crate version
-pub const VERSION: &'static str = version!();
+pub const VERSION: &str = version!();
 
 /// # Crate release date (year/month/day)
 pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 2);
 
 /// # Unique universally identifier of this crate. Its CRC-32 is `149dc8a5`.
-pub const UUID: &'static str = "acea8479-f233-4686-af1c-fe198f506ddb";
+pub const UUID: &str = "acea8479-f233-4686-af1c-fe198f506ddb";
 
 /// # Tag, which can be used for logging...
-pub const TAG: &'static str = concat!(code_name!(), "::149dc8a5::", version!());
+pub const TAG: &str = concat!(code_name!(), "::149dc8a5::", version!());
 
 // ╔════════════════════╗
 // ║   IMPLEMENTATION   ║

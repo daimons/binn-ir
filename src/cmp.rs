@@ -18,6 +18,7 @@ pub trait CmpTo<T: Ord>: Ord {
 impl CmpTo<u32> for i32 {
 
     fn cmp_to(&self, target: &u32) -> Ordering {
+        #[allow(clippy::op_ref)]
         match self < &0 {
             true => Ordering::Less,
             false => (*self as u32).cmp(target),

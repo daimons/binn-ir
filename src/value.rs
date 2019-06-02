@@ -857,7 +857,7 @@ fn read_size_and_its_length(source: &mut Read) -> io::Result<(u32, u32)> {
                 Ok((u32::from_be_bytes(buf) & !(SIZE_MASK), mem::size_of::<u32>() as u32))
             )
         },
-        _ => Ok((first_byte as u32, mem::size_of::<u8>() as u32)),
+        _ => Ok((u32::from(first_byte), mem::size_of::<u8>() as u32)),
     }
 }
 
@@ -899,8 +899,8 @@ macro_rules! sum {
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
         let mut result: io::Result<u32> = Ok($a);
         $(
-            match result {
-                Ok(current) => result = {
+            if let Ok(current) = result {
+                result = {
                     let b = $b;
                     match b.cmp_to(&MAX_DATA_SIZE) {
                         Ordering::Greater => Err(Error::new(
@@ -916,9 +916,8 @@ macro_rules! sum {
                             None => Err(Error::new(ErrorKind::InvalidData, __!("can't add {} into {}", &b, &current))),
                         },
                     }
-                },
-                Err(_) => (),
-            };
+                };
+            }
         )+
 
         result
@@ -953,7 +952,7 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
     // Notes:
     // - `len` was verified via above call to `new_vec_with_capacity!()`, that it must be <= `MAX_DATA_SIZE`
     // - `MAX_DATA_SIZE` should be **tested** to be < `std::u64::MAX`
-    match $source.take(len as u64).read_to_end(&mut result) {
+    match $source.take(u64::from(len)).read_to_end(&mut result) {
         Ok(read) => match read.cmp_to(&len) {
             Ordering::Equal => Ok(result),
             _ => Err(Error::new(ErrorKind::WriteZero, __!("expected to read {} bytes, but: {}", &len, &read))),
@@ -1053,10 +1052,9 @@ macro_rules! decode_map { ($source: ident) => {{
                 ErrorKind::InvalidData, __!("invalid map size -> expected: {}, current: {}, new item: {} -> {:?}", &size, &read, &key, &value)
             )),
         };
-        match result.insert(key, value) {
-            Some(old_value) => return Err(Error::new(ErrorKind::InvalidData, __!("duplicate key '{}' of old value: {:?}", &key, &old_value))),
-            None => (),
-        };
+        if let Some(old_value) = result.insert(key, value) {
+            return Err(Error::new(ErrorKind::InvalidData, __!("duplicate key '{}' of old value: {:?}", &key, &old_value)));
+        }
     }
 
     // Verify total read (1 byte for header)
@@ -1116,10 +1114,9 @@ macro_rules! decode_object { ($source: ident) => {{
                 ErrorKind::InvalidData, __!("invalid object size -> expected: {}, current: {}, new value: {:?}", &size, &read, &value)
             )),
         };
-        match result.insert(key, value) {
-            Some(old_value) => return Err(Error::new(ErrorKind::InvalidData, __!("duplicate key of old value: {:?}", &old_value))),
-            None => (),
-        };
+        if let Some(old_value) = result.insert(key, value) {
+            return Err(Error::new(ErrorKind::InvalidData, __!("duplicate key of old value: {:?}", &old_value)));
+        }
     }
 
     // Verify total read (1 byte for header)
@@ -1129,6 +1126,7 @@ macro_rules! decode_object { ($source: ident) => {{
     }
 }};}
 
+#[allow(clippy::len_without_is_empty)]
 impl Value {
 
     /// # Calculates length of this value
@@ -1665,7 +1663,7 @@ pub fn decode_object(source: &mut Read) -> io::Result<Option<HashMap<String, Val
 }
 
 /// # Calculates list length
-fn list_len(list: &Vec<Value>) -> io::Result<u32> {
+fn list_len(list: &[Value]) -> io::Result<u32> {
     // Type + count
     let mut result: u32 = sum!(bytes_for_len!(list.len())?, 1)?;
     // Items
@@ -1809,7 +1807,7 @@ fn encode_value_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
 }
 
 /// # Encodes a `Value`'s list into the buffer
-fn encode_value_list(size: u32, list: &Vec<Value>, buf: &mut Write) -> io::Result<u32> {
+fn encode_value_list(size: u32, list: &[Value], buf: &mut Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, LIST, buf)?,
