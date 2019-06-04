@@ -442,17 +442,17 @@ pub const NAME: &str = "Binn-IR";
 /// # Crate code name
 pub const CODE_NAME: &str = code_name!();
 
+/// # ID of this crate
+pub const ID: &str = "cff3aca7-f4b92708-1afe0ccd-3c0602a4-709572c3-1d801805";
+
 /// # Crate version
 pub const VERSION: &str = version!();
 
 /// # Crate release date (year/month/day)
 pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 2);
 
-/// # Unique universally identifier of this crate. Its CRC-32 is `149dc8a5`.
-pub const UUID: &str = "acea8479-f233-4686-af1c-fe198f506ddb";
-
 /// # Tag, which can be used for logging...
-pub const TAG: &str = concat!(code_name!(), "::149dc8a5::", version!());
+pub const TAG: &str = concat!(code_name!(), "::cff3aca7::", version!());
 
 // ╔════════════════════╗
 // ║   IMPLEMENTATION   ║
