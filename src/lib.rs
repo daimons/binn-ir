@@ -443,7 +443,10 @@ pub const NAME: &str = "Binn-IR";
 pub const CODE_NAME: &str = code_name!();
 
 /// # ID of this crate
-pub const ID: &str = "cff3aca7-f4b92708-1afe0ccd-3c0602a4-709572c3-1d801805";
+pub const ID: &str = concat!(
+    "2f0f7b89-c460bfcf-9910298a-8bd68231-7ca09fc3-389c7e9a-15966f7b-81ea0014-",
+    "58f3bd4b-517ea3b5-dbe67356-61440866-5c1034b0-2abb189b-efadbb32-1b2a48d8",
+);
 
 /// # Crate version
 pub const VERSION: &str = version!();
@@ -452,7 +455,7 @@ pub const VERSION: &str = version!();
 pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 2);
 
 /// # Tag, which can be used for logging...
-pub const TAG: &str = concat!(code_name!(), "::cff3aca7::", version!());
+pub const TAG: &str = concat!(code_name!(), "::2f0f7b89::", version!());
 
 // ╔════════════════════╗
 // ║   IMPLEMENTATION   ║
