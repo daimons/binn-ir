@@ -3,6 +3,7 @@
 //! # Values
 
 use std::{
+    borrow::Cow,
     cmp::Ordering,
     collections::{BTreeMap, HashMap},
     fmt,
@@ -712,6 +713,14 @@ impl<'a> From<&'a str> for Value {
     fn from(s: &'a str) -> Self {
         // Note that some variants also accept a String, so forward this call to implementation of `From<String> for Value`, let it decide.
         Self::from(s.to_owned())
+    }
+
+}
+
+impl<'a> From<Cow<'a, str>> for Value {
+
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::from(s.into_owned())
     }
 
 }
