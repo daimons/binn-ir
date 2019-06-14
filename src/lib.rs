@@ -432,7 +432,7 @@
 // ╚═════════════════╝
 
 macro_rules! code_name  { () => { "binn-ir" }}
-macro_rules! version    { () => { "0.12.0" }}
+macro_rules! version    { () => { "0.13.0" }}
 
 /// # Crate name
 ///
@@ -452,7 +452,7 @@ pub const ID: &str = concat!(
 pub const VERSION: &str = version!();
 
 /// # Crate release date (year/month/day)
-pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 2);
+pub const RELEASE_DATE: (u16, u8, u8) = (2019, 6, 14);
 
 /// # Tag, which can be used for logging...
 pub const TAG: &str = concat!(code_name!(), "::2f0f7b89::", version!());
