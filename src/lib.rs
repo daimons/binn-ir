@@ -2,7 +2,7 @@
 
 //! # An implementation of Binn - <https://github.com/liteserver/binn>
 //!
-//! # Project
+//! ## Project
 //!
 //! - Repository: <https://bitbucket.org/haibison/binn-ir>
 //! - License: Nice License 1.0.0 (see LICENSE file at root directory of `master` branch)
@@ -10,12 +10,12 @@
 //!
 //! ---
 //!
-//! # Features
+//! ## Features
 //!
 //! - All official types are supported.
 //! - User defined types are _not_ yet supported.
 //!
-//! # Notes
+//! ## Notes
 //!
 //! - Unless _absolutely necessary_, the project will **not** use any dependency.
 //! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
@@ -23,7 +23,7 @@
 //! - There will be **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
 //!   However, simple API for safe encoder/decoder will be supported. For example: option to limit container size to be decoded...
 //!
-//! # Quick examples
+//! ## Quick examples
 //!
 //! Most functionalities are provided via 2 traits: [`Encoder`][trait:value::Encoder], [`Decoder`][trait:value::Decoder].
 //!
@@ -62,11 +62,18 @@
 //! assert_eq!(cursor.position(), buf.len() as u64);
 //! ```
 //!
-//! # Thanks
+//! ## Failures
+//!
+//! Panics, missing documentation, missing tests... are my failures. It would help me a lot if you file new issues when you encounter such
+//! problems.
+//!
+//! ## Thanks
 //!
 //! Special thanks to [Binn]'s authors for their hard work.
 //!
-//! # Copy of specification
+//! Thank you,
+//!
+//! ## Copy of specification
 //!
 //! Below is a copy of [Binn]'s specification, with some minor changes of formatting.
 //!
