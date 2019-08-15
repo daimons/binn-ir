@@ -857,7 +857,7 @@ macro_rules! write_size { ($size: expr, $buf: ident) => {{
 ///
 /// - First value is size.
 /// - Second value is total bytes read (the 'length' of first value).
-fn read_size_and_its_length(source: &mut Read) -> io::Result<(u32, u32)> {
+fn read_size_and_its_length(source: &mut dyn Read) -> io::Result<(u32, u32)> {
     let first_byte = read_int_be!(u8, source)?;
     match first_byte & 0b_1000_0000 {
         0b_1000_0000 => {
@@ -871,7 +871,7 @@ fn read_size_and_its_length(source: &mut Read) -> io::Result<(u32, u32)> {
 }
 
 /// # Reads size from source
-fn read_size(source: &mut Read) -> io::Result<u32> {
+fn read_size(source: &mut dyn Read) -> io::Result<u32> {
     read_size_and_its_length(source).and_then(|(size, _)| Ok(size))
 }
 
@@ -1175,7 +1175,7 @@ impl Value {
     /// # Encodes this value into a buffer
     ///
     /// Returns the number of bytes written.
-    pub fn encode(&self, buf: &mut Write) -> io::Result<u32> {
+    pub fn encode(&self, buf: &mut dyn Write) -> io::Result<u32> {
         let expected_result = self.len()?;
 
         let result = match *self {
@@ -1212,7 +1212,7 @@ impl Value {
     /// # Decodes a value from source
     ///
     /// If it returns `Ok(None)`, it means there's no more data to decode.
-    pub fn decode(source: &mut Read) -> io::Result<Option<Self>> {
+    pub fn decode(source: &mut dyn Read) -> io::Result<Option<Self>> {
         decode_value(None, source)
     }
 
@@ -1223,7 +1223,7 @@ impl Value {
 /// Result: total bytes that have been written.
 ///
 /// [`Null`]: enum.Value.html#variant.Null
-pub fn encode_null(buf: &mut Write) -> io::Result<u32> {
+pub fn encode_null(buf: &mut dyn Write) -> io::Result<u32> {
     Value::Null.encode(buf)
 }
 
@@ -1233,7 +1233,7 @@ pub fn encode_null(buf: &mut Write) -> io::Result<u32> {
 ///
 /// [`True`]: enum.Value.html#variant.True
 /// [`False`]: enum.Value.html#variant.False
-pub fn encode_bool(buf: &mut Write, b: impl Into<bool>) -> io::Result<u32> {
+pub fn encode_bool(buf: &mut dyn Write, b: impl Into<bool>) -> io::Result<u32> {
     match b.into() {
         true => Value::True.encode(buf),
         false => Value::False.encode(buf),
@@ -1245,7 +1245,7 @@ pub fn encode_bool(buf: &mut Write, b: impl Into<bool>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U8`]: enum.Value.html#variant.U8
-pub fn encode_u8(buf: &mut Write, u: impl Into<u8>) -> io::Result<u32> {
+pub fn encode_u8(buf: &mut dyn Write, u: impl Into<u8>) -> io::Result<u32> {
     Value::U8(u.into()).encode(buf)
 }
 
@@ -1254,7 +1254,7 @@ pub fn encode_u8(buf: &mut Write, u: impl Into<u8>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I8`]: enum.Value.html#variant.I8
-pub fn encode_i8(buf: &mut Write, i: impl Into<i8>) -> io::Result<u32> {
+pub fn encode_i8(buf: &mut dyn Write, i: impl Into<i8>) -> io::Result<u32> {
     Value::I8(i.into()).encode(buf)
 }
 
@@ -1263,7 +1263,7 @@ pub fn encode_i8(buf: &mut Write, i: impl Into<i8>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U16`]: enum.Value.html#variant.U16
-pub fn encode_u16(buf: &mut Write, u: impl Into<u16>) -> io::Result<u32> {
+pub fn encode_u16(buf: &mut dyn Write, u: impl Into<u16>) -> io::Result<u32> {
     Value::U16(u.into()).encode(buf)
 }
 
@@ -1272,7 +1272,7 @@ pub fn encode_u16(buf: &mut Write, u: impl Into<u16>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I16`]: enum.Value.html#variant.I16
-pub fn encode_i16(buf: &mut Write, i: impl Into<i16>) -> io::Result<u32> {
+pub fn encode_i16(buf: &mut dyn Write, i: impl Into<i16>) -> io::Result<u32> {
     Value::I16(i.into()).encode(buf)
 }
 
@@ -1281,7 +1281,7 @@ pub fn encode_i16(buf: &mut Write, i: impl Into<i16>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U32`]: enum.Value.html#variant.U32
-pub fn encode_u32(buf: &mut Write, u: impl Into<u32>) -> io::Result<u32> {
+pub fn encode_u32(buf: &mut dyn Write, u: impl Into<u32>) -> io::Result<u32> {
     Value::U32(u.into()).encode(buf)
 }
 
@@ -1290,7 +1290,7 @@ pub fn encode_u32(buf: &mut Write, u: impl Into<u32>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I32`]: enum.Value.html#variant.I32
-pub fn encode_i32(buf: &mut Write, i: impl Into<i32>) -> io::Result<u32> {
+pub fn encode_i32(buf: &mut dyn Write, i: impl Into<i32>) -> io::Result<u32> {
     Value::I32(i.into()).encode(buf)
 }
 
@@ -1299,7 +1299,7 @@ pub fn encode_i32(buf: &mut Write, i: impl Into<i32>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U64`]: enum.Value.html#variant.U64
-pub fn encode_u64(buf: &mut Write, u: impl Into<u64>) -> io::Result<u32> {
+pub fn encode_u64(buf: &mut dyn Write, u: impl Into<u64>) -> io::Result<u32> {
     Value::U64(u.into()).encode(buf)
 }
 
@@ -1308,7 +1308,7 @@ pub fn encode_u64(buf: &mut Write, u: impl Into<u64>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I64`]: enum.Value.html#variant.I64
-pub fn encode_i64(buf: &mut Write, i: impl Into<i64>) -> io::Result<u32> {
+pub fn encode_i64(buf: &mut dyn Write, i: impl Into<i64>) -> io::Result<u32> {
     Value::I64(i.into()).encode(buf)
 }
 
@@ -1317,7 +1317,7 @@ pub fn encode_i64(buf: &mut Write, i: impl Into<i64>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`Float`]: enum.Value.html#variant.Float
-pub fn encode_float(buf: &mut Write, f: impl Into<f32>) -> io::Result<u32> {
+pub fn encode_float(buf: &mut dyn Write, f: impl Into<f32>) -> io::Result<u32> {
     Value::Float(f.into()).encode(buf)
 }
 
@@ -1326,7 +1326,7 @@ pub fn encode_float(buf: &mut Write, f: impl Into<f32>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`Double`]: enum.Value.html#variant.Double
-pub fn encode_double(buf: &mut Write, d: impl Into<f64>) -> io::Result<u32> {
+pub fn encode_double(buf: &mut dyn Write, d: impl Into<f64>) -> io::Result<u32> {
     Value::Double(d.into()).encode(buf)
 }
 
@@ -1335,7 +1335,7 @@ pub fn encode_double(buf: &mut Write, d: impl Into<f64>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`Text`]: enum.Value.html#variant.Text
-pub fn encode_text(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_text(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
     Value::Text(s.into()).encode(buf)
 }
 
@@ -1344,7 +1344,7 @@ pub fn encode_text(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`DateTime`]: enum.Value.html#variant.DateTime
-pub fn encode_date_time(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_date_time(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
     Value::DateTime(s.into()).encode(buf)
 }
 
@@ -1353,7 +1353,7 @@ pub fn encode_date_time(buf: &mut Write, s: impl Into<String>) -> io::Result<u32
 /// Result: total bytes that have been written.
 ///
 /// [`Date`]: enum.Value.html#variant.Date
-pub fn encode_date(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_date(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
     Value::Date(s.into()).encode(buf)
 }
 
@@ -1362,7 +1362,7 @@ pub fn encode_date(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`Time`]: enum.Value.html#variant.Time
-pub fn encode_time(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_time(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
     Value::Time(s.into()).encode(buf)
 }
 
@@ -1371,7 +1371,7 @@ pub fn encode_time(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
-pub fn encode_decimal_str(buf: &mut Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_decimal_str(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
     Value::DecimalStr(s.into()).encode(buf)
 }
 
@@ -1380,7 +1380,7 @@ pub fn encode_decimal_str(buf: &mut Write, s: impl Into<String>) -> io::Result<u
 /// Result: total bytes that have been written.
 ///
 /// [`Blob`]: enum.Value.html#variant.Blob
-pub fn encode_blob(buf: &mut Write, bytes: impl Into<Vec<u8>>) -> io::Result<u32> {
+pub fn encode_blob(buf: &mut dyn Write, bytes: impl Into<Vec<u8>>) -> io::Result<u32> {
     Value::Blob(bytes.into()).encode(buf)
 }
 
@@ -1389,7 +1389,7 @@ pub fn encode_blob(buf: &mut Write, bytes: impl Into<Vec<u8>>) -> io::Result<u32
 /// Result: total bytes that have been written.
 ///
 /// [`List`]: enum.Value.html#variant.List
-pub fn encode_list(buf: &mut Write, list: impl Into<Vec<Value>>) -> io::Result<u32> {
+pub fn encode_list(buf: &mut dyn Write, list: impl Into<Vec<Value>>) -> io::Result<u32> {
     Value::List(list.into()).encode(buf)
 }
 
@@ -1398,7 +1398,7 @@ pub fn encode_list(buf: &mut Write, list: impl Into<Vec<Value>>) -> io::Result<u
 /// Result: total bytes that have been written.
 ///
 /// [`Map`]: enum.Value.html#variant.Map
-pub fn encode_map(buf: &mut Write, map: impl Into<BTreeMap<i32, Value>>) -> io::Result<u32> {
+pub fn encode_map(buf: &mut dyn Write, map: impl Into<BTreeMap<i32, Value>>) -> io::Result<u32> {
     Value::Map(map.into()).encode(buf)
 }
 
@@ -1407,7 +1407,7 @@ pub fn encode_map(buf: &mut Write, map: impl Into<BTreeMap<i32, Value>>) -> io::
 /// Result: total bytes that have been written.
 ///
 /// [`Object`]: enum.Value.html#variant.Object
-pub fn encode_object(buf: &mut Write, object: impl Into<HashMap<String, Value>>) -> io::Result<u32> {
+pub fn encode_object(buf: &mut dyn Write, object: impl Into<HashMap<String, Value>>) -> io::Result<u32> {
     Value::Object(object.into()).encode(buf)
 }
 
@@ -1416,7 +1416,7 @@ pub fn encode_object(buf: &mut Write, object: impl Into<HashMap<String, Value>>)
 /// If `filter` is provided, the function expects that next value from source is one of them, and returns an error if not.
 ///
 /// If `filter` is `None`, the function decodes any value from source.
-fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<Value>> {
+fn decode_value(filter: Option<&[u8]>, source: &mut dyn Read) -> io::Result<Option<Value>> {
     let source_value = match read_int_be!(u8, source) {
         Ok(source_value) => source_value,
         Err(err) => return match err.kind() {
@@ -1461,7 +1461,7 @@ fn decode_value(filter: Option<&[u8]>, source: &mut Read) -> io::Result<Option<V
 /// # Decodes a [`Null`]
 ///
 /// [`Null`]: enum.Value.html#variant.Null
-pub fn decode_null(source: &mut Read) -> io::Result<Option<()>> {
+pub fn decode_null(source: &mut dyn Read) -> io::Result<Option<()>> {
     match decode_value(Some(&[NULL]), source)? {
         Some(Value::Null) => Ok(Some(())),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected null, got: {:?}", &other))),
@@ -1470,7 +1470,7 @@ pub fn decode_null(source: &mut Read) -> io::Result<Option<()>> {
 }
 
 /// # Decodes a boolean value
-pub fn decode_bool(source: &mut Read) -> io::Result<Option<bool>> {
+pub fn decode_bool(source: &mut dyn Read) -> io::Result<Option<bool>> {
     match decode_value(Some(&[TRUE, FALSE]), source)? {
         Some(Value::True) => Ok(Some(true)),
         Some(Value::False) => Ok(Some(false)),
@@ -1480,7 +1480,7 @@ pub fn decode_bool(source: &mut Read) -> io::Result<Option<bool>> {
 }
 
 /// # Decodes a `u8` value
-pub fn decode_u8(source: &mut Read) -> io::Result<Option<u8>> {
+pub fn decode_u8(source: &mut dyn Read) -> io::Result<Option<u8>> {
     match decode_value(Some(&[U8]), source)? {
         Some(Value::U8(u)) => Ok(Some(u)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected u8, got: {:?}", &other))),
@@ -1489,7 +1489,7 @@ pub fn decode_u8(source: &mut Read) -> io::Result<Option<u8>> {
 }
 
 /// # Decodes an `i8` value
-pub fn decode_i8(source: &mut Read) -> io::Result<Option<i8>> {
+pub fn decode_i8(source: &mut dyn Read) -> io::Result<Option<i8>> {
     match decode_value(Some(&[I8]), source)? {
         Some(Value::I8(i)) => Ok(Some(i)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected i8, got: {:?}", &other))),
@@ -1498,7 +1498,7 @@ pub fn decode_i8(source: &mut Read) -> io::Result<Option<i8>> {
 }
 
 /// # Decodes a `u16` value
-pub fn decode_u16(source: &mut Read) -> io::Result<Option<u16>> {
+pub fn decode_u16(source: &mut dyn Read) -> io::Result<Option<u16>> {
     match decode_value(Some(&[U16]), source)? {
         Some(Value::U16(u)) => Ok(Some(u)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected u16, got: {:?}", &other))),
@@ -1507,7 +1507,7 @@ pub fn decode_u16(source: &mut Read) -> io::Result<Option<u16>> {
 }
 
 /// # Decodes an `i16` value
-pub fn decode_i16(source: &mut Read) -> io::Result<Option<i16>> {
+pub fn decode_i16(source: &mut dyn Read) -> io::Result<Option<i16>> {
     match decode_value(Some(&[I16]), source)? {
         Some(Value::I16(i)) => Ok(Some(i)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected i16, got: {:?}", &other))),
@@ -1516,7 +1516,7 @@ pub fn decode_i16(source: &mut Read) -> io::Result<Option<i16>> {
 }
 
 /// # Decodes a `u32` value
-pub fn decode_u32(source: &mut Read) -> io::Result<Option<u32>> {
+pub fn decode_u32(source: &mut dyn Read) -> io::Result<Option<u32>> {
     match decode_value(Some(&[U32]), source)? {
         Some(Value::U32(u)) => Ok(Some(u)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected u32, got: {:?}", &other))),
@@ -1524,7 +1524,7 @@ pub fn decode_u32(source: &mut Read) -> io::Result<Option<u32>> {
     }
 }
 /// # Decodes an `i32` value
-pub fn decode_i32(source: &mut Read) -> io::Result<Option<i32>> {
+pub fn decode_i32(source: &mut dyn Read) -> io::Result<Option<i32>> {
     match decode_value(Some(&[I32]), source)? {
         Some(Value::I32(i)) => Ok(Some(i)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected i32, got: {:?}", &other))),
@@ -1533,7 +1533,7 @@ pub fn decode_i32(source: &mut Read) -> io::Result<Option<i32>> {
 }
 
 /// # Decodes a `u64` value
-pub fn decode_u64(source: &mut Read) -> io::Result<Option<u64>> {
+pub fn decode_u64(source: &mut dyn Read) -> io::Result<Option<u64>> {
     match decode_value(Some(&[U64]), source)? {
         Some(Value::U64(u)) => Ok(Some(u)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected u64, got: {:?}", &other))),
@@ -1542,7 +1542,7 @@ pub fn decode_u64(source: &mut Read) -> io::Result<Option<u64>> {
 }
 
 /// # Decodes an `i64` value
-pub fn decode_i64(source: &mut Read) -> io::Result<Option<i64>> {
+pub fn decode_i64(source: &mut dyn Read) -> io::Result<Option<i64>> {
     match decode_value(Some(&[I64]), source)? {
         Some(Value::I64(i)) => Ok(Some(i)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected i64, got: {:?}", &other))),
@@ -1553,7 +1553,7 @@ pub fn decode_i64(source: &mut Read) -> io::Result<Option<i64>> {
 /// # Decodes a [`Float`] value
 ///
 /// [`Float`]: enum.Value.html#variant.Float
-pub fn decode_float(source: &mut Read) -> io::Result<Option<f32>> {
+pub fn decode_float(source: &mut dyn Read) -> io::Result<Option<f32>> {
     match decode_value(Some(&[FLOAT]), source)? {
         Some(Value::Float(f)) => Ok(Some(f)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected float, got: {:?}", &other))),
@@ -1564,7 +1564,7 @@ pub fn decode_float(source: &mut Read) -> io::Result<Option<f32>> {
 /// # Decodes a [`Double`] value
 ///
 /// [`Double`]: enum.Value.html#variant.Double
-pub fn decode_double(source: &mut Read) -> io::Result<Option<f64>> {
+pub fn decode_double(source: &mut dyn Read) -> io::Result<Option<f64>> {
     match decode_value(Some(&[DOUBLE]), source)? {
         Some(Value::Double(d)) => Ok(Some(d)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected double, got: {:?}", &other))),
@@ -1575,7 +1575,7 @@ pub fn decode_double(source: &mut Read) -> io::Result<Option<f64>> {
 /// # Decodes a [`Text`]
 ///
 /// [`Text`]: enum.Value.html#variant.Text
-pub fn decode_text(source: &mut Read) -> io::Result<Option<String>> {
+pub fn decode_text(source: &mut dyn Read) -> io::Result<Option<String>> {
     match decode_value(Some(&[TEXT]), source)? {
         Some(Value::Text(t)) => Ok(Some(t)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected text, got: {:?}", &other))),
@@ -1586,7 +1586,7 @@ pub fn decode_text(source: &mut Read) -> io::Result<Option<String>> {
 /// # Decodes a [`DateTime`]
 ///
 /// [`DateTime`]: enum.Value.html#variant.DateTime
-pub fn decode_date_time(source: &mut Read) -> io::Result<Option<String>> {
+pub fn decode_date_time(source: &mut dyn Read) -> io::Result<Option<String>> {
     match decode_value(Some(&[DATE_TIME]), source)? {
         Some(Value::DateTime(dt)) => Ok(Some(dt)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected date_time, got: {:?}", &other))),
@@ -1597,7 +1597,7 @@ pub fn decode_date_time(source: &mut Read) -> io::Result<Option<String>> {
 /// # Decodes a [`Date`]
 ///
 /// [`Date`]: enum.Value.html#variant.Date
-pub fn decode_date(source: &mut Read) -> io::Result<Option<String>> {
+pub fn decode_date(source: &mut dyn Read) -> io::Result<Option<String>> {
     match decode_value(Some(&[DATE]), source)? {
         Some(Value::Date(d)) => Ok(Some(d)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected date, got: {:?}", &other))),
@@ -1608,7 +1608,7 @@ pub fn decode_date(source: &mut Read) -> io::Result<Option<String>> {
 /// # Decodes a [`Time`]
 ///
 /// [`Time`]: enum.Value.html#variant.Time
-pub fn decode_time(source: &mut Read) -> io::Result<Option<String>> {
+pub fn decode_time(source: &mut dyn Read) -> io::Result<Option<String>> {
     match decode_value(Some(&[TIME]), source)? {
         Some(Value::Time(t)) => Ok(Some(t)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected time, got: {:?}", &other))),
@@ -1619,7 +1619,7 @@ pub fn decode_time(source: &mut Read) -> io::Result<Option<String>> {
 /// # Decodes a [`DecimalStr`]
 ///
 /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
-pub fn decode_decimal_str(source: &mut Read) -> io::Result<Option<String>> {
+pub fn decode_decimal_str(source: &mut dyn Read) -> io::Result<Option<String>> {
     match decode_value(Some(&[DECIMAL_STR]), source)? {
         Some(Value::DecimalStr(ds)) => Ok(Some(ds)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected decimal_str, got: {:?}", &other))),
@@ -1630,7 +1630,7 @@ pub fn decode_decimal_str(source: &mut Read) -> io::Result<Option<String>> {
 /// # Decodes a [`Blob`]
 ///
 /// [`Blob`]: enum.Value.html#variant.Blob
-pub fn decode_blob(source: &mut Read) -> io::Result<Option<Vec<u8>>> {
+pub fn decode_blob(source: &mut dyn Read) -> io::Result<Option<Vec<u8>>> {
     match decode_value(Some(&[BLOB]), source)? {
         Some(Value::Blob(bytes)) => Ok(Some(bytes)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected blob, got: {:?}", &other))),
@@ -1641,7 +1641,7 @@ pub fn decode_blob(source: &mut Read) -> io::Result<Option<Vec<u8>>> {
 /// # Decodes a [`List`]
 ///
 /// [`List`]: enum.Value.html#variant.List
-pub fn decode_list(source: &mut Read) -> io::Result<Option<Vec<Value>>> {
+pub fn decode_list(source: &mut dyn Read) -> io::Result<Option<Vec<Value>>> {
     match decode_value(Some(&[LIST]), source)? {
         Some(Value::List(list)) => Ok(Some(list)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected list, got: {:?}", &other))),
@@ -1652,7 +1652,7 @@ pub fn decode_list(source: &mut Read) -> io::Result<Option<Vec<Value>>> {
 /// # Decodes a [`Map`]
 ///
 /// [`Map`]: enum.Value.html#variant.Map
-pub fn decode_map(source: &mut Read) -> io::Result<Option<BTreeMap<i32, Value>>> {
+pub fn decode_map(source: &mut dyn Read) -> io::Result<Option<BTreeMap<i32, Value>>> {
     match decode_value(Some(&[MAP]), source)? {
         Some(Value::Map(map)) => Ok(Some(map)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected map, got: {:?}", &other))),
@@ -1663,7 +1663,7 @@ pub fn decode_map(source: &mut Read) -> io::Result<Option<BTreeMap<i32, Value>>>
 /// # Decodes an [`Object`]
 ///
 /// [`Object`]: enum.Value.html#variant.Object
-pub fn decode_object(source: &mut Read) -> io::Result<Option<HashMap<String, Value>>> {
+pub fn decode_object(source: &mut dyn Read) -> io::Result<Option<HashMap<String, Value>>> {
     match decode_value(Some(&[OBJECT]), source)? {
         Some(Value::Object(object)) => Ok(Some(object)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected object, got: {:?}", &other))),
@@ -1743,7 +1743,7 @@ fn object_len(object: &HashMap<String, Value>) -> io::Result<u32> {
 }
 
 /// # Encodes a `Value`'s string into the buffer
-fn encode_value_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
+fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> io::Result<u32> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
@@ -1786,7 +1786,7 @@ fn encode_value_str(ty: u8, s: &str, buf: &mut Write) -> io::Result<u32> {
 }
 
 /// # Encodes `Value`'s blob into the buffer
-fn encode_value_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
+fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> io::Result<u32> {
     let len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
@@ -1816,7 +1816,7 @@ fn encode_value_blob(bytes: &[u8], buf: &mut Write) -> io::Result<u32> {
 }
 
 /// # Encodes a `Value`'s list into the buffer
-fn encode_value_list(size: u32, list: &[Value], buf: &mut Write) -> io::Result<u32> {
+fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, LIST, buf)?,
@@ -1837,7 +1837,7 @@ fn encode_value_list(size: u32, list: &[Value], buf: &mut Write) -> io::Result<u
 }
 
 /// # Encodes a `Value`'s map into the buffer
-fn encode_value_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut Write) -> io::Result<u32> {
+fn encode_value_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut dyn Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, MAP, buf)?,
@@ -1862,7 +1862,7 @@ fn encode_value_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut Write) -> i
 /// ## Parameters
 ///
 /// - `size`: should be calculated by `Value::len()`.
-fn encode_value_object(size: u32, object: &HashMap<String, Value>, buf: &mut Write) -> io::Result<u32> {
+fn encode_value_object(size: u32, object: &HashMap<String, Value>, buf: &mut dyn Write) -> io::Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, OBJECT, buf)?,
