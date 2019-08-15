@@ -477,6 +477,9 @@ pub mod storage;
 pub mod value;
 pub mod version_info;
 
+/// # Result type used in this crate
+pub type Result<T> = std::result::Result<T, std::io::Error>;
+
 #[test]
 fn test_crate_version() {
     assert_eq!(VERSION, env!("CARGO_PKG_VERSION"));
