@@ -1233,7 +1233,7 @@ pub fn encode_null(buf: &mut dyn Write) -> io::Result<u32> {
 ///
 /// [`True`]: enum.Value.html#variant.True
 /// [`False`]: enum.Value.html#variant.False
-pub fn encode_bool(buf: &mut dyn Write, b: impl Into<bool>) -> io::Result<u32> {
+pub fn encode_bool<T>(buf: &mut dyn Write, b: T) -> io::Result<u32> where T: Into<bool> {
     match b.into() {
         true => Value::True.encode(buf),
         false => Value::False.encode(buf),
@@ -1245,7 +1245,7 @@ pub fn encode_bool(buf: &mut dyn Write, b: impl Into<bool>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U8`]: enum.Value.html#variant.U8
-pub fn encode_u8(buf: &mut dyn Write, u: impl Into<u8>) -> io::Result<u32> {
+pub fn encode_u8<T>(buf: &mut dyn Write, u: T) -> io::Result<u32> where T: Into<u8> {
     Value::U8(u.into()).encode(buf)
 }
 
@@ -1254,7 +1254,7 @@ pub fn encode_u8(buf: &mut dyn Write, u: impl Into<u8>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I8`]: enum.Value.html#variant.I8
-pub fn encode_i8(buf: &mut dyn Write, i: impl Into<i8>) -> io::Result<u32> {
+pub fn encode_i8<T>(buf: &mut dyn Write, i: T) -> io::Result<u32> where T: Into<i8> {
     Value::I8(i.into()).encode(buf)
 }
 
@@ -1263,7 +1263,7 @@ pub fn encode_i8(buf: &mut dyn Write, i: impl Into<i8>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U16`]: enum.Value.html#variant.U16
-pub fn encode_u16(buf: &mut dyn Write, u: impl Into<u16>) -> io::Result<u32> {
+pub fn encode_u16<T>(buf: &mut dyn Write, u: T) -> io::Result<u32> where T: Into<u16> {
     Value::U16(u.into()).encode(buf)
 }
 
@@ -1272,7 +1272,7 @@ pub fn encode_u16(buf: &mut dyn Write, u: impl Into<u16>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I16`]: enum.Value.html#variant.I16
-pub fn encode_i16(buf: &mut dyn Write, i: impl Into<i16>) -> io::Result<u32> {
+pub fn encode_i16<T>(buf: &mut dyn Write, i: T) -> io::Result<u32> where T: Into<i16> {
     Value::I16(i.into()).encode(buf)
 }
 
@@ -1281,7 +1281,7 @@ pub fn encode_i16(buf: &mut dyn Write, i: impl Into<i16>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U32`]: enum.Value.html#variant.U32
-pub fn encode_u32(buf: &mut dyn Write, u: impl Into<u32>) -> io::Result<u32> {
+pub fn encode_u32<T>(buf: &mut dyn Write, u: T) -> io::Result<u32> where T: Into<u32> {
     Value::U32(u.into()).encode(buf)
 }
 
@@ -1290,7 +1290,7 @@ pub fn encode_u32(buf: &mut dyn Write, u: impl Into<u32>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I32`]: enum.Value.html#variant.I32
-pub fn encode_i32(buf: &mut dyn Write, i: impl Into<i32>) -> io::Result<u32> {
+pub fn encode_i32<T>(buf: &mut dyn Write, i: T) -> io::Result<u32> where T: Into<i32> {
     Value::I32(i.into()).encode(buf)
 }
 
@@ -1299,7 +1299,7 @@ pub fn encode_i32(buf: &mut dyn Write, i: impl Into<i32>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`U64`]: enum.Value.html#variant.U64
-pub fn encode_u64(buf: &mut dyn Write, u: impl Into<u64>) -> io::Result<u32> {
+pub fn encode_u64<T>(buf: &mut dyn Write, u: T) -> io::Result<u32> where T: Into<u64> {
     Value::U64(u.into()).encode(buf)
 }
 
@@ -1308,7 +1308,7 @@ pub fn encode_u64(buf: &mut dyn Write, u: impl Into<u64>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`I64`]: enum.Value.html#variant.I64
-pub fn encode_i64(buf: &mut dyn Write, i: impl Into<i64>) -> io::Result<u32> {
+pub fn encode_i64<T>(buf: &mut dyn Write, i: T) -> io::Result<u32> where T: Into<i64> {
     Value::I64(i.into()).encode(buf)
 }
 
@@ -1317,7 +1317,7 @@ pub fn encode_i64(buf: &mut dyn Write, i: impl Into<i64>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`Float`]: enum.Value.html#variant.Float
-pub fn encode_float(buf: &mut dyn Write, f: impl Into<f32>) -> io::Result<u32> {
+pub fn encode_float<T>(buf: &mut dyn Write, f: T) -> io::Result<u32> where T: Into<f32> {
     Value::Float(f.into()).encode(buf)
 }
 
@@ -1326,7 +1326,7 @@ pub fn encode_float(buf: &mut dyn Write, f: impl Into<f32>) -> io::Result<u32> {
 /// Result: total bytes that have been written.
 ///
 /// [`Double`]: enum.Value.html#variant.Double
-pub fn encode_double(buf: &mut dyn Write, d: impl Into<f64>) -> io::Result<u32> {
+pub fn encode_double<T>(buf: &mut dyn Write, d: T) -> io::Result<u32> where T: Into<f64> {
     Value::Double(d.into()).encode(buf)
 }
 
@@ -1335,7 +1335,7 @@ pub fn encode_double(buf: &mut dyn Write, d: impl Into<f64>) -> io::Result<u32> 
 /// Result: total bytes that have been written.
 ///
 /// [`Text`]: enum.Value.html#variant.Text
-pub fn encode_text(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_text<T>(buf: &mut dyn Write, s: T) -> io::Result<u32> where T: Into<String> {
     Value::Text(s.into()).encode(buf)
 }
 
@@ -1344,7 +1344,7 @@ pub fn encode_text(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32>
 /// Result: total bytes that have been written.
 ///
 /// [`DateTime`]: enum.Value.html#variant.DateTime
-pub fn encode_date_time(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_date_time<T>(buf: &mut dyn Write, s: T) -> io::Result<u32> where T: Into<String> {
     Value::DateTime(s.into()).encode(buf)
 }
 
@@ -1353,7 +1353,7 @@ pub fn encode_date_time(buf: &mut dyn Write, s: impl Into<String>) -> io::Result
 /// Result: total bytes that have been written.
 ///
 /// [`Date`]: enum.Value.html#variant.Date
-pub fn encode_date(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_date<T>(buf: &mut dyn Write, s: T) -> io::Result<u32> where T: Into<String> {
     Value::Date(s.into()).encode(buf)
 }
 
@@ -1362,7 +1362,7 @@ pub fn encode_date(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32>
 /// Result: total bytes that have been written.
 ///
 /// [`Time`]: enum.Value.html#variant.Time
-pub fn encode_time(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_time<T>(buf: &mut dyn Write, s: T) -> io::Result<u32> where T: Into<String> {
     Value::Time(s.into()).encode(buf)
 }
 
@@ -1371,7 +1371,7 @@ pub fn encode_time(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32>
 /// Result: total bytes that have been written.
 ///
 /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
-pub fn encode_decimal_str(buf: &mut dyn Write, s: impl Into<String>) -> io::Result<u32> {
+pub fn encode_decimal_str<T>(buf: &mut dyn Write, s: T) -> io::Result<u32> where T: Into<String> {
     Value::DecimalStr(s.into()).encode(buf)
 }
 
@@ -1380,7 +1380,7 @@ pub fn encode_decimal_str(buf: &mut dyn Write, s: impl Into<String>) -> io::Resu
 /// Result: total bytes that have been written.
 ///
 /// [`Blob`]: enum.Value.html#variant.Blob
-pub fn encode_blob(buf: &mut dyn Write, bytes: impl Into<Vec<u8>>) -> io::Result<u32> {
+pub fn encode_blob<T>(buf: &mut dyn Write, bytes: T) -> io::Result<u32> where T: Into<Vec<u8>> {
     Value::Blob(bytes.into()).encode(buf)
 }
 
@@ -1389,7 +1389,7 @@ pub fn encode_blob(buf: &mut dyn Write, bytes: impl Into<Vec<u8>>) -> io::Result
 /// Result: total bytes that have been written.
 ///
 /// [`List`]: enum.Value.html#variant.List
-pub fn encode_list(buf: &mut dyn Write, list: impl Into<Vec<Value>>) -> io::Result<u32> {
+pub fn encode_list<T>(buf: &mut dyn Write, list: T) -> io::Result<u32> where T: Into<Vec<Value>> {
     Value::List(list.into()).encode(buf)
 }
 
@@ -1398,7 +1398,7 @@ pub fn encode_list(buf: &mut dyn Write, list: impl Into<Vec<Value>>) -> io::Resu
 /// Result: total bytes that have been written.
 ///
 /// [`Map`]: enum.Value.html#variant.Map
-pub fn encode_map(buf: &mut dyn Write, map: impl Into<BTreeMap<i32, Value>>) -> io::Result<u32> {
+pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> io::Result<u32> where T: Into<BTreeMap<i32, Value>> {
     Value::Map(map.into()).encode(buf)
 }
 
@@ -1407,7 +1407,7 @@ pub fn encode_map(buf: &mut dyn Write, map: impl Into<BTreeMap<i32, Value>>) -> 
 /// Result: total bytes that have been written.
 ///
 /// [`Object`]: enum.Value.html#variant.Object
-pub fn encode_object(buf: &mut dyn Write, object: impl Into<HashMap<String, Value>>) -> io::Result<u32> {
+pub fn encode_object<T>(buf: &mut dyn Write, object: T) -> io::Result<u32> where T: Into<HashMap<String, Value>> {
     Value::Object(object.into()).encode(buf)
 }
 
@@ -1908,7 +1908,7 @@ pub trait Encoder: Write + Sized {
     /// # Encodes a value
     ///
     /// Result: total bytes that have been written.
-    fn encode(&mut self, value: impl AsRef<Value>) -> io::Result<u32> {
+    fn encode<T>(&mut self, value: T) -> io::Result<u32> where T: AsRef<Value> {
         value.as_ref().encode(self)
     }
 
@@ -1927,7 +1927,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// [`True`]: enum.Value.html#variant.True
     /// [`False`]: enum.Value.html#variant.False
-    fn encode_bool(&mut self, b: impl Into<bool>) -> io::Result<u32> {
+    fn encode_bool<T>(&mut self, b: T) -> io::Result<u32> where T: Into<bool> {
         encode_bool(self, b)
     }
 
@@ -1936,7 +1936,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`U8`]: enum.Value.html#variant.U8
-    fn encode_u8(&mut self, u: impl Into<u8>) -> io::Result<u32> {
+    fn encode_u8<T>(&mut self, u: T) -> io::Result<u32> where T: Into<u8> {
         encode_u8(self, u)
     }
 
@@ -1945,7 +1945,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`I8`]: enum.Value.html#variant.I8
-    fn encode_i8(&mut self, i: impl Into<i8>) -> io::Result<u32> {
+    fn encode_i8<T>(&mut self, i: T) -> io::Result<u32> where T: Into<i8> {
         encode_i8(self, i)
     }
 
@@ -1954,7 +1954,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`U16`]: enum.Value.html#variant.U16
-    fn encode_u16(&mut self, u: impl Into<u16>) -> io::Result<u32> {
+    fn encode_u16<T>(&mut self, u: T) -> io::Result<u32> where T: Into<u16> {
         encode_u16(self, u)
     }
 
@@ -1963,7 +1963,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`I16`]: enum.Value.html#variant.I16
-    fn encode_i16(&mut self, i: impl Into<i16>) -> io::Result<u32> {
+    fn encode_i16<T>(&mut self, i: T) -> io::Result<u32> where T: Into<i16> {
         encode_i16(self, i)
     }
 
@@ -1972,7 +1972,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`U32`]: enum.Value.html#variant.U32
-    fn encode_u32(&mut self, u: impl Into<u32>) -> io::Result<u32> {
+    fn encode_u32<T>(&mut self, u: T) -> io::Result<u32> where T: Into<u32> {
         encode_u32(self, u)
     }
 
@@ -1981,7 +1981,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`I32`]: enum.Value.html#variant.I32
-    fn encode_i32(&mut self, i: impl Into<i32>) -> io::Result<u32> {
+    fn encode_i32<T>(&mut self, i: T) -> io::Result<u32> where T: Into<i32> {
         encode_i32(self, i)
     }
 
@@ -1990,7 +1990,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`U64`]: enum.Value.html#variant.U64
-    fn encode_u64(&mut self, u: impl Into<u64>) -> io::Result<u32> {
+    fn encode_u64<T>(&mut self, u: T) -> io::Result<u32> where T: Into<u64> {
         encode_u64(self, u)
     }
 
@@ -1999,7 +1999,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`I64`]: enum.Value.html#variant.I64
-    fn encode_i64(&mut self, i: impl Into<i64>) -> io::Result<u32> {
+    fn encode_i64<T>(&mut self, i: T) -> io::Result<u32> where T: Into<i64> {
         encode_i64(self, i)
     }
 
@@ -2008,7 +2008,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Float`]: enum.Value.html#variant.Float
-    fn encode_float(&mut self, f: impl Into<f32>) -> io::Result<u32> {
+    fn encode_float<T>(&mut self, f: T) -> io::Result<u32> where T: Into<f32> {
         encode_float(self, f)
     }
 
@@ -2017,7 +2017,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Double`]: enum.Value.html#variant.Double
-    fn encode_double(&mut self, d: impl Into<f64>) -> io::Result<u32> {
+    fn encode_double<T>(&mut self, d: T) -> io::Result<u32> where T: Into<f64> {
         encode_double(self, d)
     }
 
@@ -2026,7 +2026,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Text`]: enum.Value.html#variant.Text
-    fn encode_text(&mut self, s: impl Into<String>) -> io::Result<u32> {
+    fn encode_text<T>(&mut self, s: T) -> io::Result<u32> where T: Into<String> {
         encode_text(self, s)
     }
 
@@ -2035,7 +2035,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`DateTime`]: enum.Value.html#variant.DateTime
-    fn encode_date_time(&mut self, s: impl Into<String>) -> io::Result<u32> {
+    fn encode_date_time<T>(&mut self, s: T) -> io::Result<u32> where T: Into<String> {
         encode_date_time(self, s)
     }
 
@@ -2044,7 +2044,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Date`]: enum.Value.html#variant.Date
-    fn encode_date(&mut self, s: impl Into<String>) -> io::Result<u32> {
+    fn encode_date<T>(&mut self, s: T) -> io::Result<u32> where T: Into<String> {
         encode_date(self, s)
     }
 
@@ -2053,7 +2053,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Time`]: enum.Value.html#variant.Time
-    fn encode_time(&mut self, s: impl Into<String>) -> io::Result<u32> {
+    fn encode_time<T>(&mut self, s: T) -> io::Result<u32> where T: Into<String> {
         encode_time(self, s)
     }
 
@@ -2062,7 +2062,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
-    fn encode_decimal_str(&mut self, s: impl Into<String>) -> io::Result<u32> {
+    fn encode_decimal_str<T>(&mut self, s: T) -> io::Result<u32> where T: Into<String> {
         encode_decimal_str(self, s)
     }
 
@@ -2071,7 +2071,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
-    fn encode_blob(&mut self, bytes: impl Into<Vec<u8>>) -> io::Result<u32> {
+    fn encode_blob<T>(&mut self, bytes: T) -> io::Result<u32> where T: Into<Vec<u8>> {
         encode_blob(self, bytes)
     }
 
@@ -2080,7 +2080,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`List`]: enum.Value.html#variant.List
-    fn encode_list(&mut self, list: impl Into<Vec<Value>>) -> io::Result<u32> {
+    fn encode_list<T>(&mut self, list: T) -> io::Result<u32> where T: Into<Vec<Value>> {
         encode_list(self, list)
     }
 
@@ -2089,7 +2089,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Map`]: enum.Value.html#variant.Map
-    fn encode_map(&mut self, map: impl Into<BTreeMap<i32, Value>>) -> io::Result<u32> {
+    fn encode_map<T>(&mut self, map: T) -> io::Result<u32> where T: Into<BTreeMap<i32, Value>> {
         encode_map(self, map)
     }
 
@@ -2098,7 +2098,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Object`]: enum.Value.html#variant.Object
-    fn encode_object(&mut self, object: impl Into<HashMap<String, Value>>) -> io::Result<u32> {
+    fn encode_object<T>(&mut self, object: T) -> io::Result<u32> where T: Into<HashMap<String, Value>> {
         encode_object(self, object)
     }
 
