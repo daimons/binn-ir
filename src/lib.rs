@@ -62,11 +62,6 @@
 //! assert_eq!(cursor.position(), buf.len() as u64);
 //! ```
 //!
-//! ## Failures
-//!
-//! Panics, missing documentation, missing tests... are my failures. It would help me a lot if you file new issues when you encounter such
-//! problems.
-//!
 //! ## Thanks
 //!
 //! Special thanks to [Binn]'s authors for their hard work.
