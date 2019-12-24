@@ -2,19 +2,27 @@
 
 //! # Values
 
-use std::{
-    borrow::Cow,
-    cmp::Ordering,
-    collections::{BTreeMap, HashMap},
-    fmt,
-    io::{Error, ErrorKind, Read, Write},
-    mem,
+use {
+    std::{
+        borrow::Cow,
+        cmp::Ordering,
+        collections::BTreeMap,
+        fmt,
+        io::{Error, ErrorKind, Read, Write},
+        mem,
+    },
+
+    crate::{
+        Result,
+        cmp::CmpTo,
+    },
 };
 
-use crate::{
-    Result,
-    cmp::CmpTo,
-};
+/// # Map
+pub type Map = BTreeMap<i32, Value>;
+
+/// # Object
+pub type Object = BTreeMap<String, Value>;
 
 const MAX_I8_AS_USIZE: usize = i8::max_value() as usize;
 const MAX_I8_AS_U32: u32 = i8::max_value() as u32;
@@ -180,7 +188,7 @@ const SIZE_MASK: u32 = 0x_8000_0000_u32;
 pub const OBJECT_KEY_MAX_LEN: usize = 255;
 
 /// # Max data size, in bytes
-pub const MAX_DATA_SIZE: u32 = ::std::i32::MAX as u32;
+pub const MAX_DATA_SIZE: u32 = i32::max_value() as u32;
 
 /// # Values
 #[derive(Clone, PartialEq)]
@@ -373,7 +381,7 @@ pub enum Value {
     ///
     /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
     /// [value::MAP]: constant.MAP.html
-    Map(BTreeMap<i32, Value>),
+    Map(Map),
 
     /// # Object
     ///
@@ -387,7 +395,7 @@ pub enum Value {
     /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
     /// [value::OBJECT]: constant.OBJECT.html
     /// [value::OBJECT_KEY_MAX_LEN]: constant.OBJECT_KEY_MAX_LEN.html
-    Object(HashMap<String, Value>),
+    Object(Object),
 
 }
 
@@ -783,46 +791,24 @@ impl<'a> From<&'a Vec<Value>> for Value {
 
 }
 
-impl From<BTreeMap<i32, Value>> for Value {
+impl From<Map> for Value {
 
     /// # Converts input to a [`Map`]
     ///
     /// [`Map`]: enum.Value.html#variant.Map
-    fn from(map: BTreeMap<i32, Value>) -> Self {
+    fn from(map: Map) -> Self {
         Value::Map(map)
     }
 
 }
 
-impl<'a> From<&'a BTreeMap<i32, Value>> for Value {
-
-    /// # Converts input to a [`Map`]
-    ///
-    /// [`Map`]: enum.Value.html#variant.Map
-    fn from(map: &'a BTreeMap<i32, Value>) -> Self {
-        Self::from(map.to_owned())
-    }
-
-}
-
-impl From<HashMap<String, Value>> for Value {
+impl From<Object> for Value {
 
     /// # Converts input to an [`Object`]
     ///
     /// [`Object`]: enum.Value.html#variant.Object
-    fn from(object: HashMap<String, Value>) -> Self {
+    fn from(object: Object) -> Self {
         Value::Object(object)
-    }
-
-}
-
-impl<'a> From<&'a HashMap<String, Value>> for Value {
-
-    /// # Converts input to an [`Object`]
-    ///
-    /// [`Object`]: enum.Value.html#variant.Object
-    fn from(object: &'a HashMap<String, Value>) -> Self {
-        Self::from(object.to_owned())
     }
 
 }
@@ -1047,7 +1033,7 @@ macro_rules! decode_map { ($source: ident) => {{
 
     let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
-    let mut result = BTreeMap::new();
+    let mut result = Map::new();
     let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
@@ -1088,7 +1074,7 @@ macro_rules! decode_object { ($source: ident) => {{
 
     let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
-    let mut result = HashMap::new();
+    let mut result = Object::new();
     let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         // Read key (note that there's NO null terminator)
@@ -1401,7 +1387,7 @@ pub fn encode_list<T>(buf: &mut dyn Write, list: T) -> Result<u32> where T: Into
 /// Result: total bytes that have been written.
 ///
 /// [`Map`]: enum.Value.html#variant.Map
-pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> Result<u32> where T: Into<BTreeMap<i32, Value>> {
+pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> Result<u32> where T: Into<Map> {
     Value::Map(map.into()).encode(buf)
 }
 
@@ -1410,7 +1396,7 @@ pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> Result<u32> where T: Into<B
 /// Result: total bytes that have been written.
 ///
 /// [`Object`]: enum.Value.html#variant.Object
-pub fn encode_object<T>(buf: &mut dyn Write, object: T) -> Result<u32> where T: Into<HashMap<String, Value>> {
+pub fn encode_object<T>(buf: &mut dyn Write, object: T) -> Result<u32> where T: Into<Object> {
     Value::Object(object.into()).encode(buf)
 }
 
@@ -1655,7 +1641,7 @@ pub fn decode_list(source: &mut dyn Read) -> Result<Option<Vec<Value>>> {
 /// # Decodes a [`Map`]
 ///
 /// [`Map`]: enum.Value.html#variant.Map
-pub fn decode_map(source: &mut dyn Read) -> Result<Option<BTreeMap<i32, Value>>> {
+pub fn decode_map(source: &mut dyn Read) -> Result<Option<Map>> {
     match decode_value(Some(&[MAP]), source)? {
         Some(Value::Map(map)) => Ok(Some(map)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected map, got: {:?}", &other))),
@@ -1666,7 +1652,7 @@ pub fn decode_map(source: &mut dyn Read) -> Result<Option<BTreeMap<i32, Value>>>
 /// # Decodes an [`Object`]
 ///
 /// [`Object`]: enum.Value.html#variant.Object
-pub fn decode_object(source: &mut dyn Read) -> Result<Option<HashMap<String, Value>>> {
+pub fn decode_object(source: &mut dyn Read) -> Result<Option<Object>> {
     match decode_value(Some(&[OBJECT]), source)? {
         Some(Value::Object(object)) => Ok(Some(object)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected object, got: {:?}", &other))),
@@ -1697,7 +1683,7 @@ fn list_len(list: &[Value]) -> Result<u32> {
 }
 
 /// # Calculates map length
-fn map_len(map: &BTreeMap<i32, Value>) -> Result<u32> {
+fn map_len(map: &Map) -> Result<u32> {
     // Type + count
     let mut result = sum!(bytes_for_len!(map.len())?, 1)?;
     // Items
@@ -1719,7 +1705,7 @@ fn map_len(map: &BTreeMap<i32, Value>) -> Result<u32> {
 }
 
 /// # Calculates object length
-fn object_len(object: &HashMap<String, Value>) -> Result<u32> {
+fn object_len(object: &Object) -> Result<u32> {
     // Type + count
     let mut result = sum!(bytes_for_len!(object.len())?, 1)?;
     // Items
@@ -1840,7 +1826,7 @@ fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> Result<u
 }
 
 /// # Encodes a `Value`'s map into the buffer
-fn encode_value_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut dyn Write) -> Result<u32> {
+fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, MAP, buf)?,
@@ -1865,7 +1851,7 @@ fn encode_value_map(size: u32, map: &BTreeMap<i32, Value>, buf: &mut dyn Write) 
 /// ## Parameters
 ///
 /// - `size`: should be calculated by `Value::len()`.
-fn encode_value_object(size: u32, object: &HashMap<String, Value>, buf: &mut dyn Write) -> Result<u32> {
+fn encode_value_object(size: u32, object: &Object, buf: &mut dyn Write) -> Result<u32> {
     let mut result = sum!(
         // Type
         write_int_be!(u8, OBJECT, buf)?,
@@ -2092,7 +2078,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Map`]: enum.Value.html#variant.Map
-    fn encode_map<T>(&mut self, map: T) -> Result<u32> where T: Into<BTreeMap<i32, Value>> {
+    fn encode_map<T>(&mut self, map: T) -> Result<u32> where T: Into<Map> {
         encode_map(self, map)
     }
 
@@ -2101,7 +2087,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Object`]: enum.Value.html#variant.Object
-    fn encode_object<T>(&mut self, object: T) -> Result<u32> where T: Into<HashMap<String, Value>> {
+    fn encode_object<T>(&mut self, object: T) -> Result<u32> where T: Into<Object> {
         encode_object(self, object)
     }
 
@@ -2279,14 +2265,14 @@ pub trait Decoder: Read + Sized {
     /// # Decodes a [`Map`]
     ///
     /// [`Map`]: enum.Value.html#variant.Map
-    fn decode_map(&mut self) -> Result<Option<BTreeMap<i32, Value>>> {
+    fn decode_map(&mut self) -> Result<Option<Map>> {
         decode_map(self)
     }
 
     /// # Decodes an [`Object`]
     ///
     /// [`Object`]: enum.Value.html#variant.Object
-    fn decode_object(&mut self) -> Result<Option<HashMap<String, Value>>> {
+    fn decode_object(&mut self) -> Result<Option<Object>> {
         decode_object(self)
     }
 

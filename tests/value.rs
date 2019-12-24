@@ -4,12 +4,11 @@ extern crate binn_ir;
 
 use std::{
     cmp::Ordering,
-    collections::{BTreeMap, HashMap},
     io::{Cursor, ErrorKind},
     mem,
 };
 
-use binn_ir::value::{self, Value, Encoder, Decoder};
+use binn_ir::value::{self, Encoder, Decoder, Map, Object, Value};
 
 mod cmp;
 use cmp::CmpTo;
@@ -262,7 +261,7 @@ fn lists() {
         Value::Time(String::from(std::u128::MAX.to_string().repeat(100))),
         Value::from(vec![Value::Date(String::from("July 12th, 2018")), Value::DecimalStr(String::from("1234567890"))]),
         Value::from({
-            let mut map_data = BTreeMap::new();
+            let mut map_data = Map::new();
             map_data.insert(0, Value::Null);
             map_data.insert(-1, Value::from(true));
             map_data.insert(2, Value::False);
@@ -315,7 +314,7 @@ fn decode_lists_from_invalid_sources() {
 #[test]
 fn maps() {
     let map = Value::Map({
-        let mut map_data = BTreeMap::new();
+        let mut map_data = Map::new();
         map_data.insert(-1, Value::from("Mars"));
         map_data.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
         map_data.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
@@ -328,7 +327,7 @@ fn maps() {
         map_data.insert(10, String::from("earth").into());
         map_data.insert(-11, Value::from("Saturn"));
         map_data.insert(12, Value::from({
-            let mut map_data = BTreeMap::new();
+            let mut map_data = Map::new();
             map_data.insert(0, Value::from(()));
             map_data.insert(-1, Value::True);
             map_data.insert(2, Value::from(false));
@@ -382,13 +381,13 @@ fn objects() {
     // Make a sample list from specification
     let list = Value::List(vec![
         Value::from({
-            let mut map = HashMap::new();
+            let mut map = Object::new();
             map.insert(String::from("id"), Value::U8(1));
             map.insert(String::from("name"), Value::from("John"));
             map
         }),
         Value::from({
-            let mut map = HashMap::new();
+            let mut map = Object::new();
             map.insert(String::from("id"), Value::U8(2));
             map.insert(String::from("name"), Value::from("Eric"));
             map
@@ -397,7 +396,7 @@ fn objects() {
 
     // Make an object
     let object = Value::from({
-        let mut map = HashMap::new();
+        let mut map = Object::new();
         map.insert(String::from("id"), Value::U64(999));
         map.insert(String::from("name"), Value::from("Moon"));
         map
