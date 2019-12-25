@@ -476,12 +476,14 @@ macro_rules! __ { ($($arg: tt)+) => {
 
 mod cmp;
 mod error;
+mod types;
 
 #[cfg(feature="std")]
 mod functions;
 
 pub use self::{
     error::*,
+    types::*,
 };
 
 #[cfg(feature="std")]

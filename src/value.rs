@@ -4,7 +4,6 @@
 
 use {
     alloc::{
-        collections::BTreeMap,
         string::{String, ToString},
         vec::Vec,
     },
@@ -15,6 +14,7 @@ use {
 
     crate::{
         // Error, Result,
+        Blob, List, Map, Object,
         cmp::CmpTo,
     },
 };
@@ -26,18 +26,6 @@ use {
 
     crate::IoResult,
 };
-
-/// # Blob
-pub type Blob = Vec<u8>;
-
-/// # List
-pub type List = Vec<Value>;
-
-/// # Map
-pub type Map = BTreeMap<i32, Value>;
-
-/// # Object
-pub type Object = BTreeMap<String, Value>;
 
 const MAX_I8_AS_USIZE: usize = i8::max_value() as usize;
 const MAX_I8_AS_U32: u32 = i8::max_value() as u32;

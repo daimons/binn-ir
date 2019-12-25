@@ -7,9 +7,8 @@ use {
     std::io::{self, ErrorKind, Read, Write},
 
     crate::{
-        // Error, Result,
-        IoResult,
-        value::{self, Blob, List, Map, Object, Value},
+        Blob, IoResult, List, Map, Object,
+        value::{self, Value},
     },
 };
 
