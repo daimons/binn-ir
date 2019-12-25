@@ -942,9 +942,9 @@ impl Value {
             Value::DecimalStr(ds) => sum!(bytes_for_len!(ds.len())?, 2, ds.len()),
             // 1 byte for type
             Value::Blob(bytes) => sum!(bytes_for_len!(bytes.len())?, 1, bytes.len()),
-            Value::List(list) => list_len(list),
-            Value::Map(map) => map_len(map),
-            Value::Object(object) => object_len(object),
+            Value::List(list) => size_of_list(list),
+            Value::Map(map) => size_of_map(map),
+            Value::Object(object) => size_of_object(object),
         }
     }
 
@@ -1447,8 +1447,8 @@ pub fn decode_object(source: &mut dyn Read) -> IoResult<Option<Object>> {
     }
 }
 
-/// # Calculates list length
-fn list_len(list: &[Value]) -> IoResult<u32> {
+/// # Calculates list size
+fn size_of_list(list: &[Value]) -> IoResult<u32> {
     // Type + count
     let mut result: u32 = sum!(bytes_for_len!(list.len())?, 1)?;
     // Items
@@ -1469,8 +1469,8 @@ fn list_len(list: &[Value]) -> IoResult<u32> {
     }
 }
 
-/// # Calculates map length
-fn map_len(map: &Map) -> IoResult<u32> {
+/// # Calculates map size
+fn size_of_map(map: &Map) -> IoResult<u32> {
     // Type + count
     let mut result = sum!(bytes_for_len!(map.len())?, 1)?;
     // Items
@@ -1491,8 +1491,8 @@ fn map_len(map: &Map) -> IoResult<u32> {
     }
 }
 
-/// # Calculates object length
-fn object_len(object: &Object) -> IoResult<u32> {
+/// # Calculates object size
+fn size_of_object(object: &Object) -> IoResult<u32> {
     // Type + count
     let mut result = sum!(bytes_for_len!(object.len())?, 1)?;
     // Items
