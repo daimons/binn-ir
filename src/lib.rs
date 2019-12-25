@@ -425,10 +425,6 @@
 // TODO: enable this flag when `alloc` crate is stabilized
 // #![no_std]
 
-#![allow(clippy::bool_comparison)]
-#![allow(clippy::cognitive_complexity)]
-#![allow(clippy::match_bool)]
-
 #![warn(missing_docs)]
 #![no_std]
 #![deny(unsafe_code)]
