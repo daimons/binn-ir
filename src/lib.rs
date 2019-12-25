@@ -429,6 +429,10 @@
 #![allow(clippy::cognitive_complexity)]
 #![allow(clippy::match_bool)]
 
+#![warn(missing_docs)]
+#![no_std]
+#![deny(unsafe_code)]
+
 // ╔═════════════════╗
 // ║   IDENTIFIERS   ║
 // ╚═════════════════╝
@@ -464,16 +468,33 @@ pub const TAG: &str = concat!(code_name!(), "::2f0f7b89::", version!());
 // ╚════════════════════╝
 
 #[macro_use]
-#[allow(unused_macros)]
-mod __;
+extern crate alloc;
+
+#[cfg(feature="std")]
+extern crate std;
+
+/// # Wrapper for format!(), which prefixes your message with: ::TAG, module_path!(), line!()
+macro_rules! __ { ($($arg: tt)+) => {
+    format!("[{tag}][{module_path}-{line}] {format}", tag=crate::TAG, module_path=module_path!(), line=line!(), format=format!($($arg)+))
+};}
+
 mod cmp;
+mod error;
+
+pub use self::{
+    error::*,
+};
 
 pub mod storage;
 pub mod value;
 pub mod version_info;
 
 /// # Result type used in this crate
-pub type Result<T> = std::result::Result<T, std::io::Error>;
+pub type Result<T> = core::result::Result<T, Error>;
+
+/// # Result for I/O functions
+#[cfg(feature="std")]
+pub type IoResult<T> = core::result::Result<T, std::io::Error>;
 
 #[test]
 fn test_crate_version() {

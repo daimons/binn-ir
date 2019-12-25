@@ -10,3 +10,9 @@ repository = 'https://bitbucket.org/haibison/binn-ir'
 license-file = 'LICENSE'
 keywords = ['binn', 'implementation']
 categories = ['data-structures', 'encoding']
+
+[features]
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
