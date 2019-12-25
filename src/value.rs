@@ -14,7 +14,7 @@ use {
 
     crate::{
         // Error, Result,
-        Blob, List, Map, Object,
+        Blob, List, Map, Object, Size,
         cmp::CmpTo,
     },
 };
@@ -28,7 +28,7 @@ use {
 };
 
 const MAX_I8_AS_USIZE: usize = i8::max_value() as usize;
-const MAX_I8_AS_U32: u32 = i8::max_value() as u32;
+const MAX_I8_AS_U32: Size = i8::max_value() as Size;
 
 /// # Null
 ///
@@ -185,13 +185,13 @@ pub const MAP: u8 = 0b_1110_0001;
 pub const OBJECT: u8 = 0b_1110_0010;
 
 /// # Size mask
-const SIZE_MASK: u32 = 0x_8000_0000_u32;
+const SIZE_MASK: Size = 0x_8000_0000;
 
 /// # Object key's max length
 pub const OBJECT_KEY_MAX_LEN: usize = 255;
 
 /// # Max data size, in bytes
-pub const MAX_DATA_SIZE: u32 = i32::max_value() as u32;
+pub const MAX_DATA_SIZE: Size = i32::max_value() as Size;
 
 /// # Values
 #[derive(Clone, PartialEq)]
@@ -590,10 +590,10 @@ impl From<Object> for Value {
 
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
-/// Returns: number of bytes written, as `IoResult<u32>`.
+/// Returns: number of bytes written, as `IoResult<Size>`.
 macro_rules! write_int_be { ($v: expr, $buf: ident) => {{
     let bytes = $v.to_be_bytes();
-    $buf.write_all(&bytes).map(|()| bytes.len() as u32)
+    $buf.write_all(&bytes).map(|()| bytes.len() as Size)
 }};}
 
 /// # Reads an integer value in big-endian format from std::io::Read
@@ -606,7 +606,7 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
 
 /// # Writes size (u32) into the buffer
 ///
-/// Result: number of bytes written - `IoResult<u32>`.
+/// Result: number of bytes written - `IoResult<Size>`.
 macro_rules! write_size { ($size: expr, $buf: ident) => {{
     let size = $size;
     match size > MAX_I8_AS_U32 {
@@ -621,21 +621,21 @@ macro_rules! write_size { ($size: expr, $buf: ident) => {{
 ///
 /// - First value is size.
 /// - Second value is total bytes read (the 'length' of first value).
-fn read_size_and_its_length(source: &mut dyn Read) -> IoResult<(u32, u32)> {
+fn read_size_and_its_length(source: &mut dyn Read) -> IoResult<(Size, Size)> {
     let first_byte = read_int_be!(u8, source)?;
     match first_byte & 0b_1000_0000 {
         0b_1000_0000 => {
             let mut buf = [first_byte, 0, 0, 0];
             source.read_exact(&mut buf[1..]).and_then(|()|
-                Ok((u32::from_be_bytes(buf) & !(SIZE_MASK), mem::size_of::<u32>() as u32))
+                Ok((Size::from_be_bytes(buf) & !(SIZE_MASK), mem::size_of::<Size>() as Size))
             )
         },
-        _ => Ok((u32::from(first_byte), mem::size_of::<u8>() as u32)),
+        _ => Ok((Size::from(first_byte), mem::size_of::<u8>() as Size)),
     }
 }
 
 /// # Reads size from source
-fn read_size(source: &mut dyn Read) -> IoResult<u32> {
+fn read_size(source: &mut dyn Read) -> IoResult<Size> {
     read_size_and_its_length(source).and_then(|(size, _)| Ok(size))
 }
 
@@ -643,7 +643,7 @@ fn read_size(source: &mut dyn Read) -> IoResult<u32> {
 fn test_read_size_and_its_length() {
     use ::std::io::Cursor;
 
-    const U32_SIZE: u32 = mem::size_of::<u32>() as u32;
+    const U32_SIZE: Size = mem::size_of::<Size>() as Size;
     const MAX_U8: u8 = ::std::u8::MAX;
 
     assert_eq!(read_size_and_its_length(&mut Cursor::new(vec![MAX_U8, MAX_U8, MAX_U8, MAX_U8])).unwrap(), (MAX_DATA_SIZE, U32_SIZE));
@@ -660,9 +660,9 @@ fn test_read_size_and_its_length() {
     }
 }
 
-/// # Calculates sum of first value (`u32`) with integer(s)
+/// # Calculates sum of first value (`Size`) with integer(s)
 ///
-/// Result: `IoResult<u32>`.
+/// Result: `IoResult<Size>`.
 ///
 /// If result > [`MAX_DATA_SIZE`], an error is returned.
 ///
@@ -670,7 +670,7 @@ fn test_read_size_and_its_length() {
 macro_rules! sum {
     ($a: expr, $($b: expr),+) => {{
         // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
-        let mut result: IoResult<u32> = Ok($a);
+        let mut result: IoResult<Size> = Ok($a);
         $(
             if let Ok(current) = result {
                 result = {
@@ -679,7 +679,7 @@ macro_rules! sum {
                         Ordering::Greater => Err(io::Error::new(
                             ErrorKind::InvalidData, __!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
                         )),
-                        _ => match current.checked_add(b as u32) {
+                        _ => match current.checked_add(b as Size) {
                             Some(new) => match new.cmp_to(&MAX_DATA_SIZE) {
                                 Ordering::Greater => Err(io::Error::new(
                                     ErrorKind::InvalidData, __!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
@@ -748,7 +748,7 @@ macro_rules! read_str { ($source: ident) => {{
 
 /// # Calculates bytes needed for a length
 ///
-/// Result: `IoResult<u32>`
+/// Result: `IoResult<Size>`
 macro_rules! bytes_for_len { ($len: expr) => {{
     let len = $len;
     match len.cmp_to(&MAX_I8_AS_USIZE) {
@@ -773,7 +773,7 @@ macro_rules! decode_list { ($source: ident) => {{
     let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
     let mut result = vec![];
-    let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
+    let mut read: Size = sum!(bytes_of_size, bytes_of_item_count)?;
     for item_index in 0..item_count {
         let value = match Value::decode($source)? {
             Some(value) => value,
@@ -809,14 +809,14 @@ macro_rules! decode_map { ($source: ident) => {{
     let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
     let mut result = Map::new();
-    let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
+    let mut read: Size = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
         let value = match Value::decode($source)? {
             Some(value) => value,
             None => return Err(io::Error::new(ErrorKind::InvalidData, __!("missing value for key {}", &key))),
         };
-        read = match read.checked_add(sum!(mem::size_of_val(&key) as u32, value.size()?)?) {
+        read = match read.checked_add(sum!(mem::size_of_val(&key) as Size, value.size()?)?) {
             Some(v) => match size.cmp_to(&v) {
                 Ordering::Greater => v,
                 _ => return Err(io::Error::new(ErrorKind::InvalidData, __!("expected to read less than {} bytes, got: {}", &size, &v))),
@@ -850,7 +850,7 @@ macro_rules! decode_object { ($source: ident) => {{
     let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
     let mut result = Object::new();
-    let mut read: u32 = sum!(bytes_of_size, bytes_of_item_count)?;
+    let mut read: Size = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         // Read key (note that there's NO null terminator)
         let (key_len, bytes_of_key_len) = read_size_and_its_length($source)?;
@@ -902,7 +902,7 @@ macro_rules! decode_object { ($source: ident) => {{
 impl Value {
 
     /// # Calculates size of this value
-    pub fn size(&self) -> IoResult<u32> {
+    pub fn size(&self) -> IoResult<Size> {
         match self {
             Value::Null => Ok(1),
             Value::True => Ok(1),
@@ -938,7 +938,7 @@ impl Value {
     /// # Encodes this value into a buffer
     ///
     /// Returns the number of bytes written.
-    pub fn encode(&self, buf: &mut dyn Write) -> IoResult<u32> {
+    pub fn encode(&self, buf: &mut dyn Write) -> IoResult<Size> {
         let expected_result = self.size()?;
 
         let result = match *self {
@@ -1029,9 +1029,9 @@ pub(crate) fn decode_value(filter: Option<&[u8]>, source: &mut dyn Read) -> IoRe
 }
 
 /// # Calculates list size
-fn size_of_list(list: &[Value]) -> IoResult<u32> {
+fn size_of_list(list: &[Value]) -> IoResult<Size> {
     // Type + count
-    let mut result: u32 = sum!(bytes_for_len!(list.len())?, 1)?;
+    let mut result: Size = sum!(bytes_for_len!(list.len())?, 1)?;
     // Items
     for v in list {
         result = sum!(result, v.size()?)?;
@@ -1051,7 +1051,7 @@ fn size_of_list(list: &[Value]) -> IoResult<u32> {
 }
 
 /// # Calculates map size
-fn size_of_map(map: &Map) -> IoResult<u32> {
+fn size_of_map(map: &Map) -> IoResult<Size> {
     // Type + count
     let mut result = sum!(bytes_for_len!(map.len())?, 1)?;
     // Items
@@ -1073,7 +1073,7 @@ fn size_of_map(map: &Map) -> IoResult<u32> {
 }
 
 /// # Calculates object size
-fn size_of_object(object: &Object) -> IoResult<u32> {
+fn size_of_object(object: &Object) -> IoResult<Size> {
     // Type + count
     let mut result = sum!(bytes_for_len!(object.len())?, 1)?;
     // Items
@@ -1100,13 +1100,13 @@ fn size_of_object(object: &Object) -> IoResult<u32> {
 }
 
 /// # Encodes a `Value`'s string into the buffer
-fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<u32> {
+fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<Size> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
             Ordering::Greater => return Err(io::Error::new(ErrorKind::Other, __!("string too large ({} bytes)", &tmp))),
-            _ => tmp as u32,
+            _ => tmp as Size,
         }
     };
 
@@ -1143,18 +1143,18 @@ fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<u32> {
 }
 
 /// # Encodes `Value`'s blob into the buffer
-fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<u32> {
+fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<Size> {
     let len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
             Ordering::Greater => return Err(io::Error::new(ErrorKind::Other, __!("too large: {} byte(s)", tmp))),
-            _ => tmp as u32,
+            _ => tmp as Size,
         }
     };
 
     // Type
     let mut bytes_written = match buf.write(&[BLOB])? {
-        1 => 1 as u32,
+        1 => 1 as Size,
         other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
     };
 
@@ -1173,7 +1173,7 @@ fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<u32> {
 }
 
 /// # Encodes a `Value`'s list into the buffer
-fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> IoResult<u32> {
+fn encode_value_list(size: Size, list: &[Value], buf: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
         write_int_be!(LIST, buf)?,
@@ -1182,7 +1182,7 @@ fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> IoResult
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called size(), which verified the whole
         // container's size.
-        write_size!(list.len() as u32, buf)?
+        write_size!(list.len() as Size, buf)?
     )?;
 
     // Items
@@ -1194,7 +1194,7 @@ fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> IoResult
 }
 
 /// # Encodes a `Value`'s map into the buffer
-fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> IoResult<u32> {
+fn encode_value_map(size: Size, map: &Map, buf: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
         write_int_be!(MAP, buf)?,
@@ -1203,7 +1203,7 @@ fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> IoResult<u32> 
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called size(), which verified the whole
         // container's size.
-        write_size!(map.len() as u32, buf)?
+        write_size!(map.len() as Size, buf)?
     )?;
 
     // Items
@@ -1219,7 +1219,7 @@ fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> IoResult<u32> 
 /// ## Parameters
 ///
 /// - `size`: should be calculated by `Value::size()`.
-fn encode_value_object(size: u32, object: &Object, buf: &mut dyn Write) -> IoResult<u32> {
+fn encode_value_object(size: Size, object: &Object, buf: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
         write_int_be!(OBJECT, buf)?,
@@ -1228,7 +1228,7 @@ fn encode_value_object(size: u32, object: &Object, buf: &mut dyn Write) -> IoRes
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called size(), which verified the whole
         // container's size.
-        write_size!(object.len() as u32, buf)?
+        write_size!(object.len() as Size, buf)?
     )?;
 
     // Items
