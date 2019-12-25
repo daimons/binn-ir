@@ -3,20 +3,34 @@
 //! # Values
 
 use {
-    std::{
+    alloc::{
         borrow::Cow,
-        cmp::Ordering,
         collections::BTreeMap,
-        fmt,
-        io::{Error, ErrorKind, Read, Write},
-        mem,
+    },
+    core::{
+        cmp::Ordering,
+        fmt::{self, Display, Formatter, Write as FmtWrite},
     },
 
     crate::{
-        Result,
+        Error, Result,
         cmp::CmpTo,
     },
 };
+
+#[cfg(feature="std")]
+use {
+    core::mem,
+    std::io::{self, ErrorKind, Read, Write},
+
+    crate::IoResult,
+};
+
+/// # Blob
+pub type Blob = Vec<u8>;
+
+/// # List
+pub type List = Vec<Value>;
 
 /// # Map
 pub type Map = BTreeMap<i32, Value>;
@@ -363,7 +377,7 @@ pub enum Value {
     ///
     /// [storage::BLOB]: ../storage/constant.BLOB.html
     /// [value::BLOB]: constant.BLOB.html
-    Blob(Vec<u8>),
+    Blob(Blob),
 
     /// # List
     ///
@@ -372,7 +386,7 @@ pub enum Value {
     ///
     /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
     /// [value::LIST]: constant.LIST.html
-    List(Vec<Value>),
+    List(List),
 
     /// # Map
     ///
@@ -716,44 +730,13 @@ impl From<String> for Value {
 
 }
 
-impl<'a> From<&'a str> for Value {
-
-    /// # Converts input to a [`Text`]
-    ///
-    /// [`Text`]: enum.Value.html#variant.Text
-    fn from(s: &'a str) -> Self {
-        // Note that some variants also accept a String, so forward this call to implementation of `From<String> for Value`, let it decide.
-        Self::from(s.to_owned())
-    }
-
-}
-
-impl<'a> From<Cow<'a, str>> for Value {
-
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::from(s.into_owned())
-    }
-
-}
-
-impl From<Vec<u8>> for Value {
+impl From<Blob> for Value {
 
     /// # Converts input to a [`Blob`]
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
-    fn from(v: Vec<u8>) -> Self {
+    fn from(v: Blob) -> Self {
         Value::Blob(v)
-    }
-
-}
-
-impl<'a> From<&'a Vec<u8>> for Value {
-
-    /// # Converts input to a [`Blob`]
-    ///
-    /// [`Blob`]: enum.Value.html#variant.Blob
-    fn from(v: &'a Vec<u8>) -> Self {
-        Self::from(v.to_owned())
     }
 
 }
@@ -769,24 +752,13 @@ impl<'a> From<&'a [u8]> for Value {
 
 }
 
-impl From<Vec<Value>> for Value {
+impl From<List> for Value {
 
     /// # Converts input to a [`List`]
     ///
     /// [`List`]: enum.Value.html#variant.List
-    fn from(list: Vec<Value>) -> Self {
+    fn from(list: List) -> Self {
         Value::List(list)
-    }
-
-}
-
-impl<'a> From<&'a Vec<Value>> for Value {
-
-    /// # Converts input to a [`List`]
-    ///
-    /// [`List`]: enum.Value.html#variant.List
-    fn from(list: &'a Vec<Value>) -> Self {
-        Self::from(list.to_owned())
     }
 
 }
@@ -1369,7 +1341,7 @@ pub fn encode_decimal_str<T>(buf: &mut dyn Write, s: T) -> Result<u32> where T: 
 /// Result: total bytes that have been written.
 ///
 /// [`Blob`]: enum.Value.html#variant.Blob
-pub fn encode_blob<T>(buf: &mut dyn Write, bytes: T) -> Result<u32> where T: Into<Vec<u8>> {
+pub fn encode_blob<T>(buf: &mut dyn Write, bytes: T) -> Result<u32> where T: Into<Blob> {
     Value::Blob(bytes.into()).encode(buf)
 }
 
@@ -1378,7 +1350,7 @@ pub fn encode_blob<T>(buf: &mut dyn Write, bytes: T) -> Result<u32> where T: Int
 /// Result: total bytes that have been written.
 ///
 /// [`List`]: enum.Value.html#variant.List
-pub fn encode_list<T>(buf: &mut dyn Write, list: T) -> Result<u32> where T: Into<Vec<Value>> {
+pub fn encode_list<T>(buf: &mut dyn Write, list: T) -> Result<u32> where T: Into<List> {
     Value::List(list.into()).encode(buf)
 }
 
@@ -1619,7 +1591,7 @@ pub fn decode_decimal_str(source: &mut dyn Read) -> Result<Option<String>> {
 /// # Decodes a [`Blob`]
 ///
 /// [`Blob`]: enum.Value.html#variant.Blob
-pub fn decode_blob(source: &mut dyn Read) -> Result<Option<Vec<u8>>> {
+pub fn decode_blob(source: &mut dyn Read) -> Result<Option<Blob>> {
     match decode_value(Some(&[BLOB]), source)? {
         Some(Value::Blob(bytes)) => Ok(Some(bytes)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected blob, got: {:?}", &other))),
@@ -1630,7 +1602,7 @@ pub fn decode_blob(source: &mut dyn Read) -> Result<Option<Vec<u8>>> {
 /// # Decodes a [`List`]
 ///
 /// [`List`]: enum.Value.html#variant.List
-pub fn decode_list(source: &mut dyn Read) -> Result<Option<Vec<Value>>> {
+pub fn decode_list(source: &mut dyn Read) -> Result<Option<List>> {
     match decode_value(Some(&[LIST]), source)? {
         Some(Value::List(list)) => Ok(Some(list)),
         Some(other) => Err(Error::new(ErrorKind::InvalidData, __!("expected list, got: {:?}", &other))),
@@ -2060,7 +2032,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
-    fn encode_blob<T>(&mut self, bytes: T) -> Result<u32> where T: Into<Vec<u8>> {
+    fn encode_blob<T>(&mut self, bytes: T) -> Result<u32> where T: Into<Blob> {
         encode_blob(self, bytes)
     }
 
@@ -2069,7 +2041,7 @@ pub trait Encoder: Write + Sized {
     /// Result: total bytes that have been written.
     ///
     /// [`List`]: enum.Value.html#variant.List
-    fn encode_list<T>(&mut self, list: T) -> Result<u32> where T: Into<Vec<Value>> {
+    fn encode_list<T>(&mut self, list: T) -> Result<u32> where T: Into<List> {
         encode_list(self, list)
     }
 
@@ -2097,12 +2069,12 @@ impl Encoder for ::std::fs::File {}
 impl<'a> Encoder for &'a ::std::fs::File {}
 impl<W: Write> Encoder for ::std::io::BufWriter<W> {}
 impl<'a> Encoder for ::std::io::Cursor<&'a mut [u8]> {}
-impl<'a> Encoder for ::std::io::Cursor<&'a mut Vec<u8>> {}
-impl Encoder for ::std::io::Cursor<Vec<u8>> {}
+impl<'a> Encoder for ::std::io::Cursor<&'a mut Blob> {}
+impl Encoder for ::std::io::Cursor<Blob> {}
 impl Encoder for ::std::io::Cursor<Box<[u8]>> {}
 impl<W: Write + ?Sized> Encoder for Box<W> {}
 impl<'a> Encoder for &'a mut [u8] {}
-impl Encoder for Vec<u8> {}
+impl Encoder for Blob {}
 impl Encoder for ::std::io::Sink {}
 impl Encoder for ::std::io::Stdout {}
 impl<'a> Encoder for ::std::io::StdoutLock<'a> {}
@@ -2251,14 +2223,14 @@ pub trait Decoder: Read + Sized {
     /// # Decodes a [`Blob`]
     ///
     /// [`Blob`]: enum.Value.html#variant.Blob
-    fn decode_blob(&mut self) -> Result<Option<Vec<u8>>> {
+    fn decode_blob(&mut self) -> Result<Option<Blob>> {
         decode_blob(self)
     }
 
     /// # Decodes a [`List`]
     ///
     /// [`List`]: enum.Value.html#variant.List
-    fn decode_list(&mut self) -> Result<Option<Vec<Value>>> {
+    fn decode_list(&mut self) -> Result<Option<List>> {
         decode_list(self)
     }
 
