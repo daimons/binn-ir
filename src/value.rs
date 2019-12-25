@@ -9,7 +9,7 @@ use {
     },
     core::{
         cmp::Ordering,
-        fmt::{self, Display, Formatter, Write as FmtWrite},
+        fmt::{self, Debug, Formatter, Write as FmtWrite},
     },
 
     crate::{
@@ -413,174 +413,83 @@ pub enum Value {
 
 }
 
-/// # Makes plural suffix
-macro_rules! make_plural_suffix {
-    ($size: expr, $one: expr, $other: expr) => {{
-        match $size {
-            1 => $one,
-            _ => $other,
-        }
-    }};
-    // This one makes 's' plural suffix
-    ($size: expr) => {{
-        make_plural_suffix!($size, "", "s")
-    }};
-}
+impl Debug for Value {
 
-/// # Displays a string in a formatter
-///
-/// If the string is too long, just displays a part of it.
-///
-/// Result: `Result<(), fmt::Error>`
-macro_rules! display_str { ($formatter: ident, $prefix: expr, $s: ident, $suffix: expr) => {{
-    write!($formatter, "{}", $prefix)?;
-
-    let char_count = &$s.chars().count();
-    let limit = 50;
-    match char_count.checked_sub(limit) {
-        Some(more) => write!($formatter, "\"{}...\" ({} more)", &$s.chars().take(limit).collect::<String>(), more)?,
-        None => write!($formatter, "\"{}\"", &$s)?,
-    };
-
-    write!($formatter, "{}", $suffix)
-}};}
-
-/// # Max display items of list/map/object
-const LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS: usize = 10;
-
-/// # Displays a list in a formatter
-///
-/// If the items are too much, just displays a part of them.
-///
-/// Result: `Result<(), fmt::Error>`
-macro_rules! display_list { ($formatter: ident, $value: ident, $list: ident) => {{
-    let item_count = $list.len();
-
-    match $value.len() {
-        Ok(len) => {
-            write!($formatter, "List({} item{}, {} byte{}: [", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len))?;
-            for (index, item) in $list.iter().enumerate() {
-                if index > 0 {
-                    if index >= LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS { break; }
-                    write!($formatter, ", ")?;
-                }
-                write!($formatter, "{}", &item)?;
-            }
-            match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
-                Some(more) if more > 0 => write!($formatter, ",... {} more]", &more),
-                _ => write!($formatter, "]"),
-            }
-        },
-        Err(err) => write!($formatter, "List({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
-    }
-}};}
-
-/// # Displays a map in a formatter
-///
-/// If the items are too much, just displays a part of them.
-///
-/// Result: `Result<(), fmt::Error>`
-macro_rules! display_map { ($formatter: ident, $value: ident, $map: ident) => {{
-    let item_count = $map.len();
-
-    match $value.len() {
-        Ok(len) => {
-            write!($formatter, "Map({} item{}, {} byte{}: {{", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len))?;
-            for (index, (key, value)) in $map.iter().enumerate() {
-                if index > 0 {
-                    if index >= LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS { break; }
-                    write!($formatter, ", ")?;
-                }
-                write!($formatter, "{}: {}", &key, &value)?;
-            }
-            match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
-                Some(more) if more > 0 => write!($formatter, ",... {} more}}", &more),
-                _ => write!($formatter, "}}"),
-            }
-        },
-        Err(err) => write!($formatter, "Map({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
-    }
-}};}
-
-/// # Displays an object in a formatter
-///
-/// If the items are too much, just displays a part of them.
-///
-/// Result: `Result<(), fmt::Error>`
-macro_rules! display_object { ($formatter: ident, $value: ident, $object: ident) => {{
-    let item_count = $object.len();
-
-    match $value.len() {
-        Ok(len) => {
-            write!(
-                $formatter, "Object({} item{}, {} byte{}: {{", &item_count, make_plural_suffix!(&item_count), &len, make_plural_suffix!(&len)
-            )?;
-            for (index, (key, value)) in $object.iter().enumerate() {
-                if index > 0 {
-                    if index >= LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS { break; }
-                    write!($formatter, ", ")?;
-                }
-                write!($formatter, "{:?}: {}", &key, &value)?;
-            }
-            match item_count.checked_sub(LIST_MAP_OBJECT_MAX_DISPLAY_ITEMS) {
-                Some(more) if more > 0 => write!($formatter, ",... {} more}}", &more),
-                _ => write!($formatter, "}}"),
-            }
-        },
-        Err(err) => write!($formatter, "Object({} item{}, unknown size ({}))", &item_count, make_plural_suffix!(&item_count), &err),
-    }
-}};}
-
-impl fmt::Display for Value {
-
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter) -> core::result::Result<(), fmt::Error> {
         match *self {
-            Value::Null => write!(formatter, "Null"),
-            Value::True => write!(formatter, "True"),
-            Value::False => write!(formatter, "False"),
-            Value::U8(ref u) => write!(formatter, "U8({})", &u),
-            Value::I8(ref i) => write!(formatter, "I8({})", &i),
-            Value::U16(ref u) => write!(formatter, "U16({})", &u),
-            Value::I16(ref i) => write!(formatter, "I16({})", &i),
-            Value::U32(ref u) => write!(formatter, "U32({})", &u),
-            Value::I32(ref i) => write!(formatter, "I32({})", &i),
-            Value::Float(ref f) => write!(formatter, "Float({})", &f),
-            Value::U64(ref u) => write!(formatter, "U64({})", &u),
-            Value::I64(ref i) => write!(formatter, "I64({})", &i),
-            Value::Double(ref d) => write!(formatter, "Double({})", &d),
-            Value::Text(ref s) => display_str!(formatter, "Text(", s, ')'),
-            Value::DateTime(ref dt) => display_str!(formatter, "DateTime(", dt, ')'),
-            Value::Date(ref d) => display_str!(formatter, "Date(", d, ')'),
-            Value::Time(ref t) => display_str!(formatter, "Time(", t, ')'),
-            Value::DecimalStr(ref ds) => display_str!(formatter, "DecimalStr(", ds, ')'),
-            Value::Blob(ref blob) => {
-                let len = blob.len();
-                write!(formatter, "Blob({} byte{})", &len, make_plural_suffix!(&len))
-            },
-            Value::List(ref list) => display_list!(formatter, self, list),
-            Value::Map(ref map) => display_map!(formatter, self, map),
-            Value::Object(ref object) => display_object!(formatter, self, object),
+            Value::Null => f.write_str("Null"),
+            Value::True => f.write_str("True"),
+            Value::False => f.write_str("False"),
+            Value::U8(u) => write!(f, "U8({})", u),
+            Value::I8(i) => write!(f, "I8({})", i),
+            Value::U16(u) => write!(f, "U16({})", u),
+            Value::I16(i) => write!(f, "I16({})", i),
+            Value::U32(u) => write!(f, "U32({})", u),
+            Value::I32(i) => write!(f, "I32({})", i),
+            Value::Float(f) => write!(f, "Float({})", f),
+            Value::U64(u) => write!(f, "U64({})", u),
+            Value::I64(i) => write!(f, "I64({})", i),
+            Value::Double(d) => write!(f, "Double({})", d),
+            Value::Text(s) => write!(f, "Text({:?})", s),
+            Value::DateTime(dt) => write!(f, "DateTime({:?})", dt),
+            Value::Date(d) => write!(f, "Date({:?})", d),
+            Value::Time(t) => write!(f, "Time({:?})", t),
+            Value::DecimalStr(ds) => write!(f, "DecimalStr({:?})", ds),
+            Value::Blob(blob) => format_debugging_blob(f, blob),
+            Value::List(list) => format_debugging_list(f, list),
+            Value::Map(map) => format_debugging_map(f, map),
+            Value::Object(object) => format_debugging_object(f, object),
         }
     }
 
 }
 
-impl fmt::Debug for Value {
-
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
-        write!(formatter, "\"")?;
-        fmt::Display::fmt(self, formatter)?;
-        write!(formatter, "\"")
+/// # Formats debugging blob
+fn format_debugging_blob(f: &mut Formatter, blob: &Blob) -> core::result::Result<(), fmt::Error> {
+    f.write_str("Blob(")?;
+    for (i, b) in blob.iter().enumerate() {
+        if i > 0 {
+            f.write_str(concat!(',', ' '))?;
+        }
+        write!(f, "0x{:02x}", b)?;
     }
-
+    f.write_char(')')
 }
 
-impl AsRef<Value> for Value {
-
-    fn as_ref(&self) -> &Self {
-        self
+/// # Formats debugging list
+fn format_debugging_list(f: &mut Formatter, list: &List) -> core::result::Result<(), fmt::Error> {
+    f.write_str("List(")?;
+    for (i, v) in list.iter().enumerate() {
+        if i > 0 {
+            f.write_str(concat!(',', ' '))?;
+        }
+        v.fmt(f)?;
     }
+    f.write_char(')')
+}
 
+/// # Formats debugging map
+fn format_debugging_map(f: &mut Formatter, map: &Map) -> core::result::Result<(), fmt::Error> {
+    f.write_str("Map(")?;
+    for (i, (k, v)) in map.iter().enumerate() {
+        if i > 0 {
+            f.write_str(concat!(',', ' '))?;
+        }
+        write!(f, "{k}: {v:?}", k=k, v=v)?;
+    }
+    f.write_char(')')
+}
+
+/// # Formats debugging object
+fn format_debugging_object(f: &mut Formatter, object: &Object) -> core::result::Result<(), fmt::Error> {
+    f.write_str("Object(")?;
+    for (i, (k, v)) in object.iter().enumerate() {
+        if i > 0 {
+            f.write_str(concat!(',', ' '))?;
+        }
+        write!(f, "{k:?}: {v:?}", k=k, v=v)?;
+    }
+    f.write_char(')')
 }
 
 impl From<()> for Value {
