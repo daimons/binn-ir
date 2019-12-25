@@ -2,7 +2,7 @@
 
 //! # Helper for comparing things
 
-use std::{
+use core::{
     cmp::Ordering,
     mem,
 };

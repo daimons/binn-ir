@@ -3,13 +3,11 @@
 //! # Values
 
 use {
-    alloc::{
-        string::{String, ToString},
-        vec::Vec,
-    },
+    alloc::string::{String, ToString},
     core::{
         cmp::Ordering,
         fmt::{self, Debug, Formatter, Write as FmtWrite},
+        mem,
     },
 
     crate::{
@@ -20,7 +18,7 @@ use {
 
 #[cfg(feature="std")]
 use {
-    core::mem,
+    alloc::vec::Vec,
     std::io::{self, ErrorKind, Read, Write},
 
     crate::IoResult,
@@ -183,14 +181,15 @@ pub const MAP: u8 = 0b_1110_0001;
 /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
 pub const OBJECT: u8 = 0b_1110_0010;
 
-/// # Size mask
-const SIZE_MASK: Size = 0x_8000_0000;
-
 /// # Object key's max length
 pub const OBJECT_KEY_MAX_LEN: usize = 255;
 
 /// # Max data size, in bytes
 pub const MAX_DATA_SIZE: Size = i32::max_value() as Size;
+
+/// # Size mask
+#[cfg(feature="std")]
+const SIZE_MASK: Size = 0x_8000_0000;
 
 /// # Values
 #[derive(Clone, PartialEq)]
@@ -491,6 +490,17 @@ impl From<()> for Value {
 
 }
 
+impl<T> From<Option<T>> for Value where T: Into<Value> {
+
+    fn from(v: Option<T>) -> Self {
+        match v {
+            Some(v) => v.into(),
+            None => Value::Null,
+        }
+    }
+
+}
+
 impl From<bool> for Value {
 
     /// # Converts input to either [`True`] or [`False`]
@@ -702,6 +712,7 @@ macro_rules! sum {
 /// # Makes new vector with capacity
 ///
 /// Returns: `IoResult<Vec<_>>`
+#[cfg(feature="std")]
 macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
     let capacity = $capacity;
     match capacity.cmp_to(&MAX_DATA_SIZE) {

@@ -5,14 +5,20 @@ extern crate binn_ir;
 use {
     std::{
         cmp::Ordering,
-        io::{Cursor, ErrorKind},
         mem,
     },
 
     binn_ir::{
-        IoResult, Map, Object, Result, Size,
+        Result,
         value::{self, Value},
     },
+};
+
+#[cfg(feature="std")]
+use {
+    std::io::{Cursor, ErrorKind},
+
+    binn_ir::{IoResult, Map, Object, Size},
 };
 
 mod cmp;
