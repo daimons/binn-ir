@@ -604,7 +604,7 @@ impl From<Object> for Value {
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
 /// Returns: number of bytes written, as `IoResult<u32>`.
-macro_rules! write_int_be { ($ty: ty, $v: expr, $buf: ident) => {{
+macro_rules! write_int_be { ($v: expr, $buf: ident) => {{
     let bytes = $v.to_be_bytes();
     $buf.write_all(&bytes).map(|()| bytes.len() as u32)
 }};}
@@ -623,8 +623,8 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
 macro_rules! write_size { ($size: expr, $buf: ident) => {{
     let size = $size;
     match size > MAX_I8_AS_U32 {
-        true => write_int_be!(u32, size | SIZE_MASK, $buf),
-        false => write_int_be!(u8, size as u8, $buf),
+        true => write_int_be!(size | SIZE_MASK, $buf),
+        false => write_int_be!(size as u8, $buf),
     }
 }};}
 
@@ -960,15 +960,15 @@ impl Value {
             Value::True => buf.write_all(&[TRUE]).and(Ok(1))?,
             Value::False => buf.write_all(&[FALSE]).and(Ok(1))?,
             Value::U8(u) => buf.write_all(&[U8, u]).and(Ok(2))?,
-            Value::I8(i) => sum!(write_int_be!(u8, I8, buf)?, write_int_be!(i8, i, buf)?)?,
-            Value::U16(u) => sum!(write_int_be!(u8, U16, buf)?, write_int_be!(u16, u, buf)?)?,
-            Value::I16(i) => sum!(write_int_be!(u8, I16, buf)?, write_int_be!(i16, i, buf)?)?,
-            Value::U32(u) => sum!(write_int_be!(u8, U32, buf)?, write_int_be!(u32, u, buf)?)?,
-            Value::I32(i) => sum!(write_int_be!(u8, I32, buf)?, write_int_be!(i32, i, buf)?)?,
-            Value::Float(f) => sum!(write_int_be!(u8, FLOAT, buf)?, write_int_be!(u32, f.to_bits(), buf)?)?,
-            Value::U64(u) => sum!(write_int_be!(u8, U64, buf)?, write_int_be!(u64, u, buf)?)?,
-            Value::I64(i) => sum!(write_int_be!(u8, I64, buf)?, write_int_be!(i64, i, buf)?)?,
-            Value::Double(f) => sum!(write_int_be!(u8, DOUBLE, buf)?, write_int_be!(u64, f.to_bits(), buf)?)?,
+            Value::I8(i) => sum!(write_int_be!(I8, buf)?, write_int_be!(i, buf)?)?,
+            Value::U16(u) => sum!(write_int_be!(U16, buf)?, write_int_be!(u, buf)?)?,
+            Value::I16(i) => sum!(write_int_be!(I16, buf)?, write_int_be!(i, buf)?)?,
+            Value::U32(u) => sum!(write_int_be!(U32, buf)?, write_int_be!(u, buf)?)?,
+            Value::I32(i) => sum!(write_int_be!(I32, buf)?, write_int_be!(i, buf)?)?,
+            Value::Float(f) => sum!(write_int_be!(FLOAT, buf)?, write_int_be!(f.to_bits(), buf)?)?,
+            Value::U64(u) => sum!(write_int_be!(U64, buf)?, write_int_be!(u, buf)?)?,
+            Value::I64(i) => sum!(write_int_be!(I64, buf)?, write_int_be!(i, buf)?)?,
+            Value::Double(f) => sum!(write_int_be!(DOUBLE, buf)?, write_int_be!(f.to_bits(), buf)?)?,
             Value::Text(ref t) => encode_value_str(TEXT, t.as_str(), buf)?,
             Value::DateTime(ref dt) => encode_value_str(DATE_TIME, dt.as_str(), buf)?,
             Value::Date(ref d) => encode_value_str(DATE, d.as_str(), buf)?,
@@ -1596,7 +1596,7 @@ fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<u32> {
 fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> IoResult<u32> {
     let mut result = sum!(
         // Type
-        write_int_be!(u8, LIST, buf)?,
+        write_int_be!(LIST, buf)?,
         // Size
         write_size!(size, buf)?,
         // Count
@@ -1617,7 +1617,7 @@ fn encode_value_list(size: u32, list: &[Value], buf: &mut dyn Write) -> IoResult
 fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> IoResult<u32> {
     let mut result = sum!(
         // Type
-        write_int_be!(u8, MAP, buf)?,
+        write_int_be!(MAP, buf)?,
         // Size
         write_size!(size, buf)?,
         // Count
@@ -1628,7 +1628,7 @@ fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> IoResult<u32> 
 
     // Items
     for (key, value) in map {
-        result = sum!(result, write_int_be!(i32, key, buf)?, value.encode(buf)?)?;
+        result = sum!(result, write_int_be!(key, buf)?, value.encode(buf)?)?;
     }
 
     Ok(result)
@@ -1642,7 +1642,7 @@ fn encode_value_map(size: u32, map: &Map, buf: &mut dyn Write) -> IoResult<u32> 
 fn encode_value_object(size: u32, object: &Object, buf: &mut dyn Write) -> IoResult<u32> {
     let mut result = sum!(
         // Type
-        write_int_be!(u8, OBJECT, buf)?,
+        write_int_be!(OBJECT, buf)?,
         // Size
         write_size!(size, buf)?,
         // Count
@@ -1655,7 +1655,7 @@ fn encode_value_object(size: u32, object: &Object, buf: &mut dyn Write) -> IoRes
     for (key, value) in object {
         let key_len = key.len();
         result = match key_len <= OBJECT_KEY_MAX_LEN {
-            true => sum!(result, write_int_be!(u8, key_len as u8, buf)?)?,
+            true => sum!(result, write_int_be!(key_len as u8, buf)?)?,
             false => return Err(io::Error::new(
                 ErrorKind::InvalidData, __!("key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
             )),
