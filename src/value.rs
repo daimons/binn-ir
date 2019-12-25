@@ -13,8 +13,7 @@ use {
     },
 
     crate::{
-        // Error, Result,
-        Blob, List, Map, Object, Size,
+        Blob, Error, List, Map, Object, Result, Size,
         cmp::CmpTo,
     },
 };
@@ -591,6 +590,7 @@ impl From<Object> for Value {
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
 /// Returns: number of bytes written, as `IoResult<Size>`.
+#[cfg(feature="std")]
 macro_rules! write_int_be { ($v: expr, $buf: ident) => {{
     let bytes = $v.to_be_bytes();
     $buf.write_all(&bytes).map(|()| bytes.len() as Size)
@@ -599,6 +599,7 @@ macro_rules! write_int_be { ($v: expr, $buf: ident) => {{
 /// # Reads an integer value in big-endian format from std::io::Read
 ///
 /// Result: `IoResult<$ty>`.
+#[cfg(feature="std")]
 macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
     let mut buf = [0_u8; mem::size_of::<$ty>()];
     $source.read_exact(&mut buf).map(|()| <$ty>::from_be_bytes(buf))
@@ -607,6 +608,7 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
 /// # Writes size (u32) into the buffer
 ///
 /// Result: number of bytes written - `IoResult<Size>`.
+#[cfg(feature="std")]
 macro_rules! write_size { ($size: expr, $buf: ident) => {{
     let size = $size;
     match size > MAX_I8_AS_U32 {
@@ -621,6 +623,7 @@ macro_rules! write_size { ($size: expr, $buf: ident) => {{
 ///
 /// - First value is size.
 /// - Second value is total bytes read (the 'length' of first value).
+#[cfg(feature="std")]
 fn read_size_and_its_length(source: &mut dyn Read) -> IoResult<(Size, Size)> {
     let first_byte = read_int_be!(u8, source)?;
     match first_byte & 0b_1000_0000 {
@@ -635,11 +638,13 @@ fn read_size_and_its_length(source: &mut dyn Read) -> IoResult<(Size, Size)> {
 }
 
 /// # Reads size from source
+#[cfg(feature="std")]
 fn read_size(source: &mut dyn Read) -> IoResult<Size> {
     read_size_and_its_length(source).and_then(|(size, _)| Ok(size))
 }
 
 #[test]
+#[cfg(feature="std")]
 fn test_read_size_and_its_length() {
     use ::std::io::Cursor;
 
@@ -669,24 +674,21 @@ fn test_read_size_and_its_length() {
 /// [`MAX_DATA_SIZE`]: constant.MAX_DATA_SIZE.html
 macro_rules! sum {
     ($a: expr, $($b: expr),+) => {{
-        // Do NOT nest multiple calls to cmp_integers(...); or the compiler will hang up!!!
-        let mut result: IoResult<Size> = Ok($a);
+        let mut result: Result<Size> = Ok($a);
         $(
             if let Ok(current) = result {
                 result = {
                     let b = $b;
                     match b.cmp_to(&MAX_DATA_SIZE) {
-                        Ordering::Greater => Err(io::Error::new(
-                            ErrorKind::InvalidData, __!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
-                        )),
+                        Ordering::Greater => Err(Error::from(__!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE))),
                         _ => match current.checked_add(b as Size) {
                             Some(new) => match new.cmp_to(&MAX_DATA_SIZE) {
-                                Ordering::Greater => Err(io::Error::new(
-                                    ErrorKind::InvalidData, __!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
+                                Ordering::Greater => Err(Error::from(
+                                    __!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
                                 )),
                                 _ => Ok(new),
                             },
-                            None => Err(io::Error::new(ErrorKind::InvalidData, __!("can't add {} into {}", &b, &current))),
+                            None => Err(Error::from(__!("can't add {} into {}", &b, &current))),
                         },
                     }
                 };
@@ -703,12 +705,10 @@ macro_rules! sum {
 macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
     let capacity = $capacity;
     match capacity.cmp_to(&MAX_DATA_SIZE) {
-        Ordering::Greater => Err(io::Error::new(
-            ErrorKind::WriteZero, __!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, MAX_DATA_SIZE)
-        )),
+        Ordering::Greater => Err(Error::from(__!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, MAX_DATA_SIZE))),
         _ => match capacity.cmp_to(&usize::max_value()) {
-            Ordering::Greater => Err(io::Error::new(
-                ErrorKind::WriteZero, __!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, ::std::usize::MAX)
+            Ordering::Greater => Err(Error::from(
+                __!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, ::std::usize::MAX)
             )),
             _ => Ok(Vec::with_capacity(capacity as usize)),
         },
@@ -718,6 +718,7 @@ macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
 /// # Reads data into new vector
 ///
 /// Returns: `IoResult<Vec<_>>`
+#[cfg(feature="std")]
 macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
     let len = $len;
     let mut result = new_vec_with_capacity!(len)?;
@@ -737,6 +738,7 @@ macro_rules! read_into_new_vec { ($len: expr, $source: ident) => {{
 /// # Reads a string from source
 ///
 /// Returns: `IoResult<String>`
+#[cfg(feature="std")]
 macro_rules! read_str { ($source: ident) => {{
     // Note that null terminator does NOT count
     let buf = read_into_new_vec!(read_size_and_its_length($source)?.0, $source)?;
@@ -748,12 +750,12 @@ macro_rules! read_str { ($source: ident) => {{
 
 /// # Calculates bytes needed for a length
 ///
-/// Result: `IoResult<Size>`
+/// Result: `Result<Size>`
 macro_rules! bytes_for_len { ($len: expr) => {{
     let len = $len;
     match len.cmp_to(&MAX_I8_AS_USIZE) {
         Ordering::Greater => match len.cmp_to(&MAX_DATA_SIZE) {
-            Ordering::Greater => Err(io::Error::new(ErrorKind::InvalidData, __!("too large: {} bytes", &len))),
+            Ordering::Greater => Err(Error::from(__!("too large: {} bytes", &len))),
             _ => Ok(4_u32),
         },
         _ => Ok(1_u32),
@@ -763,6 +765,7 @@ macro_rules! bytes_for_len { ($len: expr) => {{
 /// # Decodes a list from source
 ///
 /// Returns: `IoResult<Option<Value>>`
+#[cfg(feature="std")]
 macro_rules! decode_list { ($source: ident) => {{
     let (size, bytes_of_size) = read_size_and_its_length($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
@@ -775,7 +778,7 @@ macro_rules! decode_list { ($source: ident) => {{
     let mut result = vec![];
     let mut read: Size = sum!(bytes_of_size, bytes_of_item_count)?;
     for item_index in 0..item_count {
-        let value = match Value::decode($source)? {
+        let value = match crate::decode($source)? {
             Some(value) => value,
             None => return Err(io::Error::new(ErrorKind::InvalidData, __!("missing item #{}/{}", &item_index, &item_count))),
         };
@@ -799,6 +802,7 @@ macro_rules! decode_list { ($source: ident) => {{
 /// # Decodes a map from source
 ///
 /// Returns: `IoResult<Option<Value>>`
+#[cfg(feature="std")]
 macro_rules! decode_map { ($source: ident) => {{
     let (size, bytes_of_size) = read_size_and_its_length($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
@@ -812,7 +816,7 @@ macro_rules! decode_map { ($source: ident) => {{
     let mut read: Size = sum!(bytes_of_size, bytes_of_item_count)?;
     for _ in 0..item_count {
         let key = read_int_be!(i32, $source)?;
-        let value = match Value::decode($source)? {
+        let value = match crate::decode($source)? {
             Some(value) => value,
             None => return Err(io::Error::new(ErrorKind::InvalidData, __!("missing value for key {}", &key))),
         };
@@ -840,6 +844,7 @@ macro_rules! decode_map { ($source: ident) => {{
 /// # Decodes an object from source
 ///
 /// Returns: `IoResult<Option<Value>>`
+#[cfg(feature="std")]
 macro_rules! decode_object { ($source: ident) => {{
     let (size, bytes_of_size) = read_size_and_its_length($source)?;
     // 1 byte for header; at least 1 byte for size; at least 1 byte for item count
@@ -874,7 +879,7 @@ macro_rules! decode_object { ($source: ident) => {{
         )?;
 
         // Read value
-        let value = match Value::decode($source)? {
+        let value = match crate::decode($source)? {
             Some(value) => value,
             None => return Err(io::Error::new(ErrorKind::InvalidData, __!("missing value for key {:?}", &key))),
         };
@@ -902,7 +907,7 @@ macro_rules! decode_object { ($source: ident) => {{
 impl Value {
 
     /// # Calculates size of this value
-    pub fn size(&self) -> IoResult<Size> {
+    pub fn size(&self) -> Result<Size> {
         match self {
             Value::Null => Ok(1),
             Value::True => Ok(1),
@@ -938,6 +943,7 @@ impl Value {
     /// # Encodes this value into a buffer
     ///
     /// Returns the number of bytes written.
+    #[cfg(feature="std")]
     pub fn encode(&self, buf: &mut dyn Write) -> IoResult<Size> {
         let expected_result = self.size()?;
 
@@ -972,13 +978,6 @@ impl Value {
         }
     }
 
-    /// # Decodes a value from source
-    ///
-    /// If it returns `Ok(None)`, it means there's no more data to decode.
-    pub fn decode(source: &mut dyn Read) -> IoResult<Option<Self>> {
-        decode_value(None, source)
-    }
-
 }
 
 /// # Decodes a value from source
@@ -986,6 +985,7 @@ impl Value {
 /// If `filter` is provided, the function expects that next value from source is one of them, and returns an error if not.
 ///
 /// If `filter` is `None`, the function decodes any value from source.
+#[cfg(feature="std")]
 pub(crate) fn decode_value(filter: Option<&[u8]>, source: &mut dyn Read) -> IoResult<Option<Value>> {
     let source_value = match read_int_be!(u8, source) {
         Ok(source_value) => source_value,
@@ -1029,7 +1029,7 @@ pub(crate) fn decode_value(filter: Option<&[u8]>, source: &mut dyn Read) -> IoRe
 }
 
 /// # Calculates list size
-fn size_of_list(list: &[Value]) -> IoResult<Size> {
+fn size_of_list(list: &[Value]) -> Result<Size> {
     // Type + count
     let mut result: Size = sum!(bytes_for_len!(list.len())?, 1)?;
     // Items
@@ -1046,12 +1046,12 @@ fn size_of_list(list: &[Value]) -> IoResult<Size> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(io::Error::new(ErrorKind::InvalidData, __!("data too large: {} bytes", result))),
+        false => Err(Error::from(__!("data too large: {} bytes", result))),
     }
 }
 
 /// # Calculates map size
-fn size_of_map(map: &Map) -> IoResult<Size> {
+fn size_of_map(map: &Map) -> Result<Size> {
     // Type + count
     let mut result = sum!(bytes_for_len!(map.len())?, 1)?;
     // Items
@@ -1068,12 +1068,12 @@ fn size_of_map(map: &Map) -> IoResult<Size> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(io::Error::new(ErrorKind::InvalidData, __!("data too large: {} bytes", result))),
+        false => Err(Error::from(__!("data too large: {} bytes", result))),
     }
 }
 
 /// # Calculates object size
-fn size_of_object(object: &Object) -> IoResult<Size> {
+fn size_of_object(object: &Object) -> Result<Size> {
     // Type + count
     let mut result = sum!(bytes_for_len!(object.len())?, 1)?;
     // Items
@@ -1081,7 +1081,7 @@ fn size_of_object(object: &Object) -> IoResult<Size> {
         // Key has NO null terminator
         let key_len = key.len();
         if key_len > OBJECT_KEY_MAX_LEN {
-            return Err(io::Error::new(ErrorKind::InvalidData, __!("key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)));
+            return Err(Error::from(__!("key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)));
         }
         result = sum!(result, key_len, value.size()?, 1)?;
     }
@@ -1095,11 +1095,12 @@ fn size_of_object(object: &Object) -> IoResult<Size> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(io::Error::new(ErrorKind::InvalidData, __!("data too large: {} bytes", result))),
+        false => Err(Error::from(__!("data too large: {} bytes", result))),
     }
 }
 
 /// # Encodes a `Value`'s string into the buffer
+#[cfg(feature="std")]
 fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<Size> {
     let bytes = s.as_bytes();
     let str_len = {
@@ -1143,6 +1144,7 @@ fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<Size> {
 }
 
 /// # Encodes `Value`'s blob into the buffer
+#[cfg(feature="std")]
 fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<Size> {
     let len = {
         let tmp = bytes.len();
@@ -1173,6 +1175,7 @@ fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<Size> {
 }
 
 /// # Encodes a `Value`'s list into the buffer
+#[cfg(feature="std")]
 fn encode_value_list(size: Size, list: &[Value], buf: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
@@ -1194,6 +1197,7 @@ fn encode_value_list(size: Size, list: &[Value], buf: &mut dyn Write) -> IoResul
 }
 
 /// # Encodes a `Value`'s map into the buffer
+#[cfg(feature="std")]
 fn encode_value_map(size: Size, map: &Map, buf: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
@@ -1219,6 +1223,7 @@ fn encode_value_map(size: Size, map: &Map, buf: &mut dyn Write) -> IoResult<Size
 /// ## Parameters
 ///
 /// - `size`: should be calculated by `Value::size()`.
+#[cfg(feature="std")]
 fn encode_value_object(size: Size, object: &Object, buf: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type

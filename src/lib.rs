@@ -18,31 +18,28 @@
 //! ## Notes
 //!
 //! - Unless _absolutely necessary_, the project will **not** use any dependency.
-//! - `#![no_std]` _might_ be supported when [`alloc`][crate:alloc] crate is stabilized.
 //! - `IR` stands for _implementation in Rust_.
-//! - There will be **no** plan to support secure encoder/decoder via cryptography. The author considers that another field for experts.
-//!   However, simple API for safe encoder/decoder will be supported. For example: option to limit container size to be decoded...
 //!
 //! ## Quick examples
-//!
-//! Most functionalities are provided via 2 traits: [`Encoder`][trait:value::Encoder], [`Decoder`][trait:value::Decoder].
 //!
 //! This example demonstrates a simple file container:
 //!
 //! ```
-//! use binn_ir::value::{Value, Encoder, Decoder};
+//! use binn_ir::value::Value;
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;
 //!
+//! # #[cfg(feature="std")]
+//! # fn test() -> binn_ir::IoResult<()> {
 //! // Buffer
 //! let mut buf: Vec<u8> = vec![];
 //!
 //! // Magic number
-//! buf.encode_u64(MAGIC_NUMBER).unwrap();
+//! binn_ir::encode_u64(&mut buf, MAGIC_NUMBER)?;
 //!
 //! // A single file header contains: name and hash
 //! let file_header = {
-//!     let mut map = std::collections::BTreeMap::new();
+//!     let mut map = binn_ir::Map::new();
 //!     map.insert(0_i32, Value::from("the-sun"));  // name
 //!     map.insert(1_i32, Value::U64(0));           // hash
 //!     map
@@ -50,16 +47,19 @@
 //! let file_content = b"is hot".to_vec();
 //!
 //! // Encode data (using ::clone() to use the variables later in assertions)
-//! buf.encode_map(file_header.clone()).unwrap();
-//! buf.encode_blob(file_content.clone()).unwrap();
+//! binn_ir::encode_map(&mut buf, file_header.clone())?;
+//! binn_ir::encode_blob(&mut buf, file_content.clone())?;
 //!
 //! // Now decode data back
-//! let mut cursor = std::io::Cursor::new(&buf);
-//! assert_eq!(cursor.decode_u64().unwrap(), Some(MAGIC_NUMBER));
-//! assert_eq!(cursor.decode_map().unwrap(), Some(file_header));
-//! assert_eq!(cursor.decode_blob().unwrap(), Some(file_content));
-//! assert_eq!(cursor.decode().unwrap(), None);
-//! assert_eq!(cursor.position(), buf.len() as u64);
+//! let mut cursor = std::io::Cursor::new(buf);
+//! assert_eq!(binn_ir::decode_u64(&mut cursor)?, Some(MAGIC_NUMBER));
+//! assert_eq!(binn_ir::decode_map(&mut cursor)?, Some(file_header));
+//! assert_eq!(binn_ir::decode_blob(&mut cursor)?, Some(file_content));
+//! assert_eq!(binn_ir::decode(&mut cursor)?, None);
+//! # Ok(()) }
+//! # #[cfg(feature="std")]
+//! # test().unwrap();
+//! # Ok::<_, binn_ir::Error>(())
 //! ```
 //!
 //! ## Thanks
@@ -419,11 +419,6 @@
 //! [Binn]: https://github.com/liteserver/binn
 //! [Binn:License]: https://github.com/liteserver/binn/blob/master/LICENSE
 //! [crate:alloc]: https://doc.rust-lang.org/alloc/
-//! [trait:value::Encoder]: value/trait.Encoder.html
-//! [trait:value::Decoder]: value/trait.Decoder.html
-
-// TODO: enable this flag when `alloc` crate is stabilized
-// #![no_std]
 
 #![warn(missing_docs)]
 #![no_std]

@@ -2,13 +2,18 @@
 
 extern crate binn_ir;
 
-use std::{
-    cmp::Ordering,
-    io::{Cursor, ErrorKind},
-    mem,
-};
+use {
+    std::{
+        cmp::Ordering,
+        io::{Cursor, ErrorKind},
+        mem,
+    },
 
-use binn_ir::value::{self, Encoder, Decoder, Map, Object, Value};
+    binn_ir::{
+        IoResult, Map, Object, Result, Size,
+        value::{self, Value},
+    },
+};
 
 mod cmp;
 use cmp::CmpTo;
@@ -83,23 +88,27 @@ fn constants() {
 }
 
 #[test]
-fn basic_type_lengths() {
-    // Lengths
-    assert_eq!(Value::Null.len().unwrap(), 1);
-    assert_eq!(Value::True.len().unwrap(), 1);
-    assert_eq!(Value::False.len().unwrap(), 1);
-    assert_eq!(Value::U8(0).len().unwrap(), 2);
-    assert_eq!(Value::I8(0).len().unwrap(), 2);
-    assert_eq!(Value::U16(0).len().unwrap(), 3);
-    assert_eq!(Value::I16(0).len().unwrap(), 3);
-    assert_eq!(Value::U32(0).len().unwrap(), 5);
-    assert_eq!(Value::I32(0).len().unwrap(), 5);
-    assert_eq!(Value::Float(0.0).len().unwrap(), 5);
-    assert_eq!(Value::U64(0).len().unwrap(), 9);
-    assert_eq!(Value::I64(0).len().unwrap(), 9);
-    assert_eq!(Value::Double(0.0).len().unwrap(), 9);
+fn basic_type_sizes() -> Result<()> {
+    assert_eq!(Value::Null.size()?, 1);
+    assert_eq!(Value::True.size()?, 1);
+    assert_eq!(Value::False.size()?, 1);
+    assert_eq!(Value::U8(0).size()?, 2);
+    assert_eq!(Value::I8(0).size()?, 2);
+    assert_eq!(Value::U16(0).size()?, 3);
+    assert_eq!(Value::I16(0).size()?, 3);
+    assert_eq!(Value::U32(0).size()?, 5);
+    assert_eq!(Value::I32(0).size()?, 5);
+    assert_eq!(Value::Float(0.0).size()?, 5);
+    assert_eq!(Value::U64(0).size()?, 9);
+    assert_eq!(Value::I64(0).size()?, 9);
+    assert_eq!(Value::Double(0.0).size()?, 9);
 
-    // Encoded lengths
+    Ok(())
+}
+
+#[test]
+#[cfg(feature="std")]
+fn basic_type_encoded_sizes() -> IoResult<()> {
     let mut buf = vec![];
     macro_rules! encode_and_verify { ($($call: expr, $size: expr,)+) => {{
         $(
@@ -109,47 +118,50 @@ fn basic_type_lengths() {
         )+
     }};}
     encode_and_verify!(
-        buf.encode_null().unwrap(), 1,
-        buf.encode_bool(true).unwrap(), 1,
-        buf.encode_bool(false).unwrap(), 1,
-        buf.encode_u8(0_u8).unwrap(), 2,
-        buf.encode_i8(0_i8).unwrap(), 2,
-        buf.encode_u16(0_u16).unwrap(), 3,
-        buf.encode_i16(0_i16).unwrap(), 3,
-        buf.encode_u32(0_u32).unwrap(), 5,
-        buf.encode_i32(0_i32).unwrap(), 5,
-        buf.encode_u64(0_u64).unwrap(), 9,
-        buf.encode_i64(0_i64).unwrap(), 9,
-        buf.encode_float(0.0).unwrap(), 5,
-        buf.encode_double(0.0).unwrap(), 9,
+        binn_ir::encode_null(&mut buf, )?, 1,
+        binn_ir::encode_bool(&mut buf, true)?, 1,
+        binn_ir::encode_bool(&mut buf, false)?, 1,
+        binn_ir::encode_u8(&mut buf, 0_u8)?, 2,
+        binn_ir::encode_i8(&mut buf, 0_i8)?, 2,
+        binn_ir::encode_u16(&mut buf, 0_u16)?, 3,
+        binn_ir::encode_i16(&mut buf, 0_i16)?, 3,
+        binn_ir::encode_u32(&mut buf, 0_u32)?, 5,
+        binn_ir::encode_i32(&mut buf, 0_i32)?, 5,
+        binn_ir::encode_u64(&mut buf, 0_u64)?, 9,
+        binn_ir::encode_i64(&mut buf, 0_i64)?, 9,
+        binn_ir::encode_float(&mut buf, 0.0)?, 5,
+        binn_ir::encode_double(&mut buf, 0.0)?, 9,
     );
+
+    Ok(())
 }
 
 #[test]
-fn basic_types() {
+#[cfg(feature="std")]
+fn basic_types() -> IoResult<()> {
     // Encode
     let mut buf = vec![];
-    buf.encode_null().unwrap();
-    buf.encode_bool(true).unwrap();
-    buf.encode_bool(false).unwrap();
-    buf.encode_u8(123_u8).unwrap();
-    buf.encode_i8(-123_i8).unwrap();
-    buf.encode_u16(12345_u16).unwrap();
-    buf.encode_i16(-12345_i16).unwrap();
-    buf.encode_u32(123456789_u32).unwrap();
-    buf.encode_i32(-123456789_i32).unwrap();
-    buf.encode_float(123.0).unwrap();
-    buf.encode_float(-123.0).unwrap();
-    buf.encode_u64(98765432123_u64).unwrap();
-    buf.encode_i64(-98765432123_i64).unwrap();
-    buf.encode_double(0xAABB_CCDD_u64 as f64).unwrap();
-    buf.encode_double(-0xAABB_CCDD_i64 as f64).unwrap();
-    buf.encode_text(String::from("Mr. Reynholm")).unwrap();
-    buf.encode_text("hello-jen").unwrap();
-    buf.encode_date_time(String::from("hermione")).unwrap();
-    buf.encode_date("ron").unwrap();
-    buf.encode_time(String::from("harry")).unwrap();
-    buf.encode_decimal_str("ginny\t\0\n").unwrap();
+    binn_ir::encode_null(&mut buf)?;
+    binn_ir::encode_bool(&mut buf, true)?;
+    binn_ir::encode_bool(&mut buf, false)?;
+    binn_ir::encode_u8(&mut buf, 123_u8)?;
+    binn_ir::encode_i8(&mut buf, -123_i8)?;
+    binn_ir::encode_u16(&mut buf, 12345_u16)?;
+    binn_ir::encode_i16(&mut buf, -12345_i16)?;
+    binn_ir::encode_u32(&mut buf, 123456789_u32)?;
+    binn_ir::encode_i32(&mut buf, -123456789_i32)?;
+    binn_ir::encode_float(&mut buf, 123.0)?;
+    binn_ir::encode_float(&mut buf, -123.0)?;
+    binn_ir::encode_u64(&mut buf, 98765432123_u64)?;
+    binn_ir::encode_i64(&mut buf, -98765432123_i64)?;
+    binn_ir::encode_double(&mut buf, 0xAABB_CCDD_u64 as f64)?;
+    binn_ir::encode_double(&mut buf, -0xAABB_CCDD_i64 as f64)?;
+    binn_ir::encode_text(&mut buf, String::from("Mr. Reynholm"))?;
+    binn_ir::encode_text(&mut buf, "hello-jen")?;
+    binn_ir::encode_date_time(&mut buf, String::from("hermione"))?;
+    binn_ir::encode_date(&mut buf, "ron")?;
+    binn_ir::encode_time(&mut buf, String::from("harry"))?;
+    binn_ir::encode_decimal_str(&mut buf, "ginny\t\0\n")?;
 
     let blob_strings = vec![
         "roy eats moss' orange".repeat(20),
@@ -158,50 +170,54 @@ fn basic_types() {
     ];
     for s in blob_strings.iter() {
         assert!(s.len() > i8::max_value() as usize);
-        buf.encode_blob(s.as_bytes()).unwrap();
+        binn_ir::encode_blob(&mut buf, s.as_bytes())?;
     }
 
     // Decode
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(cursor.decode_null().unwrap(), Some(()));
-    assert_eq!(cursor.decode_bool().unwrap(), Some(true));
-    assert_eq!(cursor.decode_bool().unwrap(), Some(false));
-    assert_eq!(cursor.decode_u8().unwrap(), Some(123));
-    assert_eq!(cursor.decode_i8().unwrap(), Some(-123));
-    assert_eq!(cursor.decode_u16().unwrap(), Some(12345));
-    assert_eq!(cursor.decode_i16().unwrap(), Some(-12345));
-    assert_eq!(cursor.decode_u32().unwrap(), Some(123456789));
-    assert_eq!(cursor.decode_i32().unwrap(), Some(-123456789));
-    assert_eq!(cursor.decode_float().unwrap(), Some(123.0));
-    assert_eq!(cursor.decode_float().unwrap(), Some(-123.0));
-    assert_eq!(cursor.decode_u64().unwrap(), Some(98765432123));
-    assert_eq!(cursor.decode_i64().unwrap(), Some(-98765432123));
-    assert_eq!(cursor.decode_double().unwrap(), Some(0xAABB_CCDD_u64 as f64));
-    assert_eq!(cursor.decode_double().unwrap(), Some(-0xAABB_CCDD_i64 as f64));
-    assert_eq!(cursor.decode_text().unwrap().unwrap(), "Mr. Reynholm");
-    assert_eq!(cursor.decode_text().unwrap().unwrap(), "hello-jen");
-    assert_eq!(cursor.decode_date_time().unwrap().unwrap(), "hermione");
-    assert_eq!(cursor.decode_date().unwrap().unwrap(), "ron");
-    assert_eq!(cursor.decode_time().unwrap().unwrap(), "harry");
-    assert_eq!(cursor.decode_decimal_str().unwrap().unwrap(), "ginny\t\0\n");
+    assert_eq!(binn_ir::decode_null(&mut cursor)?, Some(()));
+    assert_eq!(binn_ir::decode_bool(&mut cursor)?, Some(true));
+    assert_eq!(binn_ir::decode_bool(&mut cursor)?, Some(false));
+    assert_eq!(binn_ir::decode_u8(&mut cursor)?, Some(123));
+    assert_eq!(binn_ir::decode_i8(&mut cursor)?, Some(-123));
+    assert_eq!(binn_ir::decode_u16(&mut cursor)?, Some(12345));
+    assert_eq!(binn_ir::decode_i16(&mut cursor)?, Some(-12345));
+    assert_eq!(binn_ir::decode_u32(&mut cursor)?, Some(123456789));
+    assert_eq!(binn_ir::decode_i32(&mut cursor)?, Some(-123456789));
+    assert_eq!(binn_ir::decode_float(&mut cursor)?, Some(123.0));
+    assert_eq!(binn_ir::decode_float(&mut cursor)?, Some(-123.0));
+    assert_eq!(binn_ir::decode_u64(&mut cursor)?, Some(98765432123));
+    assert_eq!(binn_ir::decode_i64(&mut cursor)?, Some(-98765432123));
+    assert_eq!(binn_ir::decode_double(&mut cursor)?, Some(0xAABB_CCDD_u64 as f64));
+    assert_eq!(binn_ir::decode_double(&mut cursor)?, Some(-0xAABB_CCDD_i64 as f64));
+    assert_eq!(binn_ir::decode_text(&mut cursor)?.unwrap(), "Mr. Reynholm");
+    assert_eq!(binn_ir::decode_text(&mut cursor)?.unwrap(), "hello-jen");
+    assert_eq!(binn_ir::decode_date_time(&mut cursor)?.unwrap(), "hermione");
+    assert_eq!(binn_ir::decode_date(&mut cursor)?.unwrap(), "ron");
+    assert_eq!(binn_ir::decode_time(&mut cursor)?.unwrap(), "harry");
+    assert_eq!(binn_ir::decode_decimal_str(&mut cursor)?.unwrap(), "ginny\t\0\n");
 
     for s in blob_strings.iter() {
-        assert_eq!(cursor.decode_blob().unwrap().unwrap(), s.as_bytes());
+        assert_eq!(binn_ir::decode_blob(&mut cursor)?.unwrap(), s.as_bytes());
     }
 
     // Verify position
-    assert_eq!(cursor.decode().unwrap(), None);
+    assert_eq!(binn_ir::decode(&mut cursor)?, None);
     assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
+
+    Ok(())
 }
 
 /// # Tries to decode from an invalid source, then unwraps an error
+#[cfg(feature="std")]
 macro_rules! decode_from_invalid_source { ($bytes: expr) => {{
-    Cursor::new($bytes).decode().unwrap_err()
+    binn_ir::decode(&mut Cursor::new($bytes)).unwrap_err()
 }};}
 
 /// # Decodes from invalid source and asserts
 ///
 /// If error kind is not provided, `ErrorKind::UnexpectedEof` will be used.
+#[cfg(feature="std")]
 macro_rules! decode_from_invalid_source_and_assert {
     ($bytes: expr, $error_kind: expr) => {{
         assert_eq!(decode_from_invalid_source!($bytes).kind(), $error_kind);
@@ -212,6 +228,7 @@ macro_rules! decode_from_invalid_source_and_assert {
 }
 
 #[test]
+#[cfg(feature="std")]
 fn decode_basic_types_from_invalid_sources() {
     decode_from_invalid_source_and_assert!(vec![value::U8]);
     decode_from_invalid_source_and_assert!(vec![value::I8]);
@@ -226,7 +243,8 @@ fn decode_basic_types_from_invalid_sources() {
 }
 
 #[test]
-fn blobs() {
+#[cfg(feature="std")]
+fn blobs() -> IoResult<()> {
     // Small blob with 4-byte size
     let buf = vec![
         value::BLOB,
@@ -236,25 +254,26 @@ fn blobs() {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
     ];
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(cursor.decode_blob().unwrap().unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
-    assert_eq!(cursor.decode_null().unwrap(), None);
+    assert_eq!(binn_ir::decode_blob(&mut cursor)?.unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
+    assert_eq!(binn_ir::decode_null(&mut cursor)?, None);
     assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
 
     // Small blob with 4-byte size; but data is missing
-    match Cursor::new(vec![
+    match binn_ir::decode_blob(&mut Cursor::new(vec![
         value::BLOB,
         // Size: 15 bytes
         0x80, 0x00, 0x00, 0x0F,
-    ])
-        .decode_blob().unwrap_err().into_inner()
-    {
+    ])).unwrap_err().into_inner() {
         Some(err) => assert_eq!(err.description().contains(binn_ir::TAG), true),
         None => panic!("value::Decoder::decode_blob() -> input was invalid; expected an inner error, got: None"),
     };
+
+    Ok(())
 }
 
 #[test]
-fn lists() {
+#[cfg(feature="std")]
+fn lists() -> IoResult<()> {
     let list = Value::List(vec![
         Value::from(123_u8), Value::I16(-456), Value::U16(789), Value::Float(-123_f32), Value::Double(-789_f64),
         Value::from(String::from("Draco Malfoy")), Value::from("Slytherin"),
@@ -270,28 +289,31 @@ fn lists() {
             map_data
         }),
     ]);
-    let list_len = list.len().unwrap();
-    assert!(list_len > i8::max_value() as u32);
+    let list_size = list.size()?;
+    assert!(list_size > i8::max_value() as Size);
 
     let mut buf = vec![];
-    buf.encode(&list).unwrap();
-    assert_eq!(list_len.cmp_to(&buf.len()), Ordering::Equal);
+    list.encode(&mut buf)?;
+    assert_eq!(list_size.cmp_to(&buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
     match list {
         Value::List(list) => {
-            assert_eq!(cursor.decode_list().unwrap().unwrap(), list);
+            assert_eq!(binn_ir::decode_list(&mut cursor)?.unwrap(), list);
             println!("Verified: {:?}", &list);
 
             // Verify position
-            assert_eq!(cursor.decode_map().unwrap(), None);
+            assert_eq!(binn_ir::decode_map(&mut cursor).unwrap(), None);
             assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };
+
+    Ok(())
 }
 
 #[test]
+#[cfg(feature="std")]
 fn decode_lists_from_invalid_sources() {
     // Missing size
     decode_from_invalid_source_and_assert!(vec![value::LIST]);
@@ -312,51 +334,55 @@ fn decode_lists_from_invalid_sources() {
 }
 
 #[test]
-fn maps() {
+#[cfg(feature="std")]
+fn maps() -> IoResult<()> {
     let map = Value::Map({
-        let mut map_data = Map::new();
-        map_data.insert(-1, Value::from("Mars"));
-        map_data.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
-        map_data.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
-        map_data.insert(4, Value::Float(-12345_f32));
-        map_data.insert(-5, Value::Double(6789_f64));
-        map_data.insert(6, ().into());
-        map_data.insert(-7, false.into());
-        map_data.insert(8, true.into());
-        map_data.insert(-9, "SUN".into());
-        map_data.insert(10, String::from("earth").into());
-        map_data.insert(-11, Value::from("Saturn"));
-        map_data.insert(12, Value::from({
-            let mut map_data = Map::new();
-            map_data.insert(0, Value::from(()));
-            map_data.insert(-1, Value::True);
-            map_data.insert(2, Value::from(false));
-            map_data.insert(-3, Value::from(vec![Value::from("Oracle"), Value::Blob(b"Universe, time and space".to_vec())]));
-            map_data
+        let mut map = Map::new();
+        map.insert(-1, Value::from("Mars"));
+        map.insert(2, Value::List(vec![Value::I16(-12345), Value::U16(6789)]));
+        map.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
+        map.insert(4, Value::Float(-12345_f32));
+        map.insert(-5, Value::Double(6789_f64));
+        map.insert(6, ().into());
+        map.insert(-7, false.into());
+        map.insert(8, true.into());
+        map.insert(-9, "SUN".into());
+        map.insert(10, String::from("earth").into());
+        map.insert(-11, Value::from("Saturn"));
+        map.insert(12, Value::from({
+            let mut map = Map::new();
+            map.insert(0, Value::from(()));
+            map.insert(-1, Value::True);
+            map.insert(2, Value::from(false));
+            map.insert(-3, Value::from(vec![Value::from("Oracle"), Value::Blob(b"Universe, time and space".to_vec())]));
+            map
         }));
-        map_data
+        map
     });
 
     let mut buf = vec![];
-    buf.encode(&map).unwrap();
+    map.encode(&mut buf)?;
 
-    assert_eq!(map.len().unwrap().cmp_to(&buf.len()), Ordering::Equal);
+    assert_eq!(map.size()?.cmp_to(&buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
     match map {
         Value::Map(map) => {
-            assert_eq!(cursor.decode_map().unwrap().unwrap(), map);
+            assert_eq!(binn_ir::decode_map(&mut cursor)?.unwrap(), map);
             println!("Verified: {:?}", &map);
 
             // Verify position
-            assert_eq!(cursor.decode_object().unwrap(), None);
+            assert_eq!(binn_ir::decode_object(&mut cursor)?, None);
             assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };
+
+    Ok(())
 }
 
 #[test]
+#[cfg(feature="std")]
 fn decode_maps_from_invalid_sources() {
     // Missing size
     decode_from_invalid_source_and_assert!(vec![value::MAP]);
@@ -377,7 +403,8 @@ fn decode_maps_from_invalid_sources() {
 }
 
 #[test]
-fn objects() {
+#[cfg(feature="std")]
+fn objects() -> IoResult<()> {
     // Make a sample list from specification
     let list = Value::List(vec![
         Value::from({
@@ -404,27 +431,30 @@ fn objects() {
 
     // Encode
     let mut buf = vec![];
-    buf.encode(&list).unwrap();
-    buf.encode(&object).unwrap();
+    list.encode(&mut buf)?;
+    object.encode(&mut buf)?;
 
     // Decode
     let mut cursor = Cursor::new(&buf);
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {
-            assert_eq!(cursor.decode_list().unwrap().unwrap(), list);
+            assert_eq!(binn_ir::decode_list(&mut cursor)?.unwrap(), list);
             println!("Verified: {:?}", &list);
-            assert_eq!(cursor.decode_object().unwrap().unwrap(), object);
+            assert_eq!(binn_ir::decode_object(&mut cursor)?.unwrap(), object);
             println!("Verified: {:?}", &object);
 
             // Verify position
-            assert_eq!(cursor.decode_null().unwrap(), None);
+            assert_eq!(binn_ir::decode_null(&mut cursor)?, None);
             assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
     };
+
+    Ok(())
 }
 
 #[test]
+#[cfg(feature="std")]
 fn decode_objects_from_invalid_sources() {
     // Missing size
     decode_from_invalid_source_and_assert!(vec![value::OBJECT]);

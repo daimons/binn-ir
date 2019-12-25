@@ -12,6 +12,13 @@ use {
     },
 };
 
+/// # Encodes a value
+///
+/// Result: total bytes that have been written.
+pub fn encode<T>(buf: &mut dyn Write, value: T) -> IoResult<Size> where T: Into<Value> {
+    value.into().encode(buf)
+}
+
 /// # Encodes a [`Null`]
 ///
 /// Result: total bytes that have been written.
@@ -203,6 +210,13 @@ pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> IoResult<Size> where T: Int
 /// [`Object`]: value/enum.Value.html#variant.Object
 pub fn encode_object<T>(buf: &mut dyn Write, object: T) -> IoResult<Size> where T: Into<Object> {
     Value::Object(object.into()).encode(buf)
+}
+
+/// # Decodes a value from source
+///
+/// If it returns `Ok(None)`, it means there's no more data to decode.
+pub fn decode(source: &mut dyn Read) -> IoResult<Option<Value>> {
+    value::decode_value(None, source)
 }
 
 /// # Decodes a [`Null`]
