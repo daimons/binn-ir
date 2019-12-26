@@ -7,3 +7,4 @@ mod list;
 mod map;
 mod null;
 mod object;
+mod strings;

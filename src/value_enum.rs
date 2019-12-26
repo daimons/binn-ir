@@ -136,12 +136,16 @@ pub enum Value {
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`TEXT`][value::TEXT]
     ///
+    /// [_Shortcuts_](#shortcuts-for-strings)
+    ///
     /// [storage::STRING]: ../storage/constant.STRING.html
     /// [value::TEXT]: constant.TEXT.html
     Text(String),
 
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`DATE_TIME`][value::DATE_TIME]
+    ///
+    /// [_Shortcuts_](#shortcuts-for-strings)
     ///
     /// [storage::STRING]: ../storage/constant.STRING.html
     /// [value::DATE_TIME]: constant.DATE_TIME.html
@@ -150,12 +154,16 @@ pub enum Value {
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`DATE`][value::DATE]
     ///
+    /// [_Shortcuts_](#shortcuts-for-strings)
+    ///
     /// [storage::STRING]: ../storage/constant.STRING.html
     /// [value::DATE]: constant.DATE.html
     Date(String),
 
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`TIME`][value::TIME]
+    ///
+    /// [_Shortcuts_](#shortcuts-for-strings)
     ///
     /// [storage::STRING]: ../storage/constant.STRING.html
     /// [value::TIME]: constant.TIME.html
@@ -165,6 +173,8 @@ pub enum Value {
     ///
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`DECIMAL_STR`][value::DECIMAL_STR]
+    ///
+    /// [_Shortcuts_](#shortcuts-for-strings)
     ///
     /// [storage::STRING]: ../storage/constant.STRING.html
     /// [value::DECIMAL_STR]: constant.DECIMAL_STR.html
@@ -1001,16 +1011,6 @@ impl Value {
             Value::List(list) => encode_value_list(self.size()?, list, stream),
             Value::Map(map) => encode_value_map(self.size()?, map, stream),
             Value::Object(object) => encode_value_object(self.size()?, object, stream),
-        }
-    }
-
-    /// # If the value is a [`Text`](#variant.Text), returns an immutable reference of it
-    ///
-    /// Returns an error if the value is not a [`Text`](#variant.Text).
-    pub fn as_text(&self) -> Result<&str> {
-        match self {
-            Value::Text(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a Text"))),
         }
     }
 
