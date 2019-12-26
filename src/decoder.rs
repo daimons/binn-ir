@@ -3,10 +3,7 @@
 //! # Decoder
 
 use {
-    alloc::{
-        boxed::Box,
-        string::String,
-    },
+    alloc::string::String,
     std::io::Read,
 
     crate::{
@@ -26,21 +23,15 @@ use {
 ///
 /// ### Decoding desired values
 ///
-/// You can use `decode_*()`. However, please note that: if an un-expected value is detected, the whole decoding operation _might_ be
-/// **broken**. It's because those functions just decode the header of a value, and stop if not matched. So at that point, data stream is
-/// already broken.
+/// You can use `decode_*()`. However, please note that: if an un-expected value is detected, the whole decoding operation might be _broken_.
+/// It's because those functions just decode the header of a value, and stop if not matched. So at that point, data stream is already broken.
 ///
 /// In contrast, with [`decode()`][#decode()], when you expect an [`Object`][Value::Object] but get a [`List`][Value::List], you can still
 /// continue decoding next values.
 ///
-/// ### Notes
-///
-/// Default implementors are copied from [`Read`][std::io/Read].
-///
 /// [#decode()]: #method.decode
 /// [Value::Object]: value/enum.Value.html#variant.Object
 /// [Value::List]: value/enum.Value.html#variant.List
-/// [std::io/Read]: https://doc.rust-lang.org/std/io/trait.Read.html
 pub trait Decoder: Read + Sized {
 
     /// # Decodes a value
@@ -174,24 +165,4 @@ pub trait Decoder: Read + Sized {
 
 }
 
-impl Decoder for std::fs::File {}
-impl<'a> Decoder for &'a std::fs::File {}
-impl<R: Read> Decoder for std::io::BufReader<R> {}
-impl<T> Decoder for std::io::Cursor<T> where T: AsRef<[u8]> {}
-impl<'a, R: Read + ?Sized> Decoder for &'a mut R {}
-impl<R: Read + ?Sized> Decoder for Box<R> {}
-impl<'a> Decoder for &'a [u8] {}
-impl Decoder for std::io::Empty {}
-impl Decoder for std::io::Repeat {}
-impl Decoder for std::io::Stdin {}
-impl<'a> Decoder for std::io::StdinLock<'a> {}
-impl<T: Read, U: Read> Decoder for std::io::Chain<T, U> {}
-impl<T: Read> Decoder for std::io::Take<T> {}
-impl Decoder for std::net::TcpStream {}
-impl<'a> Decoder for &'a std::net::TcpStream {}
-impl Decoder for std::process::ChildStdout {}
-impl Decoder for std::process::ChildStderr {}
-#[cfg(unix)]
-impl Decoder for std::os::unix::net::UnixStream {}
-#[cfg(unix)]
-impl<'a> Decoder for &'a std::os::unix::net::UnixStream {}
+impl<T> Decoder for T where T: Read {}

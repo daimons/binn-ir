@@ -3,10 +3,7 @@
 //! # Encoder
 
 use {
-    alloc::{
-        boxed::Box,
-        string::String,
-    },
+    alloc::string::String,
     std::io::Write,
 
     crate::{
@@ -16,10 +13,6 @@ use {
 };
 
 /// # Encoder
-///
-/// Default implementors are copied from [`Write`][std::io/Write].
-///
-/// [std::io/Write]: https://doc.rust-lang.org/std/io/trait.Write.html
 pub trait Encoder: Write + Sized {
 
     /// # Encodes a value
@@ -198,25 +191,4 @@ pub trait Encoder: Write + Sized {
 
 }
 
-impl Encoder for std::fs::File {}
-impl<'a> Encoder for &'a std::fs::File {}
-impl<W: Write> Encoder for std::io::BufWriter<W> {}
-impl<'a> Encoder for std::io::Cursor<&'a mut [u8]> {}
-impl<'a> Encoder for std::io::Cursor<&'a mut Blob> {}
-impl Encoder for std::io::Cursor<Blob> {}
-impl Encoder for std::io::Cursor<Box<[u8]>> {}
-impl<W: Write + ?Sized> Encoder for Box<W> {}
-impl<'a> Encoder for &'a mut [u8] {}
-impl Encoder for Blob {}
-impl Encoder for std::io::Sink {}
-impl Encoder for std::io::Stdout {}
-impl<'a> Encoder for std::io::StdoutLock<'a> {}
-impl Encoder for std::io::Stderr {}
-impl<'a> Encoder for std::io::StderrLock<'a> {}
-impl Encoder for std::net::TcpStream {}
-impl<'a> Encoder for &'a std::net::TcpStream {}
-impl Encoder for std::process::ChildStdin {}
-#[cfg(unix)]
-impl Encoder for std::os::unix::net::UnixStream {}
-#[cfg(unix)]
-impl<'a> Encoder for &'a std::os::unix::net::UnixStream {}
+impl<T> Encoder for T where T: Write {}
