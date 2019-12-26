@@ -43,6 +43,8 @@ pub enum Value {
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
     /// - Type: [`NULL`][value::NULL]
     ///
+    /// [_Shortcuts_](#shortcuts-for-null)
+    ///
     /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
     /// [value::NULL]: constant.NULL.html
     Null,
