@@ -374,7 +374,7 @@ macro_rules! write_size { ($size: expr, $stream: ident) => {{
 /// - First value is size.
 /// - Second value is total bytes read (the 'length' of first value).
 #[cfg(feature="std")]
-fn read_size_and_its_length(source: &mut dyn Read) -> IoResult<(Size, Size)> {
+fn read_size_and_its_length<R>(source: &mut R) -> IoResult<(Size, Size)> where R: Read {
     let first_byte = read_int_be!(u8, source)?;
     match first_byte & 0b_1000_0000 {
         0b_1000_0000 => {
@@ -389,7 +389,7 @@ fn read_size_and_its_length(source: &mut dyn Read) -> IoResult<(Size, Size)> {
 
 /// # Reads size from source
 #[cfg(feature="std")]
-fn read_size(source: &mut dyn Read) -> IoResult<Size> {
+fn read_size<R>(source: &mut R) -> IoResult<Size> where R: Read {
     read_size_and_its_length(source).and_then(|(size, _)| Ok(size))
 }
 
@@ -695,7 +695,7 @@ impl Value {
     ///
     /// Returns the number of bytes written.
     #[cfg(feature="std")]
-    pub fn encode(&self, stream: &mut dyn Write) -> IoResult<Size> {
+    pub fn encode<W>(&self, stream: &mut W) -> IoResult<Size> where W: Write {
         match self {
             Value::Null => stream.write_all(&[crate::value::NULL]).map(|()| 1),
             Value::True => stream.write_all(&[crate::value::TRUE]).map(|()| 1),
@@ -730,7 +730,7 @@ impl Value {
 ///
 /// If `filter` is `None`, the function decodes any value from source.
 #[cfg(feature="std")]
-pub(crate) fn decode_value(filter: Option<&[u8]>, source: &mut dyn Read) -> IoResult<Option<Value>> {
+pub(crate) fn decode_value<R>(filter: Option<&[u8]>, source: &mut R) -> IoResult<Option<Value>> where R: Read {
     let source_value = match read_int_be!(u8, source) {
         Ok(source_value) => source_value,
         Err(err) => return match err.kind() {
@@ -845,7 +845,7 @@ fn size_of_object(object: &Object) -> Result<Size> {
 
 /// # Encodes a `Value`'s string into the stream
 #[cfg(feature="std")]
-fn encode_value_str(ty: u8, s: &str, stream: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_str<W>(ty: u8, s: &str, stream: &mut W) -> IoResult<Size> where W: Write {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
@@ -889,7 +889,7 @@ fn encode_value_str(ty: u8, s: &str, stream: &mut dyn Write) -> IoResult<Size> {
 
 /// # Encodes `Value`'s blob into the stream
 #[cfg(feature="std")]
-fn encode_value_blob(bytes: &[u8], stream: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_blob<W>(bytes: &[u8], stream: &mut W) -> IoResult<Size> where W: Write {
     let len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
@@ -920,7 +920,7 @@ fn encode_value_blob(bytes: &[u8], stream: &mut dyn Write) -> IoResult<Size> {
 
 /// # Encodes a `Value`'s list into the stream
 #[cfg(feature="std")]
-fn encode_value_list(size: Size, list: &[Value], stream: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_list<W>(size: Size, list: &[Value], stream: &mut W) -> IoResult<Size> where W: Write {
     let mut result = sum!(
         // Type
         write_int_be!(crate::value::LIST, stream)?,
@@ -942,7 +942,7 @@ fn encode_value_list(size: Size, list: &[Value], stream: &mut dyn Write) -> IoRe
 
 /// # Encodes a `Value`'s map into the stream
 #[cfg(feature="std")]
-fn encode_value_map(size: Size, map: &Map, stream: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_map<W>(size: Size, map: &Map, stream: &mut W) -> IoResult<Size> where W: Write {
     let mut result = sum!(
         // Type
         write_int_be!(crate::value::MAP, stream)?,
@@ -968,7 +968,7 @@ fn encode_value_map(size: Size, map: &Map, stream: &mut dyn Write) -> IoResult<S
 ///
 /// - `size`: should be calculated by `Value::size()`.
 #[cfg(feature="std")]
-fn encode_value_object(size: Size, object: &Object, stream: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_object<W>(size: Size, object: &Object, stream: &mut W) -> IoResult<Size> where W: Write {
     let mut result = sum!(
         // Type
         write_int_be!(crate::value::OBJECT, stream)?,
