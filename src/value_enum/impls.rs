@@ -2,6 +2,7 @@
 
 //! # Implementations
 
+mod blob;
 mod list;
 mod map;
 mod null;

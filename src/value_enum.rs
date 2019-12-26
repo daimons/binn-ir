@@ -173,6 +173,8 @@ pub enum Value {
     /// - Storage: [`BLOB`][storage::BLOB]
     /// - Type: [`BLOB`][value::BLOB]
     ///
+    /// [_Shortcuts_](#shortcuts-for-blob)
+    ///
     /// [storage::BLOB]: ../storage/constant.BLOB.html
     /// [value::BLOB]: constant.BLOB.html
     Blob(Blob),
