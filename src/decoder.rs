@@ -27,8 +27,8 @@ use {
 /// continue decoding next values.
 ///
 /// [#decode()]: #method.decode
-/// [Value::Object]: value/enum.Value.html#variant.Object
-/// [Value::List]: value/enum.Value.html#variant.List
+/// [Value::Object]: enum.Value.html#variant.Object
+/// [Value::List]: enum.Value.html#variant.List
 pub trait Decoder: Read + Sized {
 
     /// # Decodes a value
@@ -87,14 +87,14 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a [`Float`][Value::Float]
     ///
-    /// [Value::Float]: value/enum.Value.html#variant.Float
+    /// [Value::Float]: enum.Value.html#variant.Float
     fn decode_float(&mut self) -> IoResult<Option<f32>> {
         crate::decode_float(self)
     }
 
     /// # Decodes a [`Double`]
     ///
-    /// [Value::Double]: value/enum.Value.html#variant.Double
+    /// [Value::Double]: enum.Value.html#variant.Double
     fn decode_double(&mut self) -> IoResult<Option<f64>> {
         crate::decode_double(self)
     }
@@ -106,56 +106,56 @@ pub trait Decoder: Read + Sized {
 
     /// # Decodes a [`DateTime`][Value::DateTime]
     ///
-    /// [Value::DateTime]: value/enum.Value.html#variant.DateTime
+    /// [Value::DateTime]: enum.Value.html#variant.DateTime
     fn decode_date_time(&mut self) -> IoResult<Option<String>> {
         crate::decode_date_time(self)
     }
 
     /// # Decodes a [`Date`][Value::Date]
     ///
-    /// [Value::Date]: value/enum.Value.html#variant.Date
+    /// [Value::Date]: enum.Value.html#variant.Date
     fn decode_date(&mut self) -> IoResult<Option<String>> {
         crate::decode_date(self)
     }
 
     /// # Decodes a [`Time`][Value::Time]
     ///
-    /// [Value::Time]: value/enum.Value.html#variant.Time
+    /// [Value::Time]: enum.Value.html#variant.Time
     fn decode_time(&mut self) -> IoResult<Option<String>> {
         crate::decode_time(self)
     }
 
     /// # Decodes a [`DecimalStr`][Value::DecimalStr]
     ///
-    /// [Value::DecimalStr]: value/enum.Value.html#variant.DecimalStr
+    /// [Value::DecimalStr]: enum.Value.html#variant.DecimalStr
     fn decode_decimal_str(&mut self) -> IoResult<Option<String>> {
         crate::decode_decimal_str(self)
     }
 
     /// # Decodes a [`Blob`][Value::Blob]
     ///
-    /// [Value::Blob]: value/enum.Value.html#variant.Blob
+    /// [Value::Blob]: enum.Value.html#variant.Blob
     fn decode_blob(&mut self) -> IoResult<Option<Blob>> {
         crate::decode_blob(self)
     }
 
     /// # Decodes a [`List`][Value::List]
     ///
-    /// [Value::List]: value/enum.Value.html#variant.List
+    /// [Value::List]: enum.Value.html#variant.List
     fn decode_list(&mut self) -> IoResult<Option<List>> {
         crate::decode_list(self)
     }
 
     /// # Decodes a [`Map`][Value::Map]
     ///
-    /// [Value::Map]: value/enum.Value.html#variant.Map
+    /// [Value::Map]: enum.Value.html#variant.Map
     fn decode_map(&mut self) -> IoResult<Option<Map>> {
         crate::decode_map(self)
     }
 
     /// # Decodes an [`Object`][Value::Object]
     ///
-    /// [Value::Object]: value/enum.Value.html#variant.Object
+    /// [Value::Object]: enum.Value.html#variant.Object
     fn decode_object(&mut self) -> IoResult<Option<Object>> {
         crate::decode_object(self)
     }

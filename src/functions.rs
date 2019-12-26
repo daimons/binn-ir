@@ -20,7 +20,7 @@ pub fn encode<T>(buf: &mut dyn Write, value: T) -> IoResult<Size> where T: Into<
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Null`]: value/enum.Value.html#variant.Null
+/// [`Null`]: enum.Value.html#variant.Null
 pub fn encode_null(buf: &mut dyn Write) -> IoResult<Size> {
     Value::Null.encode(buf)
 }
@@ -29,8 +29,8 @@ pub fn encode_null(buf: &mut dyn Write) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`True`]: value/enum.Value.html#variant.True
-/// [`False`]: value/enum.Value.html#variant.False
+/// [`True`]: enum.Value.html#variant.True
+/// [`False`]: enum.Value.html#variant.False
 pub fn encode_bool(buf: &mut dyn Write, b: bool) -> IoResult<Size> {
     match b {
         true => Value::True.encode(buf),
@@ -42,7 +42,7 @@ pub fn encode_bool(buf: &mut dyn Write, b: bool) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`U8`]: value/enum.Value.html#variant.U8
+/// [`U8`]: enum.Value.html#variant.U8
 pub fn encode_u8(buf: &mut dyn Write, u: u8) -> IoResult<Size> {
     Value::U8(u).encode(buf)
 }
@@ -51,7 +51,7 @@ pub fn encode_u8(buf: &mut dyn Write, u: u8) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`I8`]: value/enum.Value.html#variant.I8
+/// [`I8`]: enum.Value.html#variant.I8
 pub fn encode_i8(buf: &mut dyn Write, i: i8) -> IoResult<Size> {
     Value::I8(i).encode(buf)
 }
@@ -60,7 +60,7 @@ pub fn encode_i8(buf: &mut dyn Write, i: i8) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`U16`]: value/enum.Value.html#variant.U16
+/// [`U16`]: enum.Value.html#variant.U16
 pub fn encode_u16(buf: &mut dyn Write, u: u16) -> IoResult<Size> {
     Value::U16(u).encode(buf)
 }
@@ -69,7 +69,7 @@ pub fn encode_u16(buf: &mut dyn Write, u: u16) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`I16`]: value/enum.Value.html#variant.I16
+/// [`I16`]: enum.Value.html#variant.I16
 pub fn encode_i16(buf: &mut dyn Write, i: i16) -> IoResult<Size> {
     Value::I16(i).encode(buf)
 }
@@ -78,7 +78,7 @@ pub fn encode_i16(buf: &mut dyn Write, i: i16) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`U32`]: value/enum.Value.html#variant.U32
+/// [`U32`]: enum.Value.html#variant.U32
 pub fn encode_u32(buf: &mut dyn Write, u: u32) -> IoResult<Size> {
     Value::U32(u).encode(buf)
 }
@@ -87,7 +87,7 @@ pub fn encode_u32(buf: &mut dyn Write, u: u32) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`I32`]: value/enum.Value.html#variant.I32
+/// [`I32`]: enum.Value.html#variant.I32
 pub fn encode_i32(buf: &mut dyn Write, i: i32) -> IoResult<Size> {
     Value::I32(i).encode(buf)
 }
@@ -96,7 +96,7 @@ pub fn encode_i32(buf: &mut dyn Write, i: i32) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`U64`]: value/enum.Value.html#variant.U64
+/// [`U64`]: enum.Value.html#variant.U64
 pub fn encode_u64(buf: &mut dyn Write, u: u64) -> IoResult<Size> {
     Value::U64(u).encode(buf)
 }
@@ -105,7 +105,7 @@ pub fn encode_u64(buf: &mut dyn Write, u: u64) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`I64`]: value/enum.Value.html#variant.I64
+/// [`I64`]: enum.Value.html#variant.I64
 pub fn encode_i64(buf: &mut dyn Write, i: i64) -> IoResult<Size> {
     Value::I64(i).encode(buf)
 }
@@ -114,7 +114,7 @@ pub fn encode_i64(buf: &mut dyn Write, i: i64) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Float`]: value/enum.Value.html#variant.Float
+/// [`Float`]: enum.Value.html#variant.Float
 pub fn encode_float(buf: &mut dyn Write, f: f32) -> IoResult<Size> {
     Value::Float(f).encode(buf)
 }
@@ -123,7 +123,7 @@ pub fn encode_float(buf: &mut dyn Write, f: f32) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Double`]: value/enum.Value.html#variant.Double
+/// [`Double`]: enum.Value.html#variant.Double
 pub fn encode_double(buf: &mut dyn Write, d: f64) -> IoResult<Size> {
     Value::Double(d).encode(buf)
 }
@@ -132,7 +132,7 @@ pub fn encode_double(buf: &mut dyn Write, d: f64) -> IoResult<Size> {
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Text`]: value/enum.Value.html#variant.Text
+/// [`Text`]: enum.Value.html#variant.Text
 pub fn encode_text<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into<String> {
     Value::Text(s.into()).encode(buf)
 }
@@ -141,7 +141,7 @@ pub fn encode_text<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`DateTime`]: value/enum.Value.html#variant.DateTime
+/// [`DateTime`]: enum.Value.html#variant.DateTime
 pub fn encode_date_time<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into<String> {
     Value::DateTime(s.into()).encode(buf)
 }
@@ -150,7 +150,7 @@ pub fn encode_date_time<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T:
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Date`]: value/enum.Value.html#variant.Date
+/// [`Date`]: enum.Value.html#variant.Date
 pub fn encode_date<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into<String> {
     Value::Date(s.into()).encode(buf)
 }
@@ -159,7 +159,7 @@ pub fn encode_date<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Time`]: value/enum.Value.html#variant.Time
+/// [`Time`]: enum.Value.html#variant.Time
 pub fn encode_time<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into<String> {
     Value::Time(s.into()).encode(buf)
 }
@@ -168,7 +168,7 @@ pub fn encode_time<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`DecimalStr`]: value/enum.Value.html#variant.DecimalStr
+/// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
 pub fn encode_decimal_str<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where T: Into<String> {
     Value::DecimalStr(s.into()).encode(buf)
 }
@@ -177,7 +177,7 @@ pub fn encode_decimal_str<T>(buf: &mut dyn Write, s: T) -> IoResult<Size> where 
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Blob`]: value/enum.Value.html#variant.Blob
+/// [`Blob`]: enum.Value.html#variant.Blob
 pub fn encode_blob<T>(buf: &mut dyn Write, bytes: T) -> IoResult<Size> where T: Into<Blob> {
     Value::Blob(bytes.into()).encode(buf)
 }
@@ -186,7 +186,7 @@ pub fn encode_blob<T>(buf: &mut dyn Write, bytes: T) -> IoResult<Size> where T: 
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`List`]: value/enum.Value.html#variant.List
+/// [`List`]: enum.Value.html#variant.List
 pub fn encode_list<T>(buf: &mut dyn Write, list: T) -> IoResult<Size> where T: Into<List> {
     Value::List(list.into()).encode(buf)
 }
@@ -195,7 +195,7 @@ pub fn encode_list<T>(buf: &mut dyn Write, list: T) -> IoResult<Size> where T: I
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Map`]: value/enum.Value.html#variant.Map
+/// [`Map`]: enum.Value.html#variant.Map
 pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> IoResult<Size> where T: Into<Map> {
     Value::Map(map.into()).encode(buf)
 }
@@ -204,7 +204,7 @@ pub fn encode_map<T>(buf: &mut dyn Write, map: T) -> IoResult<Size> where T: Int
 ///
 /// Result: total bytes that have been written.
 ///
-/// [`Object`]: value/enum.Value.html#variant.Object
+/// [`Object`]: enum.Value.html#variant.Object
 pub fn encode_object<T>(buf: &mut dyn Write, object: T) -> IoResult<Size> where T: Into<Object> {
     Value::Object(object.into()).encode(buf)
 }
@@ -218,7 +218,7 @@ pub fn decode(source: &mut dyn Read) -> IoResult<Option<Value>> {
 
 /// # Decodes a [`Null`]
 ///
-/// [`Null`]: value/enum.Value.html#variant.Null
+/// [`Null`]: enum.Value.html#variant.Null
 pub fn decode_null(source: &mut dyn Read) -> IoResult<Option<()>> {
     match crate::decode_value(Some(&[crate::value::NULL]), source)? {
         Some(Value::Null) => Ok(Some(())),
@@ -310,7 +310,7 @@ pub fn decode_i64(source: &mut dyn Read) -> IoResult<Option<i64>> {
 
 /// # Decodes a [`Float`] value
 ///
-/// [`Float`]: value/enum.Value.html#variant.Float
+/// [`Float`]: enum.Value.html#variant.Float
 pub fn decode_float(source: &mut dyn Read) -> IoResult<Option<f32>> {
     match crate::decode_value(Some(&[crate::value::FLOAT]), source)? {
         Some(Value::Float(f)) => Ok(Some(f)),
@@ -321,7 +321,7 @@ pub fn decode_float(source: &mut dyn Read) -> IoResult<Option<f32>> {
 
 /// # Decodes a [`Double`] value
 ///
-/// [`Double`]: value/enum.Value.html#variant.Double
+/// [`Double`]: enum.Value.html#variant.Double
 pub fn decode_double(source: &mut dyn Read) -> IoResult<Option<f64>> {
     match crate::decode_value(Some(&[crate::value::DOUBLE]), source)? {
         Some(Value::Double(d)) => Ok(Some(d)),
@@ -332,7 +332,7 @@ pub fn decode_double(source: &mut dyn Read) -> IoResult<Option<f64>> {
 
 /// # Decodes a [`Text`]
 ///
-/// [`Text`]: value/enum.Value.html#variant.Text
+/// [`Text`]: enum.Value.html#variant.Text
 pub fn decode_text(source: &mut dyn Read) -> IoResult<Option<String>> {
     match crate::decode_value(Some(&[crate::value::TEXT]), source)? {
         Some(Value::Text(t)) => Ok(Some(t)),
@@ -343,7 +343,7 @@ pub fn decode_text(source: &mut dyn Read) -> IoResult<Option<String>> {
 
 /// # Decodes a [`DateTime`]
 ///
-/// [`DateTime`]: value/enum.Value.html#variant.DateTime
+/// [`DateTime`]: enum.Value.html#variant.DateTime
 pub fn decode_date_time(source: &mut dyn Read) -> IoResult<Option<String>> {
     match crate::decode_value(Some(&[crate::value::DATE_TIME]), source)? {
         Some(Value::DateTime(dt)) => Ok(Some(dt)),
@@ -354,7 +354,7 @@ pub fn decode_date_time(source: &mut dyn Read) -> IoResult<Option<String>> {
 
 /// # Decodes a [`Date`]
 ///
-/// [`Date`]: value/enum.Value.html#variant.Date
+/// [`Date`]: enum.Value.html#variant.Date
 pub fn decode_date(source: &mut dyn Read) -> IoResult<Option<String>> {
     match crate::decode_value(Some(&[crate::value::DATE]), source)? {
         Some(Value::Date(d)) => Ok(Some(d)),
@@ -365,7 +365,7 @@ pub fn decode_date(source: &mut dyn Read) -> IoResult<Option<String>> {
 
 /// # Decodes a [`Time`]
 ///
-/// [`Time`]: value/enum.Value.html#variant.Time
+/// [`Time`]: enum.Value.html#variant.Time
 pub fn decode_time(source: &mut dyn Read) -> IoResult<Option<String>> {
     match crate::decode_value(Some(&[crate::value::TIME]), source)? {
         Some(Value::Time(t)) => Ok(Some(t)),
@@ -376,7 +376,7 @@ pub fn decode_time(source: &mut dyn Read) -> IoResult<Option<String>> {
 
 /// # Decodes a [`DecimalStr`]
 ///
-/// [`DecimalStr`]: value/enum.Value.html#variant.DecimalStr
+/// [`DecimalStr`]: enum.Value.html#variant.DecimalStr
 pub fn decode_decimal_str(source: &mut dyn Read) -> IoResult<Option<String>> {
     match crate::decode_value(Some(&[crate::value::DECIMAL_STR]), source)? {
         Some(Value::DecimalStr(ds)) => Ok(Some(ds)),
@@ -387,7 +387,7 @@ pub fn decode_decimal_str(source: &mut dyn Read) -> IoResult<Option<String>> {
 
 /// # Decodes a [`Blob`]
 ///
-/// [`Blob`]: value/enum.Value.html#variant.Blob
+/// [`Blob`]: enum.Value.html#variant.Blob
 pub fn decode_blob(source: &mut dyn Read) -> IoResult<Option<Blob>> {
     match crate::decode_value(Some(&[crate::value::BLOB]), source)? {
         Some(Value::Blob(bytes)) => Ok(Some(bytes)),
@@ -398,7 +398,7 @@ pub fn decode_blob(source: &mut dyn Read) -> IoResult<Option<Blob>> {
 
 /// # Decodes a [`List`]
 ///
-/// [`List`]: value/enum.Value.html#variant.List
+/// [`List`]: enum.Value.html#variant.List
 pub fn decode_list(source: &mut dyn Read) -> IoResult<Option<List>> {
     match crate::decode_value(Some(&[crate::value::LIST]), source)? {
         Some(Value::List(list)) => Ok(Some(list)),
@@ -409,7 +409,7 @@ pub fn decode_list(source: &mut dyn Read) -> IoResult<Option<List>> {
 
 /// # Decodes a [`Map`]
 ///
-/// [`Map`]: value/enum.Value.html#variant.Map
+/// [`Map`]: enum.Value.html#variant.Map
 pub fn decode_map(source: &mut dyn Read) -> IoResult<Option<Map>> {
     match crate::decode_value(Some(&[crate::value::MAP]), source)? {
         Some(Value::Map(map)) => Ok(Some(map)),
@@ -420,7 +420,7 @@ pub fn decode_map(source: &mut dyn Read) -> IoResult<Option<Map>> {
 
 /// # Decodes an [`Object`]
 ///
-/// [`Object`]: value/enum.Value.html#variant.Object
+/// [`Object`]: enum.Value.html#variant.Object
 pub fn decode_object(source: &mut dyn Read) -> IoResult<Option<Object>> {
     match crate::decode_value(Some(&[crate::value::OBJECT]), source)? {
         Some(Value::Object(object)) => Ok(Some(object)),

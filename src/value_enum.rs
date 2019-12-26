@@ -155,7 +155,7 @@ pub enum Value {
     /// [value::TIME]: constant.TIME.html
     Time(String),
 
-    /// # Decimal string
+    /// <small>_(Decimal string)_</small>
     ///
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`DECIMAL_STR`][value::DECIMAL_STR]

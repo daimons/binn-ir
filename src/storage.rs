@@ -31,7 +31,7 @@ pub const BLOB: u8 = 0b_110;
 /// - [`Map`]
 /// - [`Object`]
 ///
-/// [`List`]: ../value/enum.Value.html#variant.List
-/// [`Map`]: ../value/enum.Value.html#variant.Map
-/// [`Object`]: ../value/enum.Value.html#variant.Object
+/// [`List`]: ../enum.Value.html#variant.List
+/// [`Map`]: ../enum.Value.html#variant.Map
+/// [`Object`]: ../enum.Value.html#variant.Object
 pub const CONTAINER: u8 = 0b_111;

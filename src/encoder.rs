@@ -93,7 +93,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Float]: value/enum.Value.html#variant.Float
+    /// [Value::Float]: enum.Value.html#variant.Float
     fn encode_float(&mut self, f: f32) -> IoResult<Size> {
         crate::encode_float(self, f)
     }
@@ -102,7 +102,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Double]: value/enum.Value.html#variant.Double
+    /// [Value::Double]: enum.Value.html#variant.Double
     fn encode_double(&mut self, d: f64) -> IoResult<Size> {
         crate::encode_double(self, d)
     }
@@ -118,7 +118,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::DateTime]: value/enum.Value.html#variant.DateTime
+    /// [Value::DateTime]: enum.Value.html#variant.DateTime
     fn encode_date_time<T>(&mut self, s: T) -> IoResult<Size> where T: Into<String> {
         crate::encode_date_time(self, s)
     }
@@ -127,7 +127,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Date]: value/enum.Value.html#variant.Date
+    /// [Value::Date]: enum.Value.html#variant.Date
     fn encode_date<T>(&mut self, s: T) -> IoResult<Size> where T: Into<String> {
         crate::encode_date(self, s)
     }
@@ -136,7 +136,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Time]: value/enum.Value.html#variant.Time
+    /// [Value::Time]: enum.Value.html#variant.Time
     fn encode_time<T>(&mut self, s: T) -> IoResult<Size> where T: Into<String> {
         crate::encode_time(self, s)
     }
@@ -145,7 +145,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::DecimalStr]: value/enum.Value.html#variant.DecimalStr
+    /// [Value::DecimalStr]: enum.Value.html#variant.DecimalStr
     fn encode_decimal_str<T>(&mut self, s: T) -> IoResult<Size> where T: Into<String> {
         crate::encode_decimal_str(self, s)
     }
@@ -154,7 +154,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Blob]: value/enum.Value.html#variant.Blob
+    /// [Value::Blob]: enum.Value.html#variant.Blob
     fn encode_blob<T>(&mut self, bytes: T) -> IoResult<Size> where T: Into<Blob> {
         crate::encode_blob(self, bytes)
     }
@@ -163,7 +163,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::List]: value/enum.Value.html#variant.List
+    /// [Value::List]: enum.Value.html#variant.List
     fn encode_list<T>(&mut self, list: T) -> IoResult<Size> where T: Into<List> {
         crate::encode_list(self, list)
     }
@@ -172,7 +172,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Map]: value/enum.Value.html#variant.Map
+    /// [Value::Map]: enum.Value.html#variant.Map
     fn encode_map<T>(&mut self, map: T) -> IoResult<Size> where T: Into<Map> {
         crate::encode_map(self, map)
     }
@@ -181,7 +181,7 @@ pub trait Encoder: Write + Sized {
     ///
     /// Result: total bytes that have been written.
     ///
-    /// [Value::Object]: value/enum.Value.html#variant.Object
+    /// [Value::Object]: enum.Value.html#variant.Object
     fn encode_object<T>(&mut self, object: T) -> IoResult<Size> where T: Into<Object> {
         crate::encode_object(self, object)
     }
