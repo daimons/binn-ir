@@ -2,7 +2,14 @@
 
 //! # Shortcuts for `Value::Map`
 
-use crate::{Error, Map, MapKey, Result, Value};
+use {
+    core::{
+        convert::TryFrom,
+        iter::FromIterator,
+    },
+
+    crate::{Error, Map, MapKey, Result, Value},
+};
 
 /// # Helper macro for Value::*_maybe_by()/*_maybe_mut_by()
 macro_rules! maybe_by_or_mut_by { ($self: ident, $variant: tt, $keys: ident, $code: tt) => {{
@@ -185,6 +192,35 @@ impl Value {
     /// Returns an error if the value is not a map.
     pub fn as_mut_map(&mut self) -> Result<&mut Map> {
         match self {
+            Value::Map(map) => Ok(map),
+            _ => Err(Error::from(__!("Value is not a Map"))),
+        }
+    }
+
+}
+
+impl From<Map> for Value {
+
+    fn from(map: Map) -> Self {
+        Value::Map(map)
+    }
+
+}
+
+impl FromIterator<(MapKey, Value)> for Value {
+
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(MapKey, Self)> {
+        Value::Map(iter.into_iter().collect())
+    }
+
+}
+
+impl TryFrom<Value> for Map {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
             Value::Map(map) => Ok(map),
             _ => Err(Error::from(__!("Value is not a Map"))),
         }

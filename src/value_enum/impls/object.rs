@@ -2,7 +2,14 @@
 
 //! # Shortcuts for `Value::Object`
 
-use crate::{Error, Object, ObjectKey, Result, Value};
+use {
+    core::{
+        convert::TryFrom,
+        iter::FromIterator,
+    },
+
+    crate::{Error, Object, ObjectKey, Result, Value},
+};
 
 /// # Helper macro for Value::*_maybe_by()/*_maybe_mut_by()
 macro_rules! maybe_by_or_mut_by { ($self: ident, $variant: tt, $keys: ident, $code: tt) => {{
@@ -185,6 +192,35 @@ impl Value {
     /// Returns an error if the value is not an object.
     pub fn as_mut_object(&mut self) -> Result<&mut Object> {
         match self {
+            Value::Object(object) => Ok(object),
+            _ => Err(Error::from(__!("Value is not an Object"))),
+        }
+    }
+
+}
+
+impl From<Object> for Value {
+
+    fn from(object: Object) -> Self {
+        Value::Object(object)
+    }
+
+}
+
+impl FromIterator<(ObjectKey, Value)> for Value {
+
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(ObjectKey, Self)> {
+        Value::Object(iter.into_iter().collect())
+    }
+
+}
+
+impl TryFrom<Value> for Object {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
             Value::Object(object) => Ok(object),
             _ => Err(Error::from(__!("Value is not an Object"))),
         }

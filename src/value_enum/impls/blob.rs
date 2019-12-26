@@ -3,6 +3,8 @@
 //! # Shortcuts for `Value::Blob`
 
 use {
+    core::convert::TryFrom,
+
     crate::{Blob, Error, Result, Value},
 };
 
@@ -24,6 +26,27 @@ impl Value {
     /// Returns an error if the value is not a blob.
     pub fn as_mut_blob(&mut self) -> Result<&mut Blob> {
         match self {
+            Value::Blob(blob) => Ok(blob),
+            _ => Err(Error::from(__!("Value is not a Blob"))),
+        }
+    }
+
+}
+
+impl From<Blob> for Value {
+
+    fn from(v: Blob) -> Self {
+        Value::Blob(v)
+    }
+
+}
+
+impl TryFrom<Value> for Blob {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
             Value::Blob(blob) => Ok(blob),
             _ => Err(Error::from(__!("Value is not a Blob"))),
         }

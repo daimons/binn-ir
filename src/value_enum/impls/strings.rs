@@ -3,6 +3,9 @@
 //! # Shortcuts for strings
 
 use {
+    alloc::string::{String, ToString},
+    core::convert::TryFrom,
+
     crate::{Error, Result, Value},
 };
 
@@ -56,6 +59,37 @@ impl Value {
         match self {
             Value::DecimalStr(s) => Ok(s),
             _ => Err(Error::from(__!("Value is not a DecimalStr"))),
+        }
+    }
+
+}
+
+/// # Converts input to a [`Text`](#variant.Text)
+impl From<String> for Value {
+
+    fn from(s: String) -> Self {
+        Value::Text(s)
+    }
+
+}
+
+/// # _Clones_ input and converts it to a [`Text`](#variant.Text)
+impl From<&str> for Value {
+
+    fn from(s: &str) -> Self {
+        Self::from(s.to_string())
+    }
+
+}
+
+impl TryFrom<Value> for String {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::Text(s) => Ok(s),
+            _ => Err(Error::from(__!("Value is not a Text"))),
         }
     }
 

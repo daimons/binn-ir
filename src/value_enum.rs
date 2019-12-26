@@ -3,17 +3,16 @@
 //! # Value enum
 
 use {
-    alloc::string::{String, ToString},
+    alloc::string::String,
     core::{
         cmp::Ordering,
         convert::TryFrom,
         fmt::{self, Debug, Formatter, Write as FmtWrite},
-        iter::FromIterator,
         mem,
     },
 
     crate::{
-        Blob, Error, List, Map, MapKey, Object, ObjectKey, Result, Size,
+        Blob, Error, List, Map, Object, Result, Size,
         cmp::CmpTo,
         value::{MAX_DATA_SIZE, OBJECT_KEY_MAX_LEN},
     },
@@ -306,38 +305,12 @@ fn format_debugging_object(f: &mut Formatter, object: &Object) -> core::result::
     f.write_char(')')
 }
 
-impl From<()> for Value {
-
-    /// # Converts input to a [`Null`]
-    ///
-    /// [`Null`]: enum.Value.html#variant.Null
-    fn from(_: ()) -> Self {
-        Value::Null
-    }
-
-}
-
 impl<T> From<Option<T>> for Value where T: Into<Value> {
 
     fn from(v: Option<T>) -> Self {
         match v {
             Some(v) => v.into(),
             None => Value::Null,
-        }
-    }
-
-}
-
-impl From<bool> for Value {
-
-    /// # Converts input to either [`True`] or [`False`]
-    ///
-    /// [`True`]: enum.Value.html#variant.True
-    /// [`False`]: enum.Value.html#variant.False
-    fn from(b: bool) -> Self {
-        match b {
-            true => Value::True,
-            false => Value::False,
         }
     }
 
@@ -359,117 +332,6 @@ impl_from_numbers_for_value!{
     i8, I8, i16, I16, i32, I32, i64, I64,
     u8, U8, u16, U16, u32, U32, u64, U64,
     f32, Float, f64, Double,
-}
-
-impl From<String> for Value {
-
-    /// # Converts input to a [`Text`]
-    ///
-    /// [`Text`]: enum.Value.html#variant.Text
-    fn from(s: String) -> Self {
-        Value::Text(s)
-    }
-
-}
-
-impl From<&str> for Value {
-
-    fn from(s: &str) -> Self {
-        Self::from(s.to_string())
-    }
-
-}
-
-impl From<Blob> for Value {
-
-    /// # Converts input to a [`Blob`]
-    ///
-    /// [`Blob`]: enum.Value.html#variant.Blob
-    fn from(v: Blob) -> Self {
-        Value::Blob(v)
-    }
-
-}
-
-impl From<List> for Value {
-
-    /// # Converts input to a [`List`]
-    ///
-    /// [`List`]: enum.Value.html#variant.List
-    fn from(list: List) -> Self {
-        Value::List(list)
-    }
-
-}
-
-impl FromIterator<Value> for Value {
-
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=Self> {
-        Value::List(iter.into_iter().collect())
-    }
-
-}
-
-impl From<Map> for Value {
-
-    /// # Converts input to a [`Map`]
-    ///
-    /// [`Map`]: enum.Value.html#variant.Map
-    fn from(map: Map) -> Self {
-        Value::Map(map)
-    }
-
-}
-
-impl FromIterator<(MapKey, Value)> for Value {
-
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(MapKey, Self)> {
-        Value::Map(iter.into_iter().collect())
-    }
-
-}
-
-impl From<Object> for Value {
-
-    /// # Converts input to an [`Object`]
-    ///
-    /// [`Object`]: enum.Value.html#variant.Object
-    fn from(object: Object) -> Self {
-        Value::Object(object)
-    }
-
-}
-
-impl FromIterator<(ObjectKey, Value)> for Value {
-
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(ObjectKey, Self)> {
-        Value::Object(iter.into_iter().collect())
-    }
-
-}
-
-impl TryFrom<&Value> for bool {
-
-    type Error = Error;
-
-    fn try_from(v: &Value) -> core::result::Result<Self, Self::Error> {
-        match v {
-            Value::True => Ok(true),
-            Value::False => Ok(false),
-            _ => Err(Error::from(__!("Value is not a boolean"))),
-        }
-    }
-
-}
-
-impl TryFrom<Value> for bool {
-
-    type Error = Error;
-
-    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
-        Self::try_from(&v)
-    }
-
 }
 
 macro_rules! impl_try_from_value_for_integers { ($($ty: ty,)+) => {
@@ -564,71 +426,6 @@ impl TryFrom<Value> for f64 {
 
     fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
         Self::try_from(&v)
-    }
-
-}
-
-impl TryFrom<Value> for String {
-
-    type Error = Error;
-
-    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
-        match v {
-            Value::Text(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a Text"))),
-        }
-    }
-
-}
-
-impl TryFrom<Value> for Blob {
-
-    type Error = Error;
-
-    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
-        match v {
-            Value::Blob(blob) => Ok(blob),
-            _ => Err(Error::from(__!("Value is not a Blob"))),
-        }
-    }
-
-}
-
-impl TryFrom<Value> for List {
-
-    type Error = Error;
-
-    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
-        match v {
-            Value::List(list) => Ok(list),
-            _ => Err(Error::from(__!("Value is not a List"))),
-        }
-    }
-
-}
-
-impl TryFrom<Value> for Map {
-
-    type Error = Error;
-
-    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
-        match v {
-            Value::Map(map) => Ok(map),
-            _ => Err(Error::from(__!("Value is not a Map"))),
-        }
-    }
-
-}
-
-impl TryFrom<Value> for Object {
-
-    type Error = Error;
-
-    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
-        match v {
-            Value::Object(object) => Ok(object),
-            _ => Err(Error::from(__!("Value is not an Object"))),
-        }
     }
 
 }

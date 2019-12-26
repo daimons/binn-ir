@@ -349,7 +349,6 @@ fn maps() -> IoResult<()> {
         map.insert(-3, Value::List(vec![Value::U16(6789), Value::I8(-89)]));
         map.insert(4, Value::Float(-12345_f32));
         map.insert(-5, Value::Double(6789_f64));
-        map.insert(6, ().into());
         map.insert(-7, false.into());
         map.insert(8, true.into());
         map.insert(-9, "SUN".into());
@@ -357,7 +356,6 @@ fn maps() -> IoResult<()> {
         map.insert(-11, Value::from("Saturn"));
         map.insert(12, Value::from({
             let mut map = Map::new();
-            map.insert(0, Value::from(()));
             map.insert(-1, Value::True);
             map.insert(2, Value::from(false));
             map.insert(-3, Value::from(vec![Value::from("Oracle"), Value::Blob(b"Universe, time and space".to_vec())]));

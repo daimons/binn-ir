@@ -3,6 +3,11 @@
 //! # Shortcuts for `Value::List`
 
 use {
+    core::{
+        convert::TryFrom,
+        iter::FromIterator,
+    },
+
     crate::{Error, List, Result, Value},
 };
 
@@ -143,6 +148,35 @@ impl Value {
     /// Returns an error if the value is not a list.
     pub fn as_mut_list(&mut self) -> Result<&mut List> {
         match self {
+            Value::List(list) => Ok(list),
+            _ => Err(Error::from(__!("Value is not a List"))),
+        }
+    }
+
+}
+
+impl From<List> for Value {
+
+    fn from(list: List) -> Self {
+        Value::List(list)
+    }
+
+}
+
+impl FromIterator<Value> for Value {
+
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=Self> {
+        Value::List(iter.into_iter().collect())
+    }
+
+}
+
+impl TryFrom<Value> for List {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
             Value::List(list) => Ok(list),
             _ => Err(Error::from(__!("Value is not a List"))),
         }
