@@ -92,7 +92,7 @@ pub trait Decoder: Read + Sized {
         crate::decode_float(self)
     }
 
-    /// # Decodes a [`Double`]
+    /// # Decodes a [`Double`][Value::Double]
     ///
     /// [Value::Double]: enum.Value.html#variant.Double
     fn decode_double(&mut self) -> IoResult<Option<f64>> {

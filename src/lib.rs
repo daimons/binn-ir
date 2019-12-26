@@ -25,7 +25,8 @@
 //! This example demonstrates a simple file container:
 //!
 //! ```
-//! use binn_ir::Value;
+//! # #[cfg(feature="std")]
+//! use binn_ir::{Decoder, Encoder, Value};
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;
 //!
@@ -35,7 +36,7 @@
 //! let mut buf: Vec<u8> = vec![];
 //!
 //! // Magic number
-//! binn_ir::encode_u64(&mut buf, MAGIC_NUMBER)?;
+//! buf.encode_u64(MAGIC_NUMBER)?;
 //!
 //! // A single file header contains: name and hash
 //! let file_header = {
@@ -46,16 +47,16 @@
 //! };
 //! let file_content = b"is hot".to_vec();
 //!
-//! // Encode data (using ::clone() to use the variables later in assertions)
-//! binn_ir::encode_map(&mut buf, file_header.clone())?;
-//! binn_ir::encode_blob(&mut buf, file_content.clone())?;
+//! // Encode data (using clone() to use the variables later in assertions)
+//! buf.encode_map(file_header.clone())?;
+//! buf.encode_blob(file_content.clone())?;
 //!
 //! // Now decode data back
 //! let mut cursor = std::io::Cursor::new(buf);
-//! assert_eq!(binn_ir::decode_u64(&mut cursor)?, Some(MAGIC_NUMBER));
-//! assert_eq!(binn_ir::decode_map(&mut cursor)?, Some(file_header));
-//! assert_eq!(binn_ir::decode_blob(&mut cursor)?, Some(file_content));
-//! assert_eq!(binn_ir::decode(&mut cursor)?, None);
+//! assert_eq!(cursor.decode_u64()?, Some(MAGIC_NUMBER));
+//! assert_eq!(cursor.decode_map()?, Some(file_header));
+//! assert_eq!(cursor.decode_blob()?, Some(file_content));
+//! assert_eq!(cursor.decode()?, None);
 //! # Ok(()) }
 //! # #[cfg(feature="std")]
 //! # test().unwrap();
