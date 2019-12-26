@@ -25,7 +25,7 @@
 //! This example demonstrates a simple file container:
 //!
 //! ```
-//! use binn_ir::value::Value;
+//! use binn_ir::Value;
 //!
 //! const MAGIC_NUMBER: u64 = 0xABCD;
 //!
@@ -472,6 +472,7 @@ macro_rules! __ { ($($arg: tt)+) => {
 mod cmp;
 mod error;
 mod types;
+mod value_enum;
 
 #[cfg(feature="std")]
 mod decoder;
@@ -483,6 +484,7 @@ mod functions;
 pub use self::{
     error::*,
     types::*,
+    value_enum::*,
 };
 
 #[cfg(feature="std")]

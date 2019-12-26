@@ -6,10 +6,7 @@ use {
     alloc::string::String,
     std::io::Read,
 
-    crate::{
-        Blob, IoResult, List, Map, Object,
-        value::Value,
-    },
+    crate::{Blob, IoResult, List, Map, Object, Value},
 };
 
 /// # Decoder

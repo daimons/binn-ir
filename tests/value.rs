@@ -9,8 +9,8 @@ use {
     },
 
     binn_ir::{
-        Result,
-        value::{self, Value},
+        Result, Value,
+        value,
     },
 };
 

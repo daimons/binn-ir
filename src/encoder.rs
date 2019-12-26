@@ -6,10 +6,7 @@ use {
     alloc::string::String,
     std::io::Write,
 
-    crate::{
-        Blob, IoResult, List, Map, Object, Size,
-        value::Value,
-    },
+    crate::{Blob, IoResult, List, Map, Object, Size, Value},
 };
 
 /// # Encoder

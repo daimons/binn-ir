@@ -9,7 +9,7 @@ use {
         vec::Vec,
     },
 
-    crate::value::Value,
+    crate::Value,
 };
 
 /// # Size
