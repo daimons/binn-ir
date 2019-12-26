@@ -52,12 +52,16 @@ pub enum Value {
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
     /// - Type: [`TRUE`][value::TRUE]
     ///
+    /// [_Shortcuts_](#shortcuts-for-booleans)
+    ///
     /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
     /// [value::TRUE]: constant.TRUE.html
     True,
 
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
     /// - Type: [`FALSE`][value::FALSE]
+    ///
+    /// [_Shortcuts_](#shortcuts-for-booleans)
     ///
     /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
     /// [value::FALSE]: constant.FALSE.html

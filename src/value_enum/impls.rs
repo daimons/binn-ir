@@ -3,6 +3,7 @@
 //! # Implementations
 
 mod blob;
+mod r#bool;
 mod list;
 mod map;
 mod null;
