@@ -195,8 +195,6 @@ const SIZE_MASK: Size = 0x_8000_0000;
 #[derive(Clone, PartialEq)]
 pub enum Value {
 
-    /// # Null
-    ///
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
     /// - Type: [`NULL`][value::NULL]
     ///
@@ -204,8 +202,6 @@ pub enum Value {
     /// [value::NULL]: constant.NULL.html
     Null,
 
-    /// # True
-    ///
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
     /// - Type: [`TRUE`][value::TRUE]
     ///
@@ -213,8 +209,6 @@ pub enum Value {
     /// [value::TRUE]: constant.TRUE.html
     True,
 
-    /// # False
-    ///
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
     /// - Type: [`FALSE`][value::FALSE]
     ///
@@ -222,8 +216,6 @@ pub enum Value {
     /// [value::FALSE]: constant.FALSE.html
     False,
 
-    /// # 8-bit unsigned integer
-    ///
     /// - Storage: [`BYTE`][storage::BYTE]
     /// - Type: [`U8`][value::U8]
     ///
@@ -231,8 +223,6 @@ pub enum Value {
     /// [value::U8]: constant.U8.html
     U8(u8),
 
-    /// # 8-bit signed integer
-    ///
     /// - Storage: [`BYTE`][storage::BYTE]
     /// - Type: [`I8`][value::I8]
     ///
@@ -240,8 +230,6 @@ pub enum Value {
     /// [value::I8]: constant.I8.html
     I8(i8),
 
-    /// # 16-bit unsigned integer
-    ///
     /// - Storage: [`WORD`][storage::WORD]
     /// - Type: [`U16`][value::U16]
     ///
@@ -249,8 +237,6 @@ pub enum Value {
     /// [value::U16]: constant.U16.html
     U16(u16),
 
-    /// # 16-bit signed integer
-    ///
     /// - Storage: [`WORD`][storage::WORD]
     /// - Type: [`I16`][value::I16]
     ///
@@ -258,8 +244,6 @@ pub enum Value {
     /// [value::I16]: constant.I16.html
     I16(i16),
 
-    /// # 32-bit unsigned integer
-    ///
     /// - Storage: [`DWORD`][storage::DWORD]
     /// - Type: [`U32`][value::U32]
     ///
@@ -267,8 +251,6 @@ pub enum Value {
     /// [value::U32]: constant.U32.html
     U32(u32),
 
-    /// # 32-bit signed integer
-    ///
     /// - Storage: [`DWORD`][storage::DWORD]
     /// - Type: [`I32`][value::I32]
     ///
@@ -276,17 +258,6 @@ pub enum Value {
     /// [value::I32]: constant.I32.html
     I32(i32),
 
-    /// # Float
-    ///
-    /// - Storage: [`DWORD`][storage::DWORD]
-    /// - Type: [`FLOAT`][value::FLOAT]
-    ///
-    /// [storage::DWORD]: ../storage/constant.DWORD.html
-    /// [value::FLOAT]: constant.FLOAT.html
-    Float(f32),
-
-    /// # 64-bit unsigned integer
-    ///
     /// - Storage: [`QWORD`][storage::QWORD]
     /// - Type: [`U64`][value::U64]
     ///
@@ -294,8 +265,6 @@ pub enum Value {
     /// [value::U64]: constant.U64.html
     U64(u64),
 
-    /// # 64-bit signed integer
-    ///
     /// - Storage: [`QWORD`][storage::QWORD]
     /// - Type: [`I64`][value::I64]
     ///
@@ -303,8 +272,13 @@ pub enum Value {
     /// [value::I64]: constant.I64.html
     I64(i64),
 
-    /// # Double
+    /// - Storage: [`DWORD`][storage::DWORD]
+    /// - Type: [`FLOAT`][value::FLOAT]
     ///
+    /// [storage::DWORD]: ../storage/constant.DWORD.html
+    /// [value::FLOAT]: constant.FLOAT.html
+    Float(f32),
+
     /// - Storage: [`QWORD`][storage::QWORD]
     /// - Type: [`DOUBLE`][value::DOUBLE]
     ///
@@ -312,8 +286,6 @@ pub enum Value {
     /// [value::DOUBLE]: constant.DOUBLE.html
     Double(f64),
 
-    /// # Text
-    ///
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`TEXT`][value::TEXT]
     ///
@@ -321,8 +293,6 @@ pub enum Value {
     /// [value::TEXT]: constant.TEXT.html
     Text(String),
 
-    /// # Date time
-    ///
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`DATE_TIME`][value::DATE_TIME]
     ///
@@ -330,8 +300,6 @@ pub enum Value {
     /// [value::DATE_TIME]: constant.DATE_TIME.html
     DateTime(String),
 
-    /// # Date
-    ///
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`DATE`][value::DATE]
     ///
@@ -339,8 +307,6 @@ pub enum Value {
     /// [value::DATE]: constant.DATE.html
     Date(String),
 
-    /// # Time
-    ///
     /// - Storage: [`STRING`][storage::STRING]
     /// - Type: [`TIME`][value::TIME]
     ///
@@ -357,8 +323,6 @@ pub enum Value {
     /// [value::DECIMAL_STR]: constant.DECIMAL_STR.html
     DecimalStr(String),
 
-    /// # Blob
-    ///
     /// - Storage: [`BLOB`][storage::BLOB]
     /// - Type: [`BLOB`][value::BLOB]
     ///
@@ -366,8 +330,6 @@ pub enum Value {
     /// [value::BLOB]: constant.BLOB.html
     Blob(Blob),
 
-    /// # List
-    ///
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
     /// - Type: [`LIST`][value::LIST]
     ///
@@ -375,8 +337,6 @@ pub enum Value {
     /// [value::LIST]: constant.LIST.html
     List(List),
 
-    /// # Map
-    ///
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
     /// - Type: [`MAP`][value::MAP]
     ///
@@ -384,8 +344,6 @@ pub enum Value {
     /// [value::MAP]: constant.MAP.html
     Map(Map),
 
-    /// # Object
-    ///
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
     /// - Type: [`OBJECT`][value::OBJECT]
     ///

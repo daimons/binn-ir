@@ -34,8 +34,8 @@ pub fn encode_null(buf: &mut dyn Write) -> IoResult<Size> {
 ///
 /// [`True`]: value/enum.Value.html#variant.True
 /// [`False`]: value/enum.Value.html#variant.False
-pub fn encode_bool<T>(buf: &mut dyn Write, b: T) -> IoResult<Size> where T: Into<bool> {
-    match b.into() {
+pub fn encode_bool(buf: &mut dyn Write, b: bool) -> IoResult<Size> {
+    match b {
         true => Value::True.encode(buf),
         false => Value::False.encode(buf),
     }
@@ -46,8 +46,8 @@ pub fn encode_bool<T>(buf: &mut dyn Write, b: T) -> IoResult<Size> where T: Into
 /// Result: total bytes that have been written.
 ///
 /// [`U8`]: value/enum.Value.html#variant.U8
-pub fn encode_u8<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<u8> {
-    Value::U8(u.into()).encode(buf)
+pub fn encode_u8(buf: &mut dyn Write, u: u8) -> IoResult<Size> {
+    Value::U8(u).encode(buf)
 }
 
 /// # Encodes an [`I8`]
@@ -55,8 +55,8 @@ pub fn encode_u8<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<u
 /// Result: total bytes that have been written.
 ///
 /// [`I8`]: value/enum.Value.html#variant.I8
-pub fn encode_i8<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<i8> {
-    Value::I8(i.into()).encode(buf)
+pub fn encode_i8(buf: &mut dyn Write, i: i8) -> IoResult<Size> {
+    Value::I8(i).encode(buf)
 }
 
 /// # Encodes a [`U16`]
@@ -64,8 +64,8 @@ pub fn encode_i8<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<i
 /// Result: total bytes that have been written.
 ///
 /// [`U16`]: value/enum.Value.html#variant.U16
-pub fn encode_u16<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<u16> {
-    Value::U16(u.into()).encode(buf)
+pub fn encode_u16(buf: &mut dyn Write, u: u16) -> IoResult<Size> {
+    Value::U16(u).encode(buf)
 }
 
 /// # Encodes an [`I16`]
@@ -73,8 +73,8 @@ pub fn encode_u16<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<
 /// Result: total bytes that have been written.
 ///
 /// [`I16`]: value/enum.Value.html#variant.I16
-pub fn encode_i16<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<i16> {
-    Value::I16(i.into()).encode(buf)
+pub fn encode_i16(buf: &mut dyn Write, i: i16) -> IoResult<Size> {
+    Value::I16(i).encode(buf)
 }
 
 /// # Encodes a [`U32`]
@@ -82,8 +82,8 @@ pub fn encode_i16<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<
 /// Result: total bytes that have been written.
 ///
 /// [`U32`]: value/enum.Value.html#variant.U32
-pub fn encode_u32<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<u32> {
-    Value::U32(u.into()).encode(buf)
+pub fn encode_u32(buf: &mut dyn Write, u: u32) -> IoResult<Size> {
+    Value::U32(u).encode(buf)
 }
 
 /// # Encodes an [`I32`]
@@ -91,8 +91,8 @@ pub fn encode_u32<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<
 /// Result: total bytes that have been written.
 ///
 /// [`I32`]: value/enum.Value.html#variant.I32
-pub fn encode_i32<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<i32> {
-    Value::I32(i.into()).encode(buf)
+pub fn encode_i32(buf: &mut dyn Write, i: i32) -> IoResult<Size> {
+    Value::I32(i).encode(buf)
 }
 
 /// # Encodes a [`U64`]
@@ -100,8 +100,8 @@ pub fn encode_i32<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<
 /// Result: total bytes that have been written.
 ///
 /// [`U64`]: value/enum.Value.html#variant.U64
-pub fn encode_u64<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<u64> {
-    Value::U64(u.into()).encode(buf)
+pub fn encode_u64(buf: &mut dyn Write, u: u64) -> IoResult<Size> {
+    Value::U64(u).encode(buf)
 }
 
 /// # Encodes an [`I64`]
@@ -109,8 +109,8 @@ pub fn encode_u64<T>(buf: &mut dyn Write, u: T) -> IoResult<Size> where T: Into<
 /// Result: total bytes that have been written.
 ///
 /// [`I64`]: value/enum.Value.html#variant.I64
-pub fn encode_i64<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<i64> {
-    Value::I64(i.into()).encode(buf)
+pub fn encode_i64(buf: &mut dyn Write, i: i64) -> IoResult<Size> {
+    Value::I64(i).encode(buf)
 }
 
 /// # Encodes a [`Float`]
@@ -118,8 +118,8 @@ pub fn encode_i64<T>(buf: &mut dyn Write, i: T) -> IoResult<Size> where T: Into<
 /// Result: total bytes that have been written.
 ///
 /// [`Float`]: value/enum.Value.html#variant.Float
-pub fn encode_float<T>(buf: &mut dyn Write, f: T) -> IoResult<Size> where T: Into<f32> {
-    Value::Float(f.into()).encode(buf)
+pub fn encode_float(buf: &mut dyn Write, f: f32) -> IoResult<Size> {
+    Value::Float(f).encode(buf)
 }
 
 /// # Encodes a [`Double`]
@@ -127,8 +127,8 @@ pub fn encode_float<T>(buf: &mut dyn Write, f: T) -> IoResult<Size> where T: Int
 /// Result: total bytes that have been written.
 ///
 /// [`Double`]: value/enum.Value.html#variant.Double
-pub fn encode_double<T>(buf: &mut dyn Write, d: T) -> IoResult<Size> where T: Into<f64> {
-    Value::Double(d.into()).encode(buf)
+pub fn encode_double(buf: &mut dyn Write, d: f64) -> IoResult<Size> {
+    Value::Double(d).encode(buf)
 }
 
 /// # Encodes a [`Text`]

@@ -474,6 +474,10 @@ mod error;
 mod types;
 
 #[cfg(feature="std")]
+mod decoder;
+#[cfg(feature="std")]
+mod encoder;
+#[cfg(feature="std")]
 mod functions;
 
 pub use self::{
@@ -483,6 +487,8 @@ pub use self::{
 
 #[cfg(feature="std")]
 pub use self::{
+    decoder::*,
+    encoder::*,
     functions::*,
 };
 
