@@ -18,7 +18,7 @@ use {
 use {
     std::io::{Cursor, ErrorKind},
 
-    binn_ir::{IoResult, Map, Object, Size},
+    binn_ir::{Decoder, Encoder, IoResult, Map, Object, Size},
 };
 
 mod cmp;
@@ -124,19 +124,19 @@ fn basic_type_encoded_sizes() -> IoResult<()> {
         )+
     }};}
     encode_and_verify!(
-        binn_ir::encode_null(&mut buf, )?, 1,
-        binn_ir::encode_bool(&mut buf, true)?, 1,
-        binn_ir::encode_bool(&mut buf, false)?, 1,
-        binn_ir::encode_u8(&mut buf, 0_u8)?, 2,
-        binn_ir::encode_i8(&mut buf, 0_i8)?, 2,
-        binn_ir::encode_u16(&mut buf, 0_u16)?, 3,
-        binn_ir::encode_i16(&mut buf, 0_i16)?, 3,
-        binn_ir::encode_u32(&mut buf, 0_u32)?, 5,
-        binn_ir::encode_i32(&mut buf, 0_i32)?, 5,
-        binn_ir::encode_u64(&mut buf, 0_u64)?, 9,
-        binn_ir::encode_i64(&mut buf, 0_i64)?, 9,
-        binn_ir::encode_float(&mut buf, 0.0)?, 5,
-        binn_ir::encode_double(&mut buf, 0.0)?, 9,
+        buf.encode_null()?, 1,
+        buf.encode_bool(true)?, 1,
+        buf.encode_bool(false)?, 1,
+        buf.encode_u8(0)?, 2,
+        buf.encode_i8(0)?, 2,
+        buf.encode_u16(0)?, 3,
+        buf.encode_i16(0)?, 3,
+        buf.encode_u32(0)?, 5,
+        buf.encode_i32(0)?, 5,
+        buf.encode_u64(0)?, 9,
+        buf.encode_i64(0)?, 9,
+        buf.encode_float(0.0)?, 5,
+        buf.encode_double(0.0)?, 9,
     );
 
     Ok(())
@@ -147,27 +147,27 @@ fn basic_type_encoded_sizes() -> IoResult<()> {
 fn basic_types() -> IoResult<()> {
     // Encode
     let mut buf = vec![];
-    binn_ir::encode_null(&mut buf)?;
-    binn_ir::encode_bool(&mut buf, true)?;
-    binn_ir::encode_bool(&mut buf, false)?;
-    binn_ir::encode_u8(&mut buf, 123_u8)?;
-    binn_ir::encode_i8(&mut buf, -123_i8)?;
-    binn_ir::encode_u16(&mut buf, 12345_u16)?;
-    binn_ir::encode_i16(&mut buf, -12345_i16)?;
-    binn_ir::encode_u32(&mut buf, 123456789_u32)?;
-    binn_ir::encode_i32(&mut buf, -123456789_i32)?;
-    binn_ir::encode_float(&mut buf, 123.0)?;
-    binn_ir::encode_float(&mut buf, -123.0)?;
-    binn_ir::encode_u64(&mut buf, 98765432123_u64)?;
-    binn_ir::encode_i64(&mut buf, -98765432123_i64)?;
-    binn_ir::encode_double(&mut buf, 0xAABB_CCDD_u64 as f64)?;
-    binn_ir::encode_double(&mut buf, -0xAABB_CCDD_i64 as f64)?;
-    binn_ir::encode_text(&mut buf, String::from("Mr. Reynholm"))?;
-    binn_ir::encode_text(&mut buf, "hello-jen")?;
-    binn_ir::encode_date_time(&mut buf, String::from("hermione"))?;
-    binn_ir::encode_date(&mut buf, "ron")?;
-    binn_ir::encode_time(&mut buf, String::from("harry"))?;
-    binn_ir::encode_decimal_str(&mut buf, "ginny\t\0\n")?;
+    buf.encode_null()?;
+    buf.encode_bool(true)?;
+    buf.encode_bool(false)?;
+    buf.encode_u8(123_u8)?;
+    buf.encode_i8(-123_i8)?;
+    buf.encode_u16(12345_u16)?;
+    buf.encode_i16(-12345_i16)?;
+    buf.encode_u32(123456789_u32)?;
+    buf.encode_i32(-123456789_i32)?;
+    buf.encode_float(123.0)?;
+    buf.encode_float(-123.0)?;
+    buf.encode_u64(98765432123_u64)?;
+    buf.encode_i64(-98765432123_i64)?;
+    buf.encode_double(0xAABB_CCDD_u64 as f64)?;
+    buf.encode_double(-0xAABB_CCDD_i64 as f64)?;
+    buf.encode_text(String::from("Mr. Reynholm"))?;
+    buf.encode_text("hello-jen")?;
+    buf.encode_date_time(String::from("hermione"))?;
+    buf.encode_date("ron")?;
+    buf.encode_time(String::from("harry"))?;
+    buf.encode_decimal_str("ginny\t\0\n")?;
 
     let blob_strings = vec![
         "roy eats moss' orange".repeat(20),
@@ -176,39 +176,39 @@ fn basic_types() -> IoResult<()> {
     ];
     for s in blob_strings.iter() {
         assert!(s.len() > i8::max_value() as usize);
-        binn_ir::encode_blob(&mut buf, s.as_bytes())?;
+        buf.encode_blob(s.as_bytes())?;
     }
 
     // Decode
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(binn_ir::decode_null(&mut cursor)?, Some(()));
-    assert_eq!(binn_ir::decode_bool(&mut cursor)?, Some(true));
-    assert_eq!(binn_ir::decode_bool(&mut cursor)?, Some(false));
-    assert_eq!(binn_ir::decode_u8(&mut cursor)?, Some(123));
-    assert_eq!(binn_ir::decode_i8(&mut cursor)?, Some(-123));
-    assert_eq!(binn_ir::decode_u16(&mut cursor)?, Some(12345));
-    assert_eq!(binn_ir::decode_i16(&mut cursor)?, Some(-12345));
-    assert_eq!(binn_ir::decode_u32(&mut cursor)?, Some(123456789));
-    assert_eq!(binn_ir::decode_i32(&mut cursor)?, Some(-123456789));
-    assert_eq!(binn_ir::decode_float(&mut cursor)?, Some(123.0));
-    assert_eq!(binn_ir::decode_float(&mut cursor)?, Some(-123.0));
-    assert_eq!(binn_ir::decode_u64(&mut cursor)?, Some(98765432123));
-    assert_eq!(binn_ir::decode_i64(&mut cursor)?, Some(-98765432123));
-    assert_eq!(binn_ir::decode_double(&mut cursor)?, Some(0xAABB_CCDD_u64 as f64));
-    assert_eq!(binn_ir::decode_double(&mut cursor)?, Some(-0xAABB_CCDD_i64 as f64));
-    assert_eq!(binn_ir::decode_text(&mut cursor)?.unwrap(), "Mr. Reynholm");
-    assert_eq!(binn_ir::decode_text(&mut cursor)?.unwrap(), "hello-jen");
-    assert_eq!(binn_ir::decode_date_time(&mut cursor)?.unwrap(), "hermione");
-    assert_eq!(binn_ir::decode_date(&mut cursor)?.unwrap(), "ron");
-    assert_eq!(binn_ir::decode_time(&mut cursor)?.unwrap(), "harry");
-    assert_eq!(binn_ir::decode_decimal_str(&mut cursor)?.unwrap(), "ginny\t\0\n");
+    assert_eq!(cursor.decode_null()?, Some(()));
+    assert_eq!(cursor.decode_bool()?, Some(true));
+    assert_eq!(cursor.decode_bool()?, Some(false));
+    assert_eq!(cursor.decode_u8()?, Some(123));
+    assert_eq!(cursor.decode_i8()?, Some(-123));
+    assert_eq!(cursor.decode_u16()?, Some(12345));
+    assert_eq!(cursor.decode_i16()?, Some(-12345));
+    assert_eq!(cursor.decode_u32()?, Some(123456789));
+    assert_eq!(cursor.decode_i32()?, Some(-123456789));
+    assert_eq!(cursor.decode_float()?, Some(123.0));
+    assert_eq!(cursor.decode_float()?, Some(-123.0));
+    assert_eq!(cursor.decode_u64()?, Some(98765432123));
+    assert_eq!(cursor.decode_i64()?, Some(-98765432123));
+    assert_eq!(cursor.decode_double()?, Some(0xAABB_CCDD_u64 as f64));
+    assert_eq!(cursor.decode_double()?, Some(-0xAABB_CCDD_i64 as f64));
+    assert_eq!(cursor.decode_text()?.unwrap(), "Mr. Reynholm");
+    assert_eq!(cursor.decode_text()?.unwrap(), "hello-jen");
+    assert_eq!(cursor.decode_date_time()?.unwrap(), "hermione");
+    assert_eq!(cursor.decode_date()?.unwrap(), "ron");
+    assert_eq!(cursor.decode_time()?.unwrap(), "harry");
+    assert_eq!(cursor.decode_decimal_str()?.unwrap(), "ginny\t\0\n");
 
     for s in blob_strings.iter() {
-        assert_eq!(binn_ir::decode_blob(&mut cursor)?.unwrap(), s.as_bytes());
+        assert_eq!(cursor.decode_blob()?.unwrap(), s.as_bytes());
     }
 
     // Verify position
-    assert_eq!(binn_ir::decode(&mut cursor)?, None);
+    assert_eq!(cursor.decode()?, None);
     assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
 
     Ok(())
@@ -217,7 +217,7 @@ fn basic_types() -> IoResult<()> {
 /// # Tries to decode from an invalid source, then unwraps an error
 #[cfg(feature="std")]
 macro_rules! decode_from_invalid_source { ($bytes: expr) => {{
-    binn_ir::decode(&mut Cursor::new($bytes)).unwrap_err()
+    Cursor::new($bytes).decode().unwrap_err()
 }};}
 
 /// # Decodes from invalid source and asserts
@@ -260,16 +260,16 @@ fn blobs() -> IoResult<()> {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
     ];
     let mut cursor = Cursor::new(&buf);
-    assert_eq!(binn_ir::decode_blob(&mut cursor)?.unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
-    assert_eq!(binn_ir::decode_null(&mut cursor)?, None);
+    assert_eq!(cursor.decode_blob()?.unwrap(), [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
+    assert_eq!(cursor.decode_null()?, None);
     assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
 
     // Small blob with 4-byte size; but data is missing
-    match binn_ir::decode_blob(&mut Cursor::new(vec![
+    match Cursor::new(vec![
         value::BLOB,
         // Size: 15 bytes
         0x80, 0x00, 0x00, 0x0F,
-    ])).unwrap_err().into_inner() {
+    ]).decode_blob().unwrap_err().into_inner() {
         Some(err) => assert_eq!(err.description().contains(binn_ir::TAG), true),
         None => panic!("value::Decoder::decode_blob() -> input was invalid; expected an inner error, got: None"),
     };
@@ -305,11 +305,11 @@ fn lists() -> IoResult<()> {
     let mut cursor = Cursor::new(&buf);
     match list {
         Value::List(list) => {
-            assert_eq!(binn_ir::decode_list(&mut cursor)?.unwrap(), list);
+            assert_eq!(cursor.decode_list()?.unwrap(), list);
             println!("Verified: {:?}", &list);
 
             // Verify position
-            assert_eq!(binn_ir::decode_map(&mut cursor).unwrap(), None);
+            assert_eq!(cursor.decode_map()?, None);
             assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
@@ -374,11 +374,11 @@ fn maps() -> IoResult<()> {
     let mut cursor = Cursor::new(&buf);
     match map {
         Value::Map(map) => {
-            assert_eq!(binn_ir::decode_map(&mut cursor)?.unwrap(), map);
+            assert_eq!(cursor.decode_map()?.unwrap(), map);
             println!("Verified: {:?}", &map);
 
             // Verify position
-            assert_eq!(binn_ir::decode_object(&mut cursor)?, None);
+            assert_eq!(cursor.decode_object()?, None);
             assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
@@ -444,13 +444,13 @@ fn objects() -> IoResult<()> {
     let mut cursor = Cursor::new(&buf);
     match (list, object) {
         (Value::List(list), Value::Object(object)) => {
-            assert_eq!(binn_ir::decode_list(&mut cursor)?.unwrap(), list);
+            assert_eq!(cursor.decode_list()?.unwrap(), list);
             println!("Verified: {:?}", &list);
-            assert_eq!(binn_ir::decode_object(&mut cursor)?.unwrap(), object);
+            assert_eq!(cursor.decode_object()?.unwrap(), object);
             println!("Verified: {:?}", &object);
 
             // Verify position
-            assert_eq!(binn_ir::decode_null(&mut cursor)?, None);
+            assert_eq!(cursor.decode_null()?, None);
             assert_eq!(cursor.position().cmp_to(&buf.len()), Ordering::Equal);
         },
         _ => unreachable!(),
