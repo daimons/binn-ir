@@ -368,7 +368,6 @@ fn maps() -> IoResult<()> {
 
     let mut buf = vec![];
     map.encode(&mut buf)?;
-
     assert_eq!(map.size()?.cmp_to(&buf.len()), Ordering::Equal);
 
     let mut cursor = Cursor::new(&buf);
@@ -439,6 +438,7 @@ fn objects() -> IoResult<()> {
     let mut buf = vec![];
     list.encode(&mut buf)?;
     object.encode(&mut buf)?;
+    assert_eq!(list.size()?.checked_add(object.size()?).unwrap().cmp_to(&buf.len()), Ordering::Equal);
 
     // Decode
     let mut cursor = Cursor::new(&buf);

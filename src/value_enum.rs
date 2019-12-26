@@ -974,36 +974,29 @@ impl Value {
     /// Returns the number of bytes written.
     #[cfg(feature="std")]
     pub fn encode(&self, stream: &mut dyn Write) -> IoResult<Size> {
-        let expected_result = self.size()?;
-
-        let result = match self {
-            Value::Null => stream.write_all(&[crate::value::NULL]).map(|()| 1)?,
-            Value::True => stream.write_all(&[crate::value::TRUE]).map(|()| 1)?,
-            Value::False => stream.write_all(&[crate::value::FALSE]).map(|()| 1)?,
-            Value::U8(u) => stream.write_all(&[crate::value::U8, *u]).map(|()| 2)?,
-            Value::I8(i) => write_int_be!(crate::value::I8, stream)? + write_int_be!(i, stream)?,
-            Value::U16(u) => write_int_be!(crate::value::U16, stream)? + write_int_be!(u, stream)?,
-            Value::I16(i) => write_int_be!(crate::value::I16, stream)? + write_int_be!(i, stream)?,
-            Value::U32(u) => write_int_be!(crate::value::U32, stream)? + write_int_be!(u, stream)?,
-            Value::I32(i) => write_int_be!(crate::value::I32, stream)? + write_int_be!(i, stream)?,
-            Value::U64(u) => write_int_be!(crate::value::U64, stream)? + write_int_be!(u, stream)?,
-            Value::I64(i) => write_int_be!(crate::value::I64, stream)? + write_int_be!(i, stream)?,
-            Value::Float(f) => write_int_be!(crate::value::FLOAT, stream)? + write_int_be!(f.to_bits(), stream)?,
-            Value::Double(f) => write_int_be!(crate::value::DOUBLE, stream)? + write_int_be!(f.to_bits(), stream)?,
-            Value::Text(ref t) => encode_value_str(crate::value::TEXT, t.as_str(), stream)?,
-            Value::DateTime(ref dt) => encode_value_str(crate::value::DATE_TIME, dt.as_str(), stream)?,
-            Value::Date(ref d) => encode_value_str(crate::value::DATE, d.as_str(), stream)?,
-            Value::Time(ref t) => encode_value_str(crate::value::TIME, t.as_str(), stream)?,
-            Value::DecimalStr(ref ds) => encode_value_str(crate::value::DECIMAL_STR, ds.as_str(), stream)?,
-            Value::Blob(ref bytes) => encode_value_blob(bytes.as_slice(), stream)?,
-            Value::List(ref list) => encode_value_list(expected_result, list, stream)?,
-            Value::Map(ref map) => encode_value_map(expected_result, map, stream)?,
-            Value::Object(ref object) => encode_value_object(expected_result, object, stream)?,
-        };
-
-        match result == expected_result {
-            true => Ok(result),
-            false => Err(io::Error::new(ErrorKind::Other, __!("expected to write {} bytes, result: {}", expected_result, result))),
+        match self {
+            Value::Null => stream.write_all(&[crate::value::NULL]).map(|()| 1),
+            Value::True => stream.write_all(&[crate::value::TRUE]).map(|()| 1),
+            Value::False => stream.write_all(&[crate::value::FALSE]).map(|()| 1),
+            Value::U8(u) => stream.write_all(&[crate::value::U8, *u]).map(|()| 2),
+            Value::I8(i) => Ok(write_int_be!(crate::value::I8, stream)? + write_int_be!(i, stream)?),
+            Value::U16(u) => Ok(write_int_be!(crate::value::U16, stream)? + write_int_be!(u, stream)?),
+            Value::I16(i) => Ok(write_int_be!(crate::value::I16, stream)? + write_int_be!(i, stream)?),
+            Value::U32(u) => Ok(write_int_be!(crate::value::U32, stream)? + write_int_be!(u, stream)?),
+            Value::I32(i) => Ok(write_int_be!(crate::value::I32, stream)? + write_int_be!(i, stream)?),
+            Value::U64(u) => Ok(write_int_be!(crate::value::U64, stream)? + write_int_be!(u, stream)?),
+            Value::I64(i) => Ok(write_int_be!(crate::value::I64, stream)? + write_int_be!(i, stream)?),
+            Value::Float(f) => Ok(write_int_be!(crate::value::FLOAT, stream)? + write_int_be!(f.to_bits(), stream)?),
+            Value::Double(f) => Ok(write_int_be!(crate::value::DOUBLE, stream)? + write_int_be!(f.to_bits(), stream)?),
+            Value::Text(t) => encode_value_str(crate::value::TEXT, t.as_str(), stream),
+            Value::DateTime(dt) => encode_value_str(crate::value::DATE_TIME, dt.as_str(), stream),
+            Value::Date(d) => encode_value_str(crate::value::DATE, d.as_str(), stream),
+            Value::Time(t) => encode_value_str(crate::value::TIME, t.as_str(), stream),
+            Value::DecimalStr(ds) => encode_value_str(crate::value::DECIMAL_STR, ds.as_str(), stream),
+            Value::Blob(bytes) => encode_value_blob(bytes.as_slice(), stream),
+            Value::List(list) => encode_value_list(self.size()?, list, stream),
+            Value::Map(map) => encode_value_map(self.size()?, map, stream),
+            Value::Object(object) => encode_value_object(self.size()?, object, stream),
         }
     }
 
