@@ -968,11 +968,11 @@ impl Value {
     pub fn encode(&self, stream: &mut dyn Write) -> IoResult<Size> {
         let expected_result = self.size()?;
 
-        let result = match *self {
-            Value::Null => stream.write_all(&[crate::value::NULL]).and(Ok(1))?,
-            Value::True => stream.write_all(&[crate::value::TRUE]).and(Ok(1))?,
-            Value::False => stream.write_all(&[crate::value::FALSE]).and(Ok(1))?,
-            Value::U8(u) => stream.write_all(&[crate::value::U8, u]).and(Ok(2))?,
+        let result = match self {
+            Value::Null => stream.write_all(&[crate::value::NULL]).map(|()| 1)?,
+            Value::True => stream.write_all(&[crate::value::TRUE]).map(|()| 1)?,
+            Value::False => stream.write_all(&[crate::value::FALSE]).map(|()| 1)?,
+            Value::U8(u) => stream.write_all(&[crate::value::U8, *u]).map(|()| 2)?,
             Value::I8(i) => write_int_be!(crate::value::I8, stream)? + write_int_be!(i, stream)?,
             Value::U16(u) => write_int_be!(crate::value::U16, stream)? + write_int_be!(u, stream)?,
             Value::I16(i) => write_int_be!(crate::value::I16, stream)? + write_int_be!(i, stream)?,
