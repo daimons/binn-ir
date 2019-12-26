@@ -19,6 +19,8 @@
 //!
 //! - Unless _absolutely necessary_, the project will **not** use any dependency.
 //! - `IR` stands for _implementation in Rust_.
+//! - The crate uses `#![no_std]` by default. Documentation is built with all features, which include `std`. If you see some components from
+//!   [`std`][crate:std] crate, you have to use that feature.
 //!
 //! ## Quick examples
 //!
@@ -419,6 +421,7 @@
 //! [Binn]: https://github.com/liteserver/binn
 //! [Binn:License]: https://github.com/liteserver/binn/blob/master/LICENSE
 //! [crate:alloc]: https://doc.rust-lang.org/alloc/
+//! [crate:std]: https://doc.rust-lang.org/std/
 
 #![warn(missing_docs)]
 #![no_std]
