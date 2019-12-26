@@ -196,6 +196,8 @@ pub enum Value {
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
     /// - Type: [`OBJECT`][value::OBJECT]
     ///
+    /// [_Shortcuts_](#shortcuts-for-object)
+    ///
     /// ## Notes
     ///
     /// - Key lengths must be `<=` [`OBJECT_KEY_MAX_LEN`][value::OBJECT_KEY_MAX_LEN].
@@ -1012,18 +1014,6 @@ impl Value {
         match self {
             Value::Text(s) => Ok(s),
             _ => Err(Error::from(__!("Value is not a Text"))),
-        }
-    }
-
-    /// # If the value is an object, inserts new item into it
-    ///
-    /// On success, returns previous value (if it existed).
-    ///
-    /// Returns an error if the value is not an object.
-    pub fn object_insert<K, V>(&mut self, key: K, value: V) -> Result<Option<Value>> where K: Into<ObjectKey>, V: Into<Self> {
-        match self {
-            Value::Object(object) => Ok(crate::object_insert(object, key, value)),
-            _ => Err(Error::from(__!("Value is not an object"))),
         }
     }
 
