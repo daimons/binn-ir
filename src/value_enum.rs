@@ -607,13 +607,13 @@ impl TryFrom<Value> for Object {
 
 }
 
-/// # Converts an integer value to big-endian order and writes it into the buffer
+/// # Converts an integer value to big-endian order and writes it into the stream
 ///
 /// Returns: number of bytes written, as `IoResult<Size>`.
 #[cfg(feature="std")]
-macro_rules! write_int_be { ($v: expr, $buf: ident) => {{
+macro_rules! write_int_be { ($v: expr, $stream: ident) => {{
     let bytes = $v.to_be_bytes();
-    $buf.write_all(&bytes).map(|()| bytes.len() as Size)
+    $stream.write_all(&bytes).map(|()| bytes.len() as Size)
 }};}
 
 /// # Reads an integer value in big-endian format from std::io::Read
@@ -625,15 +625,15 @@ macro_rules! read_int_be { ($ty: ty, $source: ident) => {{
     $source.read_exact(&mut buf).map(|()| <$ty>::from_be_bytes(buf))
 }};}
 
-/// # Writes size (u32) into the buffer
+/// # Writes size (u32) into the stream
 ///
 /// Result: number of bytes written - `IoResult<Size>`.
 #[cfg(feature="std")]
-macro_rules! write_size { ($size: expr, $buf: ident) => {{
+macro_rules! write_size { ($size: expr, $stream: ident) => {{
     let size = $size;
     match size > MAX_I8_AS_U32 {
-        true => write_int_be!(size | SIZE_MASK, $buf),
-        false => write_int_be!(size as u8, $buf),
+        true => write_int_be!(size | SIZE_MASK, $stream),
+        false => write_int_be!(size as u8, $stream),
     }
 }};}
 
@@ -961,36 +961,36 @@ impl Value {
         }
     }
 
-    /// # Encodes this value into a buffer
+    /// # Encodes this value into a stream
     ///
     /// Returns the number of bytes written.
     #[cfg(feature="std")]
-    pub fn encode(&self, buf: &mut dyn Write) -> IoResult<Size> {
+    pub fn encode(&self, stream: &mut dyn Write) -> IoResult<Size> {
         let expected_result = self.size()?;
 
         let result = match *self {
-            Value::Null => buf.write_all(&[crate::value::NULL]).and(Ok(1))?,
-            Value::True => buf.write_all(&[crate::value::TRUE]).and(Ok(1))?,
-            Value::False => buf.write_all(&[crate::value::FALSE]).and(Ok(1))?,
-            Value::U8(u) => buf.write_all(&[crate::value::U8, u]).and(Ok(2))?,
-            Value::I8(i) => sum!(write_int_be!(crate::value::I8, buf)?, write_int_be!(i, buf)?)?,
-            Value::U16(u) => sum!(write_int_be!(crate::value::U16, buf)?, write_int_be!(u, buf)?)?,
-            Value::I16(i) => sum!(write_int_be!(crate::value::I16, buf)?, write_int_be!(i, buf)?)?,
-            Value::U32(u) => sum!(write_int_be!(crate::value::U32, buf)?, write_int_be!(u, buf)?)?,
-            Value::I32(i) => sum!(write_int_be!(crate::value::I32, buf)?, write_int_be!(i, buf)?)?,
-            Value::Float(f) => sum!(write_int_be!(crate::value::FLOAT, buf)?, write_int_be!(f.to_bits(), buf)?)?,
-            Value::U64(u) => sum!(write_int_be!(crate::value::U64, buf)?, write_int_be!(u, buf)?)?,
-            Value::I64(i) => sum!(write_int_be!(crate::value::I64, buf)?, write_int_be!(i, buf)?)?,
-            Value::Double(f) => sum!(write_int_be!(crate::value::DOUBLE, buf)?, write_int_be!(f.to_bits(), buf)?)?,
-            Value::Text(ref t) => encode_value_str(crate::value::TEXT, t.as_str(), buf)?,
-            Value::DateTime(ref dt) => encode_value_str(crate::value::DATE_TIME, dt.as_str(), buf)?,
-            Value::Date(ref d) => encode_value_str(crate::value::DATE, d.as_str(), buf)?,
-            Value::Time(ref t) => encode_value_str(crate::value::TIME, t.as_str(), buf)?,
-            Value::DecimalStr(ref ds) => encode_value_str(crate::value::DECIMAL_STR, ds.as_str(), buf)?,
-            Value::Blob(ref bytes) => encode_value_blob(bytes.as_slice(), buf)?,
-            Value::List(ref list) => encode_value_list(expected_result, list, buf)?,
-            Value::Map(ref map) => encode_value_map(expected_result, map, buf)?,
-            Value::Object(ref object) => encode_value_object(expected_result, object, buf)?,
+            Value::Null => stream.write_all(&[crate::value::NULL]).and(Ok(1))?,
+            Value::True => stream.write_all(&[crate::value::TRUE]).and(Ok(1))?,
+            Value::False => stream.write_all(&[crate::value::FALSE]).and(Ok(1))?,
+            Value::U8(u) => stream.write_all(&[crate::value::U8, u]).and(Ok(2))?,
+            Value::I8(i) => sum!(write_int_be!(crate::value::I8, stream)?, write_int_be!(i, stream)?)?,
+            Value::U16(u) => sum!(write_int_be!(crate::value::U16, stream)?, write_int_be!(u, stream)?)?,
+            Value::I16(i) => sum!(write_int_be!(crate::value::I16, stream)?, write_int_be!(i, stream)?)?,
+            Value::U32(u) => sum!(write_int_be!(crate::value::U32, stream)?, write_int_be!(u, stream)?)?,
+            Value::I32(i) => sum!(write_int_be!(crate::value::I32, stream)?, write_int_be!(i, stream)?)?,
+            Value::Float(f) => sum!(write_int_be!(crate::value::FLOAT, stream)?, write_int_be!(f.to_bits(), stream)?)?,
+            Value::U64(u) => sum!(write_int_be!(crate::value::U64, stream)?, write_int_be!(u, stream)?)?,
+            Value::I64(i) => sum!(write_int_be!(crate::value::I64, stream)?, write_int_be!(i, stream)?)?,
+            Value::Double(f) => sum!(write_int_be!(crate::value::DOUBLE, stream)?, write_int_be!(f.to_bits(), stream)?)?,
+            Value::Text(ref t) => encode_value_str(crate::value::TEXT, t.as_str(), stream)?,
+            Value::DateTime(ref dt) => encode_value_str(crate::value::DATE_TIME, dt.as_str(), stream)?,
+            Value::Date(ref d) => encode_value_str(crate::value::DATE, d.as_str(), stream)?,
+            Value::Time(ref t) => encode_value_str(crate::value::TIME, t.as_str(), stream)?,
+            Value::DecimalStr(ref ds) => encode_value_str(crate::value::DECIMAL_STR, ds.as_str(), stream)?,
+            Value::Blob(ref bytes) => encode_value_blob(bytes.as_slice(), stream)?,
+            Value::List(ref list) => encode_value_list(expected_result, list, stream)?,
+            Value::Map(ref map) => encode_value_map(expected_result, map, stream)?,
+            Value::Object(ref object) => encode_value_object(expected_result, object, stream)?,
         };
 
         match result == expected_result {
@@ -1154,9 +1154,9 @@ fn size_of_object(object: &Object) -> Result<Size> {
     }
 }
 
-/// # Encodes a `Value`'s string into the buffer
+/// # Encodes a `Value`'s string into the stream
 #[cfg(feature="std")]
-fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_str(ty: u8, s: &str, stream: &mut dyn Write) -> IoResult<Size> {
     let bytes = s.as_bytes();
     let str_len = {
         let tmp = bytes.len();
@@ -1173,24 +1173,24 @@ fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<Size> {
     )?;
 
     // Type
-    match buf.write(&[ty])? {
+    match stream.write(&[ty])? {
         1 => (),
         other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
     };
 
     // Size
     // Note that null terminator does NOT count
-    write_size!(str_len, buf)?;
+    write_size!(str_len, stream)?;
 
     // Data
-    let written = buf.write(bytes)?;
+    let written = stream.write(bytes)?;
     match written.cmp_to(&str_len) {
         Ordering::Equal => (),
         _ => return Err(io::Error::new(ErrorKind::Other, __!("expected to write {} byte(s); result: {}", str_len, written))),
     };
 
     // Null terminator
-    match buf.write(&[0])? {
+    match stream.write(&[0])? {
         1 => (),
         other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
     };
@@ -1198,9 +1198,9 @@ fn encode_value_str(ty: u8, s: &str, buf: &mut dyn Write) -> IoResult<Size> {
     Ok(total_size)
 }
 
-/// # Encodes `Value`'s blob into the buffer
+/// # Encodes `Value`'s blob into the stream
 #[cfg(feature="std")]
-fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_blob(bytes: &[u8], stream: &mut dyn Write) -> IoResult<Size> {
     let len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
@@ -1210,16 +1210,16 @@ fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<Size> {
     };
 
     // Type
-    let mut bytes_written = match buf.write(&[crate::value::BLOB])? {
+    let mut bytes_written = match stream.write(&[crate::value::BLOB])? {
         1 => 1 as Size,
         other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
     };
 
     // Size
-    bytes_written = sum!(write_size!(len, buf)?, bytes_written)?;
+    bytes_written = sum!(write_size!(len, stream)?, bytes_written)?;
 
     // Data
-    let written = buf.write(bytes)?;
+    let written = stream.write(bytes)?;
     match written.cmp_to(&len) {
         Ordering::Equal => (),
         _ => return Err(io::Error::new(ErrorKind::Other, __!("expected to write {} byte(s); result: {}", &len, &written))),
@@ -1229,85 +1229,85 @@ fn encode_value_blob(bytes: &[u8], buf: &mut dyn Write) -> IoResult<Size> {
     Ok(bytes_written)
 }
 
-/// # Encodes a `Value`'s list into the buffer
+/// # Encodes a `Value`'s list into the stream
 #[cfg(feature="std")]
-fn encode_value_list(size: Size, list: &[Value], buf: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_list(size: Size, list: &[Value], stream: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
-        write_int_be!(crate::value::LIST, buf)?,
+        write_int_be!(crate::value::LIST, stream)?,
         // Size
-        write_size!(size, buf)?,
+        write_size!(size, stream)?,
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called size(), which verified the whole
         // container's size.
-        write_size!(list.len() as Size, buf)?
+        write_size!(list.len() as Size, stream)?
     )?;
 
     // Items
     for v in list {
-        result = sum!(result, v.encode(buf)?)?;
+        result = sum!(result, v.encode(stream)?)?;
     }
 
     Ok(result)
 }
 
-/// # Encodes a `Value`'s map into the buffer
+/// # Encodes a `Value`'s map into the stream
 #[cfg(feature="std")]
-fn encode_value_map(size: Size, map: &Map, buf: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_map(size: Size, map: &Map, stream: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
-        write_int_be!(crate::value::MAP, buf)?,
+        write_int_be!(crate::value::MAP, stream)?,
         // Size
-        write_size!(size, buf)?,
+        write_size!(size, stream)?,
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called size(), which verified the whole
         // container's size.
-        write_size!(map.len() as Size, buf)?
+        write_size!(map.len() as Size, stream)?
     )?;
 
     // Items
     for (key, value) in map {
-        result = sum!(result, write_int_be!(key, buf)?, value.encode(buf)?)?;
+        result = sum!(result, write_int_be!(key, stream)?, value.encode(stream)?)?;
     }
 
     Ok(result)
 }
 
-/// # Encodes a `Value`'s object into the buffer
+/// # Encodes a `Value`'s object into the stream
 ///
 /// ## Parameters
 ///
 /// - `size`: should be calculated by `Value::size()`.
 #[cfg(feature="std")]
-fn encode_value_object(size: Size, object: &Object, buf: &mut dyn Write) -> IoResult<Size> {
+fn encode_value_object(size: Size, object: &Object, stream: &mut dyn Write) -> IoResult<Size> {
     let mut result = sum!(
         // Type
-        write_int_be!(crate::value::OBJECT, buf)?,
+        write_int_be!(crate::value::OBJECT, stream)?,
         // Size
-        write_size!(size, buf)?,
+        write_size!(size, stream)?,
         // Count
         // We don't have to verify this value. Since at the beginning of Value::encode(), we already called size(), which verified the whole
         // container's size.
-        write_size!(object.len() as Size, buf)?
+        write_size!(object.len() as Size, stream)?
     )?;
 
     // Items
     for (key, value) in object {
         let key_len = key.len();
         result = match key_len <= OBJECT_KEY_MAX_LEN {
-            true => sum!(result, write_int_be!(key_len as u8, buf)?)?,
+            true => sum!(result, write_int_be!(key_len as u8, stream)?)?,
             false => return Err(io::Error::new(
                 ErrorKind::InvalidData, __!("key length is limited to {} bytes, got: {}", OBJECT_KEY_MAX_LEN, &key_len)
             )),
         };
 
-        let written = buf.write(key.as_bytes())?;
+        let written = stream.write(key.as_bytes())?;
         match written.cmp_to(&key_len) {
             Ordering::Equal => result = sum!(result, written)?,
             _ => return Err(io::Error::new(ErrorKind::Other, __!("expected to write {} byte(s) of key; result: {}", &key_len, &written))),
         }
 
-        result = sum!(result, value.encode(buf)?)?;
+        result = sum!(result, value.encode(stream)?)?;
     }
 
     Ok(result)
