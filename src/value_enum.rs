@@ -8,6 +8,7 @@ use {
         cmp::Ordering,
         convert::TryFrom,
         fmt::{self, Debug, Formatter, Write as FmtWrite},
+        iter::FromIterator,
         mem,
     },
 
@@ -375,6 +376,14 @@ impl From<List> for Value {
 
 }
 
+impl FromIterator<Value> for Value {
+
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=Value> {
+        Value::List(iter.into_iter().collect())
+    }
+
+}
+
 impl From<Map> for Value {
 
     /// # Converts input to a [`Map`]
@@ -386,6 +395,14 @@ impl From<Map> for Value {
 
 }
 
+impl FromIterator<(MapKey, Value)> for Value {
+
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(MapKey, Value)> {
+        Value::Map(iter.into_iter().collect())
+    }
+
+}
+
 impl From<Object> for Value {
 
     /// # Converts input to an [`Object`]
@@ -393,6 +410,14 @@ impl From<Object> for Value {
     /// [`Object`]: enum.Value.html#variant.Object
     fn from(object: Object) -> Self {
         Value::Object(object)
+    }
+
+}
+
+impl FromIterator<(ObjectKey, Value)> for Value {
+
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(ObjectKey, Value)> {
+        Value::Object(iter.into_iter().collect())
     }
 
 }
