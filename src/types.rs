@@ -22,7 +22,13 @@ pub type Blob = Vec<u8>;
 pub type List = Vec<Value>;
 
 /// # Map
-pub type Map = BTreeMap<i32, Value>;
+pub type Map = BTreeMap<MapKey, Value>;
+
+/// # Map key
+pub type MapKey = i32;
 
 /// # Object
-pub type Object = BTreeMap<String, Value>;
+pub type Object = BTreeMap<ObjectKey, Value>;
+
+/// # Object key
+pub type ObjectKey = String;

@@ -11,7 +11,7 @@ use {
     },
 
     crate::{
-        Blob, Error, List, Map, Object, Result, Size,
+        Blob, Error, List, Map, MapKey, Object, ObjectKey, Result, Size,
         cmp::CmpTo,
         value::{MAX_DATA_SIZE, OBJECT_KEY_MAX_LEN},
     },
@@ -785,6 +785,40 @@ impl Value {
         match result == expected_result {
             true => Ok(result),
             false => Err(io::Error::new(ErrorKind::Other, __!("expected to write {} bytes, result: {}", expected_result, result))),
+        }
+    }
+
+    /// # If the value is a list, pushes new item into it
+    ///
+    /// Returns an error if the value is not a list.
+    pub fn push<T>(&mut self, value: T) -> Result<()> where T: Into<Self> {
+        match self {
+            Value::List(list) => Ok(crate::push(list, value)),
+            _ => Err(Error::from(__!("Value is not a list"))),
+        }
+    }
+
+    /// # If the value is a map, inserts new item into it
+    ///
+    /// On success, returns previous value (if it existed).
+    ///
+    /// Returns an error if the value is not a map.
+    pub fn map_insert<V>(&mut self, key: MapKey, value: V) -> Result<Option<Self>> where V: Into<Self> {
+        match self {
+            Value::Map(map) => Ok(crate::map_insert(map, key, value)),
+            _ => Err(Error::from(__!("Value is not a map"))),
+        }
+    }
+
+    /// # If the value is an object, inserts new item into it
+    ///
+    /// On success, returns previous value (if it existed).
+    ///
+    /// Returns an error if the value is not an object.
+    pub fn object_insert<K, V>(&mut self, key: K, value: V) -> Result<Option<Value>> where K: Into<ObjectKey>, V: Into<Self> {
+        match self {
+            Value::Object(object) => Ok(crate::object_insert(object, key, value)),
+            _ => Err(Error::from(__!("Value is not an object"))),
         }
     }
 

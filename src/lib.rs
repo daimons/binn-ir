@@ -39,12 +39,10 @@
 //! buf.encode_u64(MAGIC_NUMBER)?;
 //!
 //! // A single file header contains: name and hash
-//! let file_header = {
-//!     let mut map = binn_ir::Map::new();
-//!     map.insert(0_i32, Value::from("the-sun"));  // name
-//!     map.insert(1_i32, Value::U64(0));           // hash
-//!     map
-//! };
+//! let mut file_header = binn_ir::Map::new();
+//! binn_ir::map_insert(&mut file_header, 0, "the-sun");    // name
+//! binn_ir::map_insert(&mut file_header, 1, 0_u64);        // hash
+//!
 //! let file_content = b"is hot".to_vec();
 //!
 //! // Encode data (using clone() to use the variables later in assertions)
@@ -471,6 +469,7 @@ macro_rules! __ { ($($arg: tt)+) => {
 };}
 
 mod cmp;
+mod container_functions;
 mod error;
 mod types;
 mod value_enum;
@@ -485,6 +484,7 @@ mod encoder;
 mod encoding_functions;
 
 pub use self::{
+    container_functions::*,
     error::*,
     types::*,
     value_enum::*,
