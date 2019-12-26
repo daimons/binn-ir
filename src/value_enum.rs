@@ -6,6 +6,7 @@ use {
     alloc::string::{String, ToString},
     core::{
         cmp::Ordering,
+        convert::TryFrom,
         fmt::{self, Debug, Formatter, Write as FmtWrite},
         mem,
     },
@@ -394,6 +395,63 @@ impl From<Object> for Value {
         Value::Object(object)
     }
 
+}
+
+impl TryFrom<&Value> for bool {
+
+    type Error = Error;
+
+    fn try_from(v: &Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::True => Ok(true),
+            Value::False => Ok(false),
+            _ => Err(Error::from(__!("Value is not a boolean"))),
+        }
+    }
+
+}
+
+impl TryFrom<Value> for bool {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        Self::try_from(&v)
+    }
+
+}
+
+macro_rules! impl_try_from_value_for_numbers { ($($ty: ty, $code: tt,)+) => {
+    $(
+        impl TryFrom<&Value> for $ty {
+
+            type Error = Error;
+
+            fn try_from(v: &Value) -> core::result::Result<Self, Self::Error> {
+                match v {
+                    Value::$code(x) => Ok(*x),
+                    _ => Err(Error::from(__!("Value is not {}", stringify!($code)))),
+                }
+            }
+
+        }
+
+        impl TryFrom<Value> for $ty {
+
+            type Error = Error;
+
+            fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+                Self::try_from(&v)
+            }
+
+        }
+    )+
+}}
+
+impl_try_from_value_for_numbers! {
+    i8, I8, i16, I16, i32, I32, i64, I64,
+    u8, U8, u16, U16, u32, U32, u64, U64,
+    f32, Float, f64, Double,
 }
 
 /// # Converts an integer value to big-endian order and writes it into the buffer
