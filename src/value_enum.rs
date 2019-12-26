@@ -378,7 +378,7 @@ impl From<List> for Value {
 
 impl FromIterator<Value> for Value {
 
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=Value> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=Self> {
         Value::List(iter.into_iter().collect())
     }
 
@@ -397,7 +397,7 @@ impl From<Map> for Value {
 
 impl FromIterator<(MapKey, Value)> for Value {
 
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(MapKey, Value)> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(MapKey, Self)> {
         Value::Map(iter.into_iter().collect())
     }
 
@@ -416,7 +416,7 @@ impl From<Object> for Value {
 
 impl FromIterator<(ObjectKey, Value)> for Value {
 
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(ObjectKey, Value)> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(ObjectKey, Self)> {
         Value::Object(iter.into_iter().collect())
     }
 
