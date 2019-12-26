@@ -35,6 +35,28 @@ const MAX_I8_AS_U32: Size = i8::max_value() as Size;
 const SIZE_MASK: Size = 0x_8000_0000;
 
 /// # Values
+///
+/// ## Usage
+///
+/// ### Converting data into `Value`
+///
+/// This is straightforward. You can make this enum directly, or via implementations of [`From`][core::convert/From],
+/// [`FromIterator`][core::iter/FromIterator]...
+///
+/// ### Extracting data from `Value`
+///
+/// There are several options:
+///
+/// - By using the good old `match`.
+/// - Or implementations of [`TryFrom`][core::convert/TryFrom].
+/// - Or via shortcut functions.
+///
+/// For numbers, if your have a strict specification of your data, it's better to use `match`. Otherwise, you can use
+/// [`TryFrom`][core::convert/TryFrom] implementations.
+///
+/// [core::convert/From]: https://doc.rust-lang.org/core/convert/trait.From.html
+/// [core::convert/TryFrom]: https://doc.rust-lang.org/core/convert/trait.TryFrom.html
+/// [core::iter/FromIterator]: https://doc.rust-lang.org/core/iter/trait.FromIterator.html
 #[derive(Clone, PartialEq)]
 pub enum Value {
 
