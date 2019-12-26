@@ -478,9 +478,11 @@ mod value_enum;
 #[cfg(feature="std")]
 mod decoder;
 #[cfg(feature="std")]
+mod decoding_functions;
+#[cfg(feature="std")]
 mod encoder;
 #[cfg(feature="std")]
-mod functions;
+mod encoding_functions;
 
 pub use self::{
     error::*,
@@ -491,8 +493,9 @@ pub use self::{
 #[cfg(feature="std")]
 pub use self::{
     decoder::*,
+    decoding_functions::*,
     encoder::*,
-    functions::*,
+    encoding_functions::*,
 };
 
 pub mod storage;
