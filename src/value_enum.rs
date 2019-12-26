@@ -178,6 +178,8 @@ pub enum Value {
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
     /// - Type: [`LIST`][value::LIST]
     ///
+    /// [_Shortcuts_](#shortcuts-for-list)
+    ///
     /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
     /// [value::LIST]: constant.LIST.html
     List(List),

@@ -1,6 +1,6 @@
 // License: see LICENSE file at root directory of `master` branch
 
-//! # Helper functions for `Value::List`
+//! # Shortcuts for `Value::List`
 
 use {
     crate::{Error, List, Result, Value},
@@ -28,7 +28,7 @@ macro_rules! at_or_mut_at { ($self: ident, $indexes: ident, $code: tt) => {{
     Err(Error::from(__!("Indexes must not be empty")))
 }}}
 
-/// # Helper functions for [`List`](#variant.List)
+/// # Shortcuts for [`List`](#variant.List)
 impl Value {
 
     /// # If the value is a list, pushes new item into it
