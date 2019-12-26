@@ -517,6 +517,71 @@ impl TryFrom<Value> for f64 {
 
 }
 
+impl TryFrom<Value> for String {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::Text(s) => Ok(s),
+            _ => Err(Error::from(__!("Value is not a Text"))),
+        }
+    }
+
+}
+
+impl TryFrom<Value> for Blob {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::Blob(blob) => Ok(blob),
+            _ => Err(Error::from(__!("Value is not a Blob"))),
+        }
+    }
+
+}
+
+impl TryFrom<Value> for List {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::List(list) => Ok(list),
+            _ => Err(Error::from(__!("Value is not a List"))),
+        }
+    }
+
+}
+
+impl TryFrom<Value> for Map {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::Map(map) => Ok(map),
+            _ => Err(Error::from(__!("Value is not a Map"))),
+        }
+    }
+
+}
+
+impl TryFrom<Value> for Object {
+
+    type Error = Error;
+
+    fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
+        match v {
+            Value::Object(object) => Ok(object),
+            _ => Err(Error::from(__!("Value is not an Object"))),
+        }
+    }
+
+}
+
 /// # Converts an integer value to big-endian order and writes it into the buffer
 ///
 /// Returns: number of bytes written, as `IoResult<Size>`.
