@@ -104,9 +104,9 @@ fn basic_type_sizes() -> Result<()> {
     assert_eq!(Value::I16(0).size()?, 3);
     assert_eq!(Value::U32(0).size()?, 5);
     assert_eq!(Value::I32(0).size()?, 5);
-    assert_eq!(Value::Float(0.0).size()?, 5);
     assert_eq!(Value::U64(0).size()?, 9);
     assert_eq!(Value::I64(0).size()?, 9);
+    assert_eq!(Value::Float(0.0).size()?, 5);
     assert_eq!(Value::Double(0.0).size()?, 9);
 
     Ok(())
