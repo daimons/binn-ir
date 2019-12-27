@@ -65,8 +65,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-null)
     ///
-    /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
-    /// [value::NULL]: constant.NULL.html
+    /// [storage::NO_BYTES]: storage/constant.NO_BYTES.html
+    /// [value::NULL]: value/constant.NULL.html
     Null,
 
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
@@ -74,8 +74,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-booleans)
     ///
-    /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
-    /// [value::TRUE]: constant.TRUE.html
+    /// [storage::NO_BYTES]: storage/constant.NO_BYTES.html
+    /// [value::TRUE]: value/constant.TRUE.html
     True,
 
     /// - Storage: [`NO_BYTES`][storage::NO_BYTES]
@@ -83,78 +83,78 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-booleans)
     ///
-    /// [storage::NO_BYTES]: ../storage/constant.NO_BYTES.html
-    /// [value::FALSE]: constant.FALSE.html
+    /// [storage::NO_BYTES]: storage/constant.NO_BYTES.html
+    /// [value::FALSE]: value/constant.FALSE.html
     False,
 
     /// - Storage: [`BYTE`][storage::BYTE]
     /// - Type: [`U8`][value::U8]
     ///
-    /// [storage::BYTE]: ../storage/constant.BYTE.html
-    /// [value::U8]: constant.U8.html
+    /// [storage::BYTE]: storage/constant.BYTE.html
+    /// [value::U8]: value/constant.U8.html
     U8(u8),
 
     /// - Storage: [`BYTE`][storage::BYTE]
     /// - Type: [`I8`][value::I8]
     ///
-    /// [storage::BYTE]: ../storage/constant.BYTE.html
-    /// [value::I8]: constant.I8.html
+    /// [storage::BYTE]: storage/constant.BYTE.html
+    /// [value::I8]: value/constant.I8.html
     I8(i8),
 
     /// - Storage: [`WORD`][storage::WORD]
     /// - Type: [`U16`][value::U16]
     ///
-    /// [storage::WORD]: ../storage/constant.WORD.html
-    /// [value::U16]: constant.U16.html
+    /// [storage::WORD]: storage/constant.WORD.html
+    /// [value::U16]: value/constant.U16.html
     U16(u16),
 
     /// - Storage: [`WORD`][storage::WORD]
     /// - Type: [`I16`][value::I16]
     ///
-    /// [storage::WORD]: ../storage/constant.WORD.html
-    /// [value::I16]: constant.I16.html
+    /// [storage::WORD]: storage/constant.WORD.html
+    /// [value::I16]: value/constant.I16.html
     I16(i16),
 
     /// - Storage: [`DWORD`][storage::DWORD]
     /// - Type: [`U32`][value::U32]
     ///
-    /// [storage::DWORD]: ../storage/constant.DWORD.html
-    /// [value::U32]: constant.U32.html
+    /// [storage::DWORD]: storage/constant.DWORD.html
+    /// [value::U32]: value/constant.U32.html
     U32(u32),
 
     /// - Storage: [`DWORD`][storage::DWORD]
     /// - Type: [`I32`][value::I32]
     ///
-    /// [storage::DWORD]: ../storage/constant.DWORD.html
-    /// [value::I32]: constant.I32.html
+    /// [storage::DWORD]: storage/constant.DWORD.html
+    /// [value::I32]: value/constant.I32.html
     I32(i32),
 
     /// - Storage: [`QWORD`][storage::QWORD]
     /// - Type: [`U64`][value::U64]
     ///
-    /// [storage::QWORD]: ../storage/constant.QWORD.html
-    /// [value::U64]: constant.U64.html
+    /// [storage::QWORD]: storage/constant.QWORD.html
+    /// [value::U64]: value/constant.U64.html
     U64(u64),
 
     /// - Storage: [`QWORD`][storage::QWORD]
     /// - Type: [`I64`][value::I64]
     ///
-    /// [storage::QWORD]: ../storage/constant.QWORD.html
-    /// [value::I64]: constant.I64.html
+    /// [storage::QWORD]: storage/constant.QWORD.html
+    /// [value::I64]: value/constant.I64.html
     I64(i64),
 
     /// - Storage: [`DWORD`][storage::DWORD]
     /// - Type: [`FLOAT`][value::FLOAT]
     ///
-    /// [storage::DWORD]: ../storage/constant.DWORD.html
-    /// [value::FLOAT]: constant.FLOAT.html
+    /// [storage::DWORD]: storage/constant.DWORD.html
+    /// [value::FLOAT]: value/constant.FLOAT.html
     Float(f32),
 
     /// - Storage: [`QWORD`][storage::QWORD]
     /// - Type: [`DOUBLE`][value::DOUBLE]
     ///
-    /// [storage::QWORD]: ../storage/constant.QWORD.html
-    /// [value::DOUBLE]: constant.DOUBLE.html
+    /// [storage::QWORD]: storage/constant.QWORD.html
+    /// [value::DOUBLE]: value/constant.DOUBLE.html
     Double(f64),
 
     /// - Storage: [`STRING`][storage::STRING]
@@ -162,8 +162,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-strings)
     ///
-    /// [storage::STRING]: ../storage/constant.STRING.html
-    /// [value::TEXT]: constant.TEXT.html
+    /// [storage::STRING]: storage/constant.STRING.html
+    /// [value::TEXT]: value/constant.TEXT.html
     Text(String),
 
     /// - Storage: [`STRING`][storage::STRING]
@@ -171,8 +171,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-strings)
     ///
-    /// [storage::STRING]: ../storage/constant.STRING.html
-    /// [value::DATE_TIME]: constant.DATE_TIME.html
+    /// [storage::STRING]: storage/constant.STRING.html
+    /// [value::DATE_TIME]: value/constant.DATE_TIME.html
     DateTime(String),
 
     /// - Storage: [`STRING`][storage::STRING]
@@ -180,8 +180,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-strings)
     ///
-    /// [storage::STRING]: ../storage/constant.STRING.html
-    /// [value::DATE]: constant.DATE.html
+    /// [storage::STRING]: storage/constant.STRING.html
+    /// [value::DATE]: value/constant.DATE.html
     Date(String),
 
     /// - Storage: [`STRING`][storage::STRING]
@@ -189,8 +189,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-strings)
     ///
-    /// [storage::STRING]: ../storage/constant.STRING.html
-    /// [value::TIME]: constant.TIME.html
+    /// [storage::STRING]: storage/constant.STRING.html
+    /// [value::TIME]: value/constant.TIME.html
     Time(String),
 
     /// <small>_(Decimal string)_</small>
@@ -200,8 +200,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-strings)
     ///
-    /// [storage::STRING]: ../storage/constant.STRING.html
-    /// [value::DECIMAL_STR]: constant.DECIMAL_STR.html
+    /// [storage::STRING]: storage/constant.STRING.html
+    /// [value::DECIMAL_STR]: value/constant.DECIMAL_STR.html
     DecimalStr(String),
 
     /// - Storage: [`BLOB`][storage::BLOB]
@@ -209,8 +209,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-blob)
     ///
-    /// [storage::BLOB]: ../storage/constant.BLOB.html
-    /// [value::BLOB]: constant.BLOB.html
+    /// [storage::BLOB]: storage/constant.BLOB.html
+    /// [value::BLOB]: value/constant.BLOB.html
     Blob(Blob),
 
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
@@ -218,8 +218,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-list)
     ///
-    /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
-    /// [value::LIST]: constant.LIST.html
+    /// [storage::CONTAINER]: storage/constant.CONTAINER.html
+    /// [value::LIST]: value/constant.LIST.html
     List(List),
 
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
@@ -227,8 +227,8 @@ pub enum Value {
     ///
     /// [_Shortcuts_](#shortcuts-for-map)
     ///
-    /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
-    /// [value::MAP]: constant.MAP.html
+    /// [storage::CONTAINER]: storage/constant.CONTAINER.html
+    /// [value::MAP]: value/constant.MAP.html
     Map(Map),
 
     /// - Storage: [`CONTAINER`][storage::CONTAINER]
@@ -240,9 +240,9 @@ pub enum Value {
     ///
     /// - Key lengths must be `<=` [`OBJECT_KEY_MAX_LEN`][value::OBJECT_KEY_MAX_LEN].
     ///
-    /// [storage::CONTAINER]: ../storage/constant.CONTAINER.html
-    /// [value::OBJECT]: constant.OBJECT.html
-    /// [value::OBJECT_KEY_MAX_LEN]: constant.OBJECT_KEY_MAX_LEN.html
+    /// [storage::CONTAINER]: storage/constant.CONTAINER.html
+    /// [value::OBJECT]: value/constant.OBJECT.html
+    /// [value::OBJECT_KEY_MAX_LEN]: value/constant.OBJECT_KEY_MAX_LEN.html
     Object(Object),
 
 }
