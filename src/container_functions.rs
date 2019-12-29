@@ -39,8 +39,8 @@ pub fn map() -> Value {
 /// # Inserts new item into a map
 ///
 /// Returns previous value (if it existed).
-pub fn map_insert<V>(map: &mut Map, key: MapKey, value: V) -> Option<Value> where V: Into<Value> {
-    map.insert(key, value.into())
+pub fn map_insert<K, V>(map: &mut Map, key: K, value: V) -> Option<Value> where K: Into<MapKey>, V: Into<Value> {
+    map.insert(key.into(), value.into())
 }
 
 /// # Makes new object

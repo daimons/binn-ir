@@ -60,7 +60,7 @@ impl Value {
     /// On success, returns previous value (if it existed).
     ///
     /// Returns an error if the value is not a map.
-    pub fn map_insert<V>(&mut self, key: MapKey, value: V) -> Result<Option<Self>> where V: Into<Self> {
+    pub fn map_insert<K, V>(&mut self, key: K, value: V) -> Result<Option<Self>> where K: Into<MapKey>, V: Into<Self> {
         match self {
             Value::Map(map) => Ok(crate::map_insert(map, key, value)),
             _ => Err(Error::from(__!("Value is not a map"))),
@@ -203,6 +203,16 @@ impl From<Map> for Value {
 
     fn from(map: Map) -> Self {
         Value::Map(map)
+    }
+
+}
+
+impl<K, V> From<(K, V)> for Value where K: Into<MapKey>, V: Into<Value> {
+
+    fn from((key, value): (K, V)) -> Self {
+        let mut map = crate::Map::new();
+        crate::map_insert(&mut map, key, value);
+        Self::from(map)
     }
 
 }
