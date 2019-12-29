@@ -36,6 +36,13 @@ pub fn map() -> Value {
     Value::Map(Map::new())
 }
 
+/// # Makes new map from one pair of key/value
+pub fn map_from<K, V>(key: K, value: V) -> Value where K: Into<MapKey>, V: Into<Value> {
+    let mut map = Map::new();
+    map_insert(&mut map, key, value);
+    map.into()
+}
+
 /// # Inserts new item into a map
 ///
 /// Returns previous value (if it existed).
@@ -46,6 +53,13 @@ pub fn map_insert<K, V>(map: &mut Map, key: K, value: V) -> Option<Value> where 
 /// # Makes new object
 pub fn object() -> Value {
     Value::Object(Object::new())
+}
+
+/// # Makes new object from one pair of key/value
+pub fn object_from<K, V>(key: K, value: V) -> Value where K: Into<ObjectKey>, V: Into<Value> {
+    let mut object = Object::new();
+    object_insert(&mut object, key, value);
+    object.into()
 }
 
 /// # Inserts new item into an object
