@@ -207,16 +207,6 @@ impl From<Map> for Value {
 
 }
 
-impl<K, V> From<(K, V)> for Value where K: Into<MapKey>, V: Into<Value> {
-
-    fn from((key, value): (K, V)) -> Self {
-        let mut map = crate::Map::new();
-        crate::map_insert(&mut map, key, value);
-        Self::from(map)
-    }
-
-}
-
 impl FromIterator<(MapKey, Value)> for Value {
 
     fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item=(MapKey, Self)> {
