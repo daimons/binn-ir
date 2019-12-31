@@ -16,3 +16,6 @@ std = []
 
 [package.metadata.docs.rs]
 all-features = true
+
+[dev-dependencies]
+kib = '3'

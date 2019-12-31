@@ -1,5 +1,8 @@
 // License: see LICENSE file at root directory of `master` branch
 
+#[cfg(feature="std")]
+extern crate alloc;
+
 extern crate binn_ir;
 
 use {
@@ -16,7 +19,11 @@ use {
 
 #[cfg(feature="std")]
 use {
-    std::io::{Cursor, ErrorKind},
+    alloc::borrow::Cow,
+    std::{
+        io::{self, Cursor, ErrorKind},
+        time::Instant,
+    },
 
     binn_ir::{Decoder, Encoder, IoResult, Map, Object, Size},
 };
@@ -476,4 +483,41 @@ fn decode_objects_from_invalid_sources() {
     decode_from_invalid_source!(vec![value::OBJECT, 3, 0x80, 0x00, 0x00, 0x01]);
     // Invalid size + missing items
     decode_from_invalid_source!(vec![value::OBJECT, 0x80, 0x00, 0x00, 0x03, 0x80, 0x00, 0x00, 0x01]);
+}
+
+#[test]
+#[cfg(feature="std")]
+#[ignore]
+fn benchmarks() -> IoResult<()> {
+    const COUNT: usize = 1_000_000;
+
+    fn run<F>(name: Cow<str>, size: u32, f: F) -> IoResult<()> where F: FnOnce() -> IoResult<()> {
+        let start = Instant::now();
+        f()?;
+        let duration = Instant::now().duration_since(start);
+        let speed = (f64::from(size) * COUNT as f64 / duration.as_nanos().max(1) as f64 * 1e9) as u128;
+        println!("{name}: {duration:?} ({speed}/s)", name=name, duration=duration, speed=kib::format(speed));
+        Ok(())
+    }
+
+    let value = Value::List(vec![0_u8.into(), 0_i16.into(), 0_u32.into(), 0_i64.into(), 0_f32.into(), 0_f64.into()]);
+    run(format!("Encoding {count} integers/floats", count=COUNT).into(), value.size()?, || {
+        let count = COUNT / value.as_list()?.len();
+        let mut sink = io::sink();
+        for _ in 0..=count {
+            value.encode(&mut sink)?;
+        }
+        Ok(())
+    })?;
+    run(format!("Decoding {count} integers/floats", count=COUNT).into(), value.size()?, || {
+        let count = COUNT / value.as_list()?.len();
+        let mut buf = Vec::with_capacity(value.size()? as usize);
+        value.encode(&mut buf)?;
+        for _ in 0..=count {
+            binn_ir::decode(&mut &buf[..])?;
+        }
+        Ok(())
+    })?;
+
+    Ok(())
 }
