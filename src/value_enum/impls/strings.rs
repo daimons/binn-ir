@@ -3,7 +3,10 @@
 //! # Shortcuts for strings
 
 use {
-    alloc::string::{String, ToString},
+    alloc::{
+        borrow::Cow,
+        string::{String, ToString},
+    },
     core::convert::TryFrom,
 
     crate::{Error, Result, Value},
@@ -78,6 +81,14 @@ impl From<&str> for Value {
 
     fn from(s: &str) -> Self {
         Self::from(s.to_string())
+    }
+
+}
+
+impl From<Cow<'_, str>> for Value {
+
+    fn from(s: Cow<str>) -> Self {
+        Self::from(s.into_owned())
     }
 
 }
