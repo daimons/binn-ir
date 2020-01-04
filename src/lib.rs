@@ -21,6 +21,10 @@
 //! - The crate uses `#![no_std]` by default. Documentation is built with all features, which include `std`. If you see some components from
 //!   [`std`][crate:std] crate, you have to use that feature.
 //!
+//! ## Security notes
+//!
+//! To prevent attacks when decoding from [`Read`][std::io/Read], consider limiting your source via [`Read::take()`][std::io/Read#take()].
+//!
 //! ## Quick examples
 //!
 //! This example demonstrates a simple file container:
@@ -72,6 +76,9 @@
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
 //! [Binn]: https://github.com/liteserver/binn
 //! [crate:std]: https://doc.rust-lang.org/std/
+//!
+//! [std::io/Read]: https://doc.rust-lang.org/std/io/trait.Read.html
+//! [std::io/Read#take()]: https://doc.rust-lang.org/std/io/trait.Read.html#method.take
 
 #![warn(missing_docs)]
 #![no_std]
