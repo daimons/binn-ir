@@ -10,10 +10,18 @@ use {
 
 macro_rules! impl_from_numbers_for_value { ($($number: ty, $variant: tt,)+) => {
     $(
+        impl From<&$number> for Value {
+
+            fn from(n: &$number) -> Self {
+                Value::$variant(*n)
+            }
+
+        }
+
         impl From<$number> for Value {
 
             fn from(n: $number) -> Self {
-                Value::$variant(n)
+                Self::from(&n)
             }
 
         }
