@@ -18,8 +18,8 @@
 //! ## Notes
 //!
 //! - `IR` stands for _implementation in Rust_.
-//! - The crate uses `#![no_std]` by default. Documentation is built with all features, which include `std`. If you see some components from
-//!   [`std`][crate:std] crate, you have to use that feature.
+//! - Documentation is built with all features. Some of them are optional. If you see components from other crates, you can view source to see
+//!   what features are required.
 //!
 //! ## Security notes
 //!
@@ -75,7 +75,6 @@
 //!
 //! [Semantic Versioning 2.0.0]: https://semver.org/spec/v2.0.0.html
 //! [Binn]: https://github.com/liteserver/binn
-//! [crate:std]: https://doc.rust-lang.org/std/
 //!
 //! [std::io/Read]: https://doc.rust-lang.org/std/io/trait.Read.html
 //! [std::io/Read#take()]: https://doc.rust-lang.org/std/io/trait.Read.html#method.take
