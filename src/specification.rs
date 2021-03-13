@@ -40,14 +40,14 @@
 //!
 //! Parameter | Size
 //! ------- | ----
-//! [type]  | 1 or 2 bytes
-//! [size]  | 1 or 4 bytes
-//! [count] | 1 or 4 bytes
-//! [data]  | n bytes
+//! `[type]`  | 1 or 2 bytes
+//! `[size]`  | 1 or 4 bytes
+//! `[count]` | 1 or 4 bytes
+//! `[data]`  | n bytes
 //!
 //!
-//! [Type]
-//! -----
+//! `[Type]`
+//! --------
 //! Each value is stored starting with the data type. It can use 1 or 2 bytes. The first byte is divided as follows:
 //!
 //! ```Text
@@ -164,8 +164,8 @@
 //!
 //! The created type parameter must be stored as big-endian.
 //!
-//! [Size]
-//! -------
+//! `[Size]`
+//! --------
 //! This parameter is used in strings, blobs and containters. It can have 1 or 4 bytes.
 //!
 //! If the first bit of size is 0, it uses only 1 byte. So when the data size is up to 127 (0x7F) bytes the size parameter will use only 1
@@ -184,7 +184,7 @@
 //!
 //! For *containers*, the size parameter includes the type parameter. It stores the size of the whole structure.
 //!
-//! [Count]
+//! `[Count]`
 //! ---------
 //! This parameter is used only in containers to inform the number of items inside them. It can have 1 or 4 bytes, formatted exactly as the
 //! size parameter.
