@@ -277,7 +277,7 @@ fn blobs() -> IoResult<()> {
         // Size: 15 bytes
         0x80, 0x00, 0x00, 0x0F,
     ]).decode_blob().unwrap_err().into_inner() {
-        Some(err) => assert_eq!(err.description().contains(binn_ir::TAG), true),
+        Some(err) => assert!(err.to_string().contains(binn_ir::TAG)),
         None => panic!("value::Decoder::decode_blob() -> input was invalid; expected an inner error, got: None"),
     };
 
