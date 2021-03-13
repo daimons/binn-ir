@@ -1,6 +1,6 @@
 # Binn-IR
 
-- Version: [`0.14.2`](src/version_info.rs) _(December 31st, 2019)_
+- Version: [`0.15.0`](src/version_info.rs) _(March 14th, 2021)_
     + _This project follows [Semantic Versioning 2.0.0]_
 - License: [Nice License 1.0.0](LICENSE)
 
