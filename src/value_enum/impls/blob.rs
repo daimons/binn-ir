@@ -17,7 +17,7 @@ impl Value {
     pub fn as_blob(&self) -> Result<&[u8]> {
         match self {
             Value::Blob(blob) => Ok(blob),
-            _ => Err(Error::from(__!("Value is not a Blob"))),
+            _ => Err(err!("Value is not a Blob")),
         }
     }
 
@@ -27,7 +27,7 @@ impl Value {
     pub fn as_mut_blob(&mut self) -> Result<&mut Blob> {
         match self {
             Value::Blob(blob) => Ok(blob),
-            _ => Err(Error::from(__!("Value is not a Blob"))),
+            _ => Err(err!("Value is not a Blob")),
         }
     }
 
@@ -48,7 +48,7 @@ impl TryFrom<Value> for Blob {
     fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
         match v {
             Value::Blob(blob) => Ok(blob),
-            _ => Err(Error::from(__!("Value is not a Blob"))),
+            _ => Err(err!("Value is not a Blob")),
         }
     }
 

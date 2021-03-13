@@ -117,16 +117,50 @@ pub const TAG: &str = concat!(code_name!(), "::2f0f7b89::", version!());
 // ║   IMPLEMENTATION   ║
 // ╚════════════════════╝
 
-#[macro_use]
 extern crate alloc;
 
 #[cfg(feature="std")]
 extern crate std;
 
-/// # Wrapper for format!(), which prefixes your message with: ::TAG, module_path!(), line!()
-macro_rules! __ { ($($arg: tt)+) => {
-    format!("[{tag}][{module_path}-{line}] {format}", tag=crate::TAG, module_path=module_path!(), line=line!(), format=format!($($arg)+))
-};}
+/// # Makes new Error with formatted string, or without one
+macro_rules! err {
+    () => {
+        crate::Error::new(line!(), module_path!(), None)
+    };
+    ($s: literal) => {
+        crate::Error::new(line!(), module_path!(), Some(alloc::borrow::Cow::Borrowed($s)))
+    };
+    ($s: literal, $($arg: tt)+) => {
+        crate::Error::new(line!(), module_path!(), Some(alloc::borrow::Cow::Owned(alloc::format!($s, $($arg)+))))
+    };
+}
+
+#[test]
+fn test_macro_err() {
+    use alloc::borrow::Cow;
+
+    macro_rules! s_test { () => { "test" }}
+
+    fn eq(first: Error, second: Error) -> bool {
+        first.line() == second.line() && first.module_path() == second.module_path() && first.msg() == second.msg()
+    }
+
+    assert!(eq(err!(), Error::new(line!(), module_path!(), None)));
+    assert!(eq(err!("test"), Error::new(line!(), module_path!(), Some(Cow::Borrowed(s_test!())))));
+    assert!(eq(err!("{s:?}", s=s_test!()), Error::new(line!(), module_path!(), Some(Cow::Owned(alloc::format!("{:?}", s_test!()))))));
+}
+
+/// # Wrapper for format!(), which prefixes your optional message with: crate::TAG, module_path!(), line!()
+macro_rules! __ {
+    ($($arg: tt)+) => {
+        alloc::format!(
+            "[{tag}][{module_path}-{line}] {msg}", tag=crate::TAG, module_path=module_path!(), line=line!(), msg=alloc::format!($($arg)+),
+        )
+    };
+    () => {
+        alloc::format!("[{tag}][{module_path}-{line}] (internal error)", tag=crate::TAG, module_path=module_path!(), line=line!())
+    };
+}
 
 mod cmp;
 mod container_functions;

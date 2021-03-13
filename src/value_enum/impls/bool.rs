@@ -29,7 +29,7 @@ impl Value {
         match self {
             Value::True => Ok(true),
             Value::False => Ok(false),
-            _ => Err(Error::from(__!("Value is not a boolean"))),
+            _ => Err(err!("Value is not a boolean")),
         }
     }
 
@@ -54,7 +54,7 @@ impl TryFrom<&Value> for bool {
         match v {
             Value::True => Ok(true),
             Value::False => Ok(false),
-            _ => Err(Error::from(__!("Value is not a boolean"))),
+            _ => Err(err!("Value is not a boolean")),
         }
     }
 

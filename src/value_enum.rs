@@ -11,7 +11,7 @@ use {
     },
 
     crate::{
-        Blob, Error, List, Map, Object, Result, Size,
+        Blob, List, Map, Object, Result, Size,
         cmp::CmpTo,
         value::{MAX_DATA_SIZE, OBJECT_KEY_MAX_LEN},
     },
@@ -401,9 +401,9 @@ fn test_read_size_and_its_length() {
     const U32_SIZE: Size = mem::size_of::<Size>() as Size;
     const MAX_U8: u8 = ::std::u8::MAX;
 
-    assert_eq!(read_size_and_its_length(&mut Cursor::new(vec![MAX_U8, MAX_U8, MAX_U8, MAX_U8])).unwrap(), (MAX_DATA_SIZE, U32_SIZE));
+    assert_eq!(read_size_and_its_length(&mut Cursor::new(alloc::vec![MAX_U8, MAX_U8, MAX_U8, MAX_U8])).unwrap(), (MAX_DATA_SIZE, U32_SIZE));
 
-    for bytes in vec![
+    for bytes in alloc::vec![
         [0xF0, MAX_U8, MAX_U8, MAX_U8],
         [0x80, MAX_U8, MAX_U8, MAX_U8],
         [MAX_U8, MAX_U8, MAX_U8, 0xF0],
@@ -430,15 +430,13 @@ macro_rules! sum {
                 result = {
                     let b = $b;
                     match b.cmp_to(&MAX_DATA_SIZE) {
-                        Ordering::Greater => Err(Error::from(__!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE))),
+                        Ordering::Greater => Err(err!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)),
                         _ => match current.checked_add(b as Size) {
                             Some(new) => match new.cmp_to(&MAX_DATA_SIZE) {
-                                Ordering::Greater => Err(Error::from(
-                                    __!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)
-                                )),
+                                Ordering::Greater => Err(err!("too large for: {} + {} (max allowed: {})", &current, &b, MAX_DATA_SIZE)),
                                 _ => Ok(new),
                             },
-                            None => Err(Error::from(__!("can't add {} into {}", &b, &current))),
+                            None => Err(err!("can't add {} into {}", &b, &current)),
                         },
                     }
                 };
@@ -456,11 +454,9 @@ macro_rules! sum {
 macro_rules! new_vec_with_capacity { ($capacity: expr) => {{
     let capacity = $capacity;
     match capacity.cmp_to(&MAX_DATA_SIZE) {
-        Ordering::Greater => Err(Error::from(__!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, MAX_DATA_SIZE))),
+        Ordering::Greater => Err(err!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, MAX_DATA_SIZE)),
         _ => match capacity.cmp_to(&usize::max_value()) {
-            Ordering::Greater => Err(Error::from(
-                __!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, ::std::usize::MAX)
-            )),
+            Ordering::Greater => Err(err!("cannot allocate a vector with capacity: {} (max allowed: {})", &capacity, ::std::usize::MAX)),
             _ => Ok(Vec::with_capacity(capacity as usize)),
         },
     }
@@ -506,7 +502,7 @@ macro_rules! bytes_for_len { ($len: expr) => {{
     let len = $len;
     match len.cmp_to(&MAX_I8_AS_USIZE) {
         Ordering::Greater => match len.cmp_to(&MAX_DATA_SIZE) {
-            Ordering::Greater => Err(Error::from(__!("too large: {} bytes", &len))),
+            Ordering::Greater => Err(err!("too large: {} bytes", &len)),
             _ => Ok(4_u32),
         },
         _ => Ok(1_u32),
@@ -526,7 +522,7 @@ macro_rules! decode_list { ($source: ident) => {{
 
     let (item_count, bytes_of_item_count) = read_size_and_its_length($source)?;
 
-    let mut result = vec![];
+    let mut result = alloc::vec![];
     let mut read: Size = sum!(bytes_of_size, bytes_of_item_count)?;
     for item_index in 0..item_count {
         let value = match crate::decode($source)? {
@@ -790,7 +786,7 @@ fn size_of_list(list: &[Value]) -> Result<Size> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::from(__!("data too large: {} bytes", result))),
+        false => Err(err!("data too large: {} bytes", result)),
     }
 }
 
@@ -812,7 +808,7 @@ fn size_of_map(map: &Map) -> Result<Size> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::from(__!("data too large: {} bytes", result))),
+        false => Err(err!("data too large: {} bytes", result)),
     }
 }
 
@@ -825,7 +821,7 @@ fn size_of_object(object: &Object) -> Result<Size> {
         // Key has NO null terminator
         let key_len = key.len();
         if key_len > OBJECT_KEY_MAX_LEN {
-            return Err(Error::from(__!("key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len)));
+            return Err(err!("key size is limited to {} bytes; got: {}", OBJECT_KEY_MAX_LEN, &key_len));
         }
         result = sum!(result, key_len, value.size()?, 1)?;
     }
@@ -839,7 +835,7 @@ fn size_of_object(object: &Object) -> Result<Size> {
     };
     match result <= MAX_DATA_SIZE {
         true => Ok(result),
-        false => Err(Error::from(__!("data too large: {} bytes", result))),
+        false => Err(err!("data too large: {} bytes", result)),
     }
 }
 
@@ -850,7 +846,7 @@ fn encode_value_str<W>(ty: u8, s: &str, stream: &mut W) -> IoResult<Size> where 
     let str_len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
-            Ordering::Greater => return Err(io::Error::new(ErrorKind::Other, __!("string too large ({} bytes)", &tmp))),
+            Ordering::Greater => return Err(io::Error::from(err!("string too large ({} bytes)", &tmp))),
             _ => tmp as Size,
         }
     };
@@ -864,7 +860,7 @@ fn encode_value_str<W>(ty: u8, s: &str, stream: &mut W) -> IoResult<Size> where 
     // Type
     match stream.write(&[ty])? {
         1 => (),
-        other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
+        other => return Err(io::Error::from(err!("expected to write 1 byte; result: {}", &other))),
     };
 
     // Size
@@ -875,13 +871,13 @@ fn encode_value_str<W>(ty: u8, s: &str, stream: &mut W) -> IoResult<Size> where 
     let written = stream.write(bytes)?;
     match written.cmp_to(&str_len) {
         Ordering::Equal => (),
-        _ => return Err(io::Error::new(ErrorKind::Other, __!("expected to write {} byte(s); result: {}", str_len, written))),
+        _ => return Err(io::Error::from(err!("expected to write {} byte(s); result: {}", str_len, written))),
     };
 
     // Null terminator
     match stream.write(&[0])? {
         1 => (),
-        other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
+        other => return Err(io::Error::from(err!("expected to write 1 byte; result: {}", &other))),
     };
 
     Ok(total_size)
@@ -893,7 +889,7 @@ fn encode_value_blob<W>(bytes: &[u8], stream: &mut W) -> IoResult<Size> where W:
     let len = {
         let tmp = bytes.len();
         match tmp.cmp_to(&MAX_DATA_SIZE) {
-            Ordering::Greater => return Err(io::Error::new(ErrorKind::Other, __!("too large: {} byte(s)", tmp))),
+            Ordering::Greater => return Err(io::Error::from(err!("too large: {} byte(s)", tmp))),
             _ => tmp as Size,
         }
     };
@@ -901,7 +897,7 @@ fn encode_value_blob<W>(bytes: &[u8], stream: &mut W) -> IoResult<Size> where W:
     // Type
     let mut bytes_written = match stream.write(&[crate::value::BLOB])? {
         1 => 1 as Size,
-        other => return Err(io::Error::new(ErrorKind::Other, __!("expected to write 1 byte; result: {}", &other))),
+        other => return Err(io::Error::from(err!("expected to write 1 byte; result: {}", &other))),
     };
 
     // Size
@@ -911,7 +907,7 @@ fn encode_value_blob<W>(bytes: &[u8], stream: &mut W) -> IoResult<Size> where W:
     let written = stream.write(bytes)?;
     match written.cmp_to(&len) {
         Ordering::Equal => (),
-        _ => return Err(io::Error::new(ErrorKind::Other, __!("expected to write {} byte(s); result: {}", &len, &written))),
+        _ => return Err(io::Error::from(err!("expected to write {} byte(s); result: {}", &len, &written))),
     };
     bytes_written = sum!(bytes_written, written)?;
 
@@ -993,7 +989,7 @@ fn encode_value_object<W>(size: Size, object: &Object, stream: &mut W) -> IoResu
         let written = stream.write(key.as_bytes())?;
         match written.cmp_to(&key_len) {
             Ordering::Equal => result = sum!(result, written)?,
-            _ => return Err(io::Error::new(ErrorKind::Other, __!("expected to write {} byte(s) of key; result: {}", &key_len, &written))),
+            _ => return Err(io::Error::from(err!("expected to write {} byte(s) of key; result: {}", &key_len, &written))),
         }
 
         result = sum!(result, value.encode(stream)?)?;

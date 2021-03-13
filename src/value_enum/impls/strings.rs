@@ -21,7 +21,7 @@ impl Value {
     pub fn as_text(&self) -> Result<&str> {
         match self {
             Value::Text(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a Text"))),
+            _ => Err(err!("Value is not a Text")),
         }
     }
 
@@ -31,7 +31,7 @@ impl Value {
     pub fn as_date_time(&self) -> Result<&str> {
         match self {
             Value::DateTime(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a DateTime"))),
+            _ => Err(err!("Value is not a DateTime")),
         }
     }
 
@@ -41,7 +41,7 @@ impl Value {
     pub fn as_date(&self) -> Result<&str> {
         match self {
             Value::Date(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a Date"))),
+            _ => Err(err!("Value is not a Date")),
         }
     }
 
@@ -51,7 +51,7 @@ impl Value {
     pub fn as_time(&self) -> Result<&str> {
         match self {
             Value::Time(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a Time"))),
+            _ => Err(err!("Value is not a Time")),
         }
     }
 
@@ -61,7 +61,7 @@ impl Value {
     pub fn as_decimal_str(&self) -> Result<&str> {
         match self {
             Value::DecimalStr(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a DecimalStr"))),
+            _ => Err(err!("Value is not a DecimalStr")),
         }
     }
 
@@ -100,7 +100,7 @@ impl TryFrom<Value> for String {
     fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
         match v {
             Value::Text(s) => Ok(s),
-            _ => Err(Error::from(__!("Value is not a Text"))),
+            _ => Err(err!("Value is not a Text")),
         }
     }
 

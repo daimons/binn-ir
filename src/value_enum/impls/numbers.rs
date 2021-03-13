@@ -42,15 +42,15 @@ macro_rules! impl_try_from_value_for_integers { ($($ty: ty,)+) => {
 
             fn try_from(v: &Value) -> core::result::Result<Self, Self::Error> {
                 match v {
-                    Value::I8(i) => Self::try_from(*i).map_err(|e| Error::from(__!("{}", e))),
-                    Value::U8(u) => Self::try_from(*u).map_err(|e| Error::from(__!("{}", e))),
-                    Value::I16(i) => Self::try_from(*i).map_err(|e| Error::from(__!("{}", e))),
-                    Value::U16(u) => Self::try_from(*u).map_err(|e| Error::from(__!("{}", e))),
-                    Value::I32(i) => Self::try_from(*i).map_err(|e| Error::from(__!("{}", e))),
-                    Value::U32(u) => Self::try_from(*u).map_err(|e| Error::from(__!("{}", e))),
-                    Value::I64(i) => Self::try_from(*i).map_err(|e| Error::from(__!("{}", e))),
-                    Value::U64(u) => Self::try_from(*u).map_err(|e| Error::from(__!("{}", e))),
-                    _ => Err(Error::from(__!("Value is not an integer"))),
+                    Value::I8(i) => Self::try_from(*i).map_err(|e| err!("{}", e)),
+                    Value::U8(u) => Self::try_from(*u).map_err(|e| err!("{}", e)),
+                    Value::I16(i) => Self::try_from(*i).map_err(|e| err!("{}", e)),
+                    Value::U16(u) => Self::try_from(*u).map_err(|e| err!("{}", e)),
+                    Value::I32(i) => Self::try_from(*i).map_err(|e| err!("{}", e)),
+                    Value::U32(u) => Self::try_from(*u).map_err(|e| err!("{}", e)),
+                    Value::I64(i) => Self::try_from(*i).map_err(|e| err!("{}", e)),
+                    Value::U64(u) => Self::try_from(*u).map_err(|e| err!("{}", e)),
+                    _ => Err(err!("Value is not an integer")),
                 }
             }
 
@@ -84,7 +84,7 @@ impl TryFrom<&Value> for f32 {
             Value::I16(i) => Ok(Self::from(*i)),
             Value::U16(u) => Ok(Self::from(*u)),
             Value::Float(f) => Ok(*f),
-            _ => Err(Error::from(__!("Cannot convert this value to f32"))),
+            _ => Err(err!("Cannot convert this value to f32")),
         }
     }
 
@@ -114,7 +114,7 @@ impl TryFrom<&Value> for f64 {
             Value::U32(u) => Ok(Self::from(*u)),
             Value::Float(f) => Ok(Self::from(*f)),
             Value::Double(d) => Ok(*d),
-            _ => Err(Error::from(__!("Cannot convert this value to f64"))),
+            _ => Err(err!("Cannot convert this value to f64")),
         }
     }
 

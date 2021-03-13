@@ -19,18 +19,18 @@ macro_rules! at_or_mut_at { ($self: ident, $indexes: ident, $code: tt) => {{
             Some(Value::List(list)) => {
                 value = list.$code(*idx);
                 if nth + 1 == $indexes.len() {
-                    return value.ok_or_else(|| Error::from(__!("Indexes are invalid: {:?}", $indexes)));
+                    return value.ok_or_else(|| err!("Indexes are invalid: {:?}", $indexes));
                 }
             },
-            Some(_) => return Err(Error::from(match nth {
-                0 => __!("Value is not a List"),
-                _ => __!("Value at {:?} is not a List", &$indexes[..nth]),
-            })),
-            None => return Err(Error::from(__!("There is no value at {:?}", &$indexes[..nth]))),
+            Some(_) => return Err(match nth {
+                0 => err!("Value is not a List"),
+                _ => err!("Value at {:?} is not a List", &$indexes[..nth]),
+            }),
+            None => return Err(err!("There is no value at {:?}", &$indexes[..nth])),
         };
     }
 
-    Err(Error::from(__!("Indexes must not be empty")))
+    Err(err!("Indexes must not be empty"))
 }}}
 
 /// # Shortcuts for [`List`](#variant.List)
@@ -42,7 +42,7 @@ impl Value {
     pub fn push<T>(&mut self, value: T) -> Result<()> where T: Into<Self> {
         match self {
             Value::List(list) => Ok(crate::push(list, value)),
-            _ => Err(Error::from(__!("Value is not a list"))),
+            _ => Err(err!("Value is not a list")),
         }
     }
 
@@ -118,19 +118,19 @@ impl Value {
                 Some(Value::List(list)) => match nth + 1 == indexes.len() {
                     true => return match idx >= &0 && idx < &list.len() {
                         true => Ok(list.remove(*idx)),
-                        false => Err(Error::from(__!("Invalid indexes: {:?}", indexes))),
+                        false => Err(err!("Invalid indexes: {:?}", indexes)),
                     },
                     false => value = list.get_mut(*idx),
                 },
-                Some(_) => return Err(Error::from(match nth {
-                    0 => __!("Value is not a List"),
-                    _ => __!("Value at {:?} is not a List", &indexes[..nth]),
-                })),
-                None => return Err(Error::from(__!("There is no value at {:?}", &indexes[..nth]))),
+                Some(_) => return Err(match nth {
+                    0 => err!("Value is not a List"),
+                    _ => err!("Value at {:?} is not a List", &indexes[..nth]),
+                }),
+                None => return Err(err!("There is no value at {:?}", &indexes[..nth])),
             };
         }
 
-        Err(Error::from(__!("Indexes must not be empty")))
+        Err(err!("Indexes must not be empty"))
     }
 
     /// # If the value is a list, returns an immutable reference of it
@@ -139,7 +139,7 @@ impl Value {
     pub fn as_list(&self) -> Result<&List> {
         match self {
             Value::List(list) => Ok(list),
-            _ => Err(Error::from(__!("Value is not a List"))),
+            _ => Err(err!("Value is not a List")),
         }
     }
 
@@ -149,7 +149,7 @@ impl Value {
     pub fn as_mut_list(&mut self) -> Result<&mut List> {
         match self {
             Value::List(list) => Ok(list),
-            _ => Err(Error::from(__!("Value is not a List"))),
+            _ => Err(err!("Value is not a List")),
         }
     }
 
@@ -178,7 +178,7 @@ impl TryFrom<Value> for List {
     fn try_from(v: Value) -> core::result::Result<Self, Self::Error> {
         match v {
             Value::List(list) => Ok(list),
-            _ => Err(Error::from(__!("Value is not a List"))),
+            _ => Err(err!("Value is not a List")),
         }
     }
 
